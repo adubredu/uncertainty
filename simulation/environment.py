@@ -21,16 +21,16 @@ class Grocery_item:
 class environment:
     def __init__(self):
         self.table = Grocery_item(150,300,'assets/table.jpg')
-        self.pepsi = Grocery_item(230, 260,'assets/pepsi.jpg')
-        self.nutella = Grocery_item(500, 260,'assets/nutella.jpg')
-        self.coke = Grocery_item(180, 260, 'assets/coke.jpg')
-        self.lipton = Grocery_item(400, 280, 'assets/lipton.jpg')
-        self.bleach = Grocery_item(280, 250, 'assets/bleach.jpg')
+        self.pepsi = Grocery_item(10, 400,'assets/pepsi.jpg')
+        self.nutella = Grocery_item(15, 400,'assets/nutella.jpg')
+        self.coke = Grocery_item(20, 400, 'assets/coke.jpg')
+        self.lipton = Grocery_item(25, 400, 'assets/lipton.jpg')
+        self.bleach = Grocery_item(13, 400, 'assets/bleach.jpg')
         self.gripper = Grocery_item(330, 0,'assets/gripper.png')
 
         self.items = {"pepsi":self.pepsi, "nutella":self.nutella,
                       "coke": self.coke, "lipton": self.lipton,
-                      "bleach": self.bleach}
+                      "bleach": self.bleach, "table":self.table}
 
         self.clock = pygame.time.Clock()
         self.win = pygame.display.set_mode((700,480))
@@ -53,6 +53,8 @@ class environment:
         for i in range(1):
             self.redrawGameWindow()
             raw_input('Continue?')
+            self.pick_up('bleach')
+            self.put_on_table('bleach')
             self.pick_up('coke')
             self.put_on('coke','bleach')
             self.pick_up('nutella')
@@ -141,6 +143,55 @@ class environment:
                 self.gripper.y -=1
 
             elif (top.y+64 - bot.y) < 0:
+                top.y += 1
+                self.gripper.y +=1
+            
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+
+        print('moving back')
+        while math.fabs(orig_y - self.gripper.y) > 0:
+            if (orig_y - self.gripper.y) > 0:
+                self.gripper.y += 1
+            elif (orig_y - self.gripper.y) < 0:
+                self.gripper.y -= 1
+
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+
+
+        while math.fabs(orig_x - self.gripper.x) > 0:
+            if (orig_x - self.gripper.x) > 0:
+                self.gripper.x += 1
+            elif (orig_y - self.gripper.x) < 0:
+                self.gripper.x -= 1
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+
+
+    def put_on_table(self, topitem):
+        top = self.items[topitem]
+        bot = self.items['table']
+        orig_x = self.gripper.x
+        orig_y = self.gripper.y
+        while math.fabs(top.x - 330) > 0:
+            if (top.x - 330) > 0:
+                top.x-=1
+                self.gripper.x -=1
+
+            elif (top.x - 330) < 0:
+                top.x += 1
+                self.gripper.x +=1
+            
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+
+        while math.fabs(top.y - 260) > 0:
+            if (top.y - 260) > 0:
+                top.y-=1
+                self.gripper.y -=1
+
+            elif (top.y - 260) < 0:
                 top.y += 1
                 self.gripper.y +=1
             
