@@ -1,6 +1,10 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import pygame
 import time
 import math
+from fd import Fast_Downward
 
 pygame.init()
 pygame.display.set_caption("Grocery Packing")

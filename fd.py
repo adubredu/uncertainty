@@ -6,11 +6,11 @@ import subprocess
 import time
 
 class Fast_Downward:
-    def __init__(self,domain_path, problem_path):
+    def __init__(self):
         self.search_options = {
             # Optimal
             'dijkstra': '--heuristic "h=blind(transform=adapt_costs(cost_type=NORMAL))" '
-                        '--search "astar(h,cost_type=NORMAL,max_time=%s,bound=%s)"',
+                        '--search "astar(h,cost_type=NORMAL,max_time=30)"',
             'max-astar': '--heuristic "h=hmax(transform=adapt_costs(cost_type=NORMAL))"'
                          ' --search "astar(h,cost_type=NORMAL,max_time=%s,bound=%s)"',
             'cerberus':  '--heuristic "h=hmax(transform=adapt_costs(cost_type=NORMAL))"'
@@ -55,17 +55,15 @@ class Fast_Downward:
                            'preferred_successors_first=true,cost_type=PLUSONE,max_time=%s,bound=%s)"'.format(w)
 
         self.default_max_time = 30 # INF
-        self.default_planner = 'ff-astar'
+        self.default_planner = 'dijkstra'
         self.max_fd_cost = 1e8
-        self.problem_path = problem_path
-        self.domain_path = domain_path
         self.plan_file = 'sas_plan'
         self.fd_path = '/home/developer/garage/FastDownward/fast-downward.py'
 
 
-    def run_search(self,debug=True):
+    def plan(self,domain_path, problem_path,debug=True):
         start_time = time.time()
-        command = self.fd_path+" "+self.domain_path+" "+self.problem_path+" "+self.search_options[self.default_planner]
+        command = self.fd_path+" "+domain_path+" "+problem_path+" "+self.search_options[self.default_planner]
         print(command)
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, cwd=None, close_fds=True)
         output, error = proc.communicate()
@@ -74,7 +72,7 @@ class Fast_Downward:
             print('Search runtime:', time.time() - start_time)
         time.sleep(3)
         plan = self.read(self.plan_file)
-        return plan
+        return plan[:-1]
 
 
     def read(self, filename):
@@ -84,5 +82,5 @@ class Fast_Downward:
 
 
 if __name__ == '__main__':
-    f = Fast_Downward('dom.pddl', 'prob.pddl')
-    print(f.run_search())
+    f = Fast_Downward()
+    print(f.plan('pddl/dom.pddl', 'pddl/prob.pddl'))
