@@ -1,6 +1,10 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import pygame
 import time
 import math
+from fd import Fast_Downward
 
 pygame.init()
 pygame.display.set_caption("Grocery Packing")
@@ -48,23 +52,34 @@ class environment:
         
         pygame.display.update()
 
+    def execute_action(self, action):
+        if action[0] == 'pick-up':
+            self.pick_up(action[1])
+        elif action[0] == 'put-on-table':
+            self.put_on_table(action[1])
+        elif action[0] == 'put-on':
+            self.put_on(action[1], action[2])
+        elif action[0] == 'put-left':
+            self.put_left(action[1],action[2])
+        elif action[0] == 'put-right':
+            self.put_right(action[1], action[2])
+
 
     def run_simulation(self):
-        for i in range(1):
-            self.redrawGameWindow()
-            raw_input('Continue?')
-            self.pick_up('bleach')
-            self.put_on_table('bleach')
-            self.pick_up('coke')
-            self.put_on('coke','bleach')
-            self.pick_up('nutella')
-            self.put_on('nutella','coke')
-            self.pick_up('pepsi')
-            self.put_left('pepsi','bleach')
-            self.pick_up('lipton')
-            self.put_right('lipton','bleach')
-            time.sleep(2)
+        f = Fast_Downward()
+        plan = f.plan('/home/developer/uncertainty/pddl/dom.pddl', '/home/developer/uncertainty/pddl/prob.pddl')
+        if plan is None:
+            print('No valid plan found')
+        else:
+            raw_input('Plan computed. Execute plan?')
+            for action in plan:
+                self.redrawGameWindow()
+                
+                print('Performing action: '+str(action))
+                self.execute_action(action)
+                time.sleep(1)
         pygame.quit()
+
 
     def pick_motion(self, item):
         orig_x = self.gripper.x
@@ -78,7 +93,7 @@ class environment:
 
             self.redrawGameWindow()
             self.clock.tick(self.rate)
-        print('done moving left')
+        # print('done moving left')
 
         while math.fabs(item.y - (self.gripper.y+90)) > 0:
             if item.y - (self.gripper.y+90) > 0:
@@ -89,9 +104,9 @@ class environment:
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
-        print('done moving right')
+        # print('done moving right')
         # time.sleep(2)
-        print('moving back')
+        # print('moving back')
         while math.fabs(orig_y - self.gripper.y) > 0:
             if (orig_y - self.gripper.y) > 0:
                 self.gripper.y += 1
@@ -149,7 +164,7 @@ class environment:
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
-        print('moving back')
+        # print('moving back')
         while math.fabs(orig_y - self.gripper.y) > 0:
             if (orig_y - self.gripper.y) > 0:
                 self.gripper.y += 1
@@ -198,7 +213,7 @@ class environment:
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
-        print('moving back')
+        # print('moving back')
         while math.fabs(orig_y - self.gripper.y) > 0:
             if (orig_y - self.gripper.y) > 0:
                 self.gripper.y += 1
@@ -248,7 +263,7 @@ class environment:
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
-        print('moving back')
+        # print('moving back')
         while math.fabs(orig_y - self.gripper.y) > 0:
             if (orig_y - self.gripper.y) > 0:
                 self.gripper.y += 1
@@ -298,7 +313,7 @@ class environment:
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
-        print('moving back')
+        # print('moving back')
         while math.fabs(orig_y - self.gripper.y) > 0:
             if (orig_y - self.gripper.y) > 0:
                 self.gripper.y += 1

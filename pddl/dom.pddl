@@ -2,57 +2,66 @@
 	(:requirements :strips :typing)
 	(:types item)
 	(:predicates (on ?x - item ?y - item)
-			(ontable ?x - item)
-			(cleartop ?x - item)
-			(clearleft ?x - item)
-			(clearright ?x - item)
-			(handempty)
-			(holding ?x - item)
-			(toleft ?x - item ?y - item)
-			(toright ?x -  item ?y - item)
-			)
-
+		(ontable ?x - item)
+		(cleartop ?x - item)
+		(handempty)
+		(holding ?x - item)
+		(clearleft ?x - item)
+		(clearright ?x - item)
+		(toleft ?x - item ?y - item)
+		(toright ?x - item ?y - item)
+		)
+		
 	(:action pick-up
-		:parameters (?x - item)
-		:precondition (and (cleartop ?x) (handempty))
-		:effect
-		(and (not (ontable ?x))
-		     (not (cleartop ?x))
-		     (not (handempty))
-		     (holding ?x)))
-
-	(:action put-on
-		:parameters (?x - item ?y - item)
-		:precondition (and (cleartop ?y) (holding ?x))
-		:effect
-		(and (on ?x ?y)
-			 (not (cleartop ?y))
-			 (handempty)
-			 (cleartop ?x)
-			 (clearleft ?x)
-			 (clearright ?x)
-			 (not (holding ?x))))
-
+	        :parameters (?x - item)
+	        :precondition (and (cleartop ?x) (handempty))
+	        :effect
+	        (and (not (ontable ?x))
+	            (not (handempty))
+	            (not (cleartop ?x))
+	            (holding ?x)))
+	            
+	(:action put-on-table
+	    :parameters (?x - item)
+	    :precondition (holding ?x)
+	    :effect
+	    (and (not (holding ?x))
+	    (cleartop ?x)
+	    (handempty)
+	    (ontable ?x)))
+	    
+	
+	(:action put-on 
+	        :parameters (?x - item ?y - item)
+	        :precondition (and (holding ?x) (cleartop ?y) )
+	        :effect
+	        (and (not (holding ?x))
+	        (not (cleartop ?y))
+	        (cleartop ?x)
+	        (handempty)
+	        (on ?x ?y)))
+	        
+	        
 	(:action put-left
-		:parameters (?x - item ?y - item)
-		:precondition (and (clearleft ?y) (holding ?x))
-		:effect
-		(and (toleft ?x ?y)
-			 (not (clearleft ?y))
-			 (handempty)
-			 (clearleft ?x)
-			 (not (clearright ?x))
-			 (not (holding ?x))))
-
+	        :parameters (?x - item ?y - item)
+	        :precondition (and (holding ?x) (clearleft ?y) (ontable ?y))
+	        :effect
+	        (and (not (holding ?x))
+	        (not (clearleft ?y))
+	        (clearleft ?x)
+	        (handempty)
+	        (toleft ?x ?y)))
+	
 	(:action put-right
-		:parameters (?x - item ?y - item)
-		:precondition (and (clearright ?y) (holding ?x))
-		:effect
-		(and (toright ?x ?y)
-			 (not (clearright ?y))
-			 (handempty)
-			 (clearright ?x)
-			 (not (clearleft ?x))
-			 (not (holding ?x))))
-
+	        :parameters (?x - item ?y - item)
+	        :precondition (and (holding ?x) (clearright ?y) (ontable ?y))
+	        :effect
+	        (and (not (holding ?x))
+	        (not (clearright ?y))
+	        (clearright ?x)
+	        (handempty)
+	        (toright ?x ?y)))
+	        
 )
+	        
+	       
