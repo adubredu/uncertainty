@@ -57,11 +57,7 @@ class Fast_Downward:
         self.default_max_time = 30 # INF
         self.default_planner = 'dijkstra'
         self.max_fd_cost = 1e8
-<<<<<<< HEAD
         self.plan_file = '/home/developer/uncertainty/sas_plan'
-=======
-        self.plan_file = 'sas_plan'
->>>>>>> 8f1a45ef2a3f7f11c0c057cf72f96bf1eb115547
         self.fd_path = '/home/developer/garage/FastDownward/fast-downward.py'
 
 
