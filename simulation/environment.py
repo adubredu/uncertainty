@@ -35,6 +35,8 @@ class environment:
         self.gripper = Grocery_item(330, 0,'assets/gripper.png',75,75)
 
         self.certainty = bool_certain
+        self.domain_path='/home/developer/uncertainty/pddl/dom.pddl'
+        self.problem_path='/home/developer/uncertainty/pddl/prob.pddl'
         self.items = {"pepsi":self.pepsi, "nutella":self.nutella,
                       "coke": self.coke, "lipton": self.lipton,
                       "bleach": self.bleach, "table":self.table}
@@ -141,10 +143,14 @@ class environment:
             return False
 
 
-    def run_simulation(self):
-        action_progress=[]
+    def get_current_packing_state(self):
+        pass
+
+
+    def run_simulation(self,domain_path, problem_path):
+        action_progress=[] 
         f = Fast_Downward()
-        plan = f.plan('/home/developer/uncertainty/pddl/dom.pddl', '/home/developer/uncertainty/pddl/prob.pddl')
+        plan = f.plan(domain_path, problem_path)
         if plan is None:
             print('No valid plan found')
         else:
@@ -155,7 +161,14 @@ class environment:
                 self.execute_action(action)
                 action_progress.append(action)
                 if not self.inspect_scene(action_progress):
+                    '''
                     #replan
+                    1. get current state
+                    2. form it into init, keep original problem 
+                        and save it as newprob.pddl
+                    3. pass domain_path and newprob.pddl into
+                        run_simulation
+                    '''
                 time.sleep(1)
         pygame.quit()
 
@@ -426,7 +439,7 @@ class environment:
 
 if __name__ == '__main__':
     g = environment(bool_certain=False)
-    g.run_simulation()
+    g.run_simulation(g.domain_path, g.problem_path)
 
 
 
