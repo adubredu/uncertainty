@@ -25,7 +25,7 @@ class Grocery_item:
 
 
 class environment:
-    def __init__(self):
+    def __init__(self, bool_certain):
         self.table = Grocery_item(150,300,'assets/table.jpg',419,144)
         self.pepsi = Grocery_item(10, 400,'assets/pepsi.jpg',26,49)
         self.nutella = Grocery_item(15, 400,'assets/nutella.jpg',26,37)
@@ -34,6 +34,7 @@ class environment:
         self.bleach = Grocery_item(13, 400, 'assets/bleach.jpg',26,64)
         self.gripper = Grocery_item(330, 0,'assets/gripper.png',75,75)
 
+        self.certainty = bool_certain
         self.items = {"pepsi":self.pepsi, "nutella":self.nutella,
                       "coke": self.coke, "lipton": self.lipton,
                       "bleach": self.bleach, "table":self.table}
@@ -43,6 +44,9 @@ class environment:
 
 
     def sample_object(self,object_name):
+        if self.certainty:
+            return self.items[object_name]
+
         objects = [self.pepsi, self.nutella,self.coke,self.lipton,
                     self.bleach]
         item_probabilities = 
@@ -86,22 +90,55 @@ class environment:
 
 
     def inspect_scene(self, progress):
+        result = True
         for action in progress:
             if action[0] == 'put-on-table':
-                self.check_on_table(action[1])
+                result = result and self.check_on_table(action[1])
             elif action[0] == 'put-on':
-                self.check_on(action[1],action[2])
+                result = result and self.check_on(action[1],action[2])
             elif action[0] == 'put-left':
-                self.check_left(action[1],action[2])
+                result = result and self.check_left(action[1],action[2])
             elif action[0] == 'put-right':
-                self.check_right(action[1],action[2])
+                result = result and self.check_right(action[1],action[2])
+        return result
 
 
-    def check_on_table(self,item):
+    def check_on_table(self, item_name):
+        item = self.items[item_name]
+        if item.y == 260:
+            return True
+        else:
+            return False
 
 
+    def check_left(self, left_item_name, right_item_name):
+        left_item = self.items[left_item_name]
+        right_item = self.items[right_item_name]
+
+        if (right_item.x - left_item.x) == 50:
+            return True
+        else:
+            return False
 
 
+    def check_right(self, left_item_name, right_item_name):
+        left_item = self.items[left_item_name]
+        right_item = self.items[right_item_name]
+
+        if (left_item.x - right_item.x) == 50:
+            return True
+        else:
+            return False
+
+
+    def check_on(self, top_item_name, bot_item_name):
+        top_item = self.items[top_item_name]
+        bot_item = self.items[bot_item_name]
+
+        if (bot_item.y - top_item.y) == 64:
+            return True
+        else:
+            return False
 
 
     def run_simulation(self):
@@ -117,7 +154,8 @@ class environment:
                 print('Performing action: '+str(action))
                 self.execute_action(action)
                 action_progress.append(action)
-                self.inspect_scene(action_progress)
+                if not self.inspect_scene(action_progress):
+                    #replan
                 time.sleep(1)
         pygame.quit()
 
@@ -387,7 +425,7 @@ class environment:
 
 
 if __name__ == '__main__':
-    g = environment()
+    g = environment(bool_certain=False)
     g.run_simulation()
 
 
