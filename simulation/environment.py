@@ -11,9 +11,11 @@ pygame.display.set_caption("Grocery Packing")
 
 
 class Grocery_item:
-    def __init__(self, x, y, image_path):
+    def __init__(self, x, y, image_path,image_width,image_height):
         self.x = x
         self.y = y
+        self.width = image_width
+        self.image_height = image_height
         self.body = pygame.image.load(image_path)
 
     def move_to(self, x, y):
@@ -24,21 +26,39 @@ class Grocery_item:
 
 class environment:
     def __init__(self):
-        self.table = Grocery_item(150,300,'assets/table.jpg')
-        self.pepsi = Grocery_item(10, 400,'assets/pepsi.jpg')
-        self.nutella = Grocery_item(15, 400,'assets/nutella.jpg')
-        self.coke = Grocery_item(20, 400, 'assets/coke.jpg')
-        self.lipton = Grocery_item(25, 400, 'assets/lipton.jpg')
-        self.bleach = Grocery_item(13, 400, 'assets/bleach.jpg')
-        self.gripper = Grocery_item(330, 0,'assets/gripper.png')
+        self.table = Grocery_item(150,300,'assets/table.jpg',419,144)
+        self.pepsi = Grocery_item(10, 400,'assets/pepsi.jpg',26,49)
+        self.nutella = Grocery_item(15, 400,'assets/nutella.jpg',26,37)
+        self.coke = Grocery_item(20, 400, 'assets/coke.jpg',28,52)
+        self.lipton = Grocery_item(25, 400, 'assets/lipton.jpg',58,28)
+        self.bleach = Grocery_item(13, 400, 'assets/bleach.jpg',26,64)
+        self.gripper = Grocery_item(330, 0,'assets/gripper.png',75,75)
 
         self.items = {"pepsi":self.pepsi, "nutella":self.nutella,
                       "coke": self.coke, "lipton": self.lipton,
                       "bleach": self.bleach, "table":self.table}
-
         self.clock = pygame.time.Clock()
         self.win = pygame.display.set_mode((700,480))
         self.rate = 80
+
+
+    def sample_object(self,object_name):
+        objects = [self.pepsi, self.nutella,self.coke,self.lipton,
+                    self.bleach]
+        item_probabilities = 
+            { "pepsi":[0.4, 0.1,0.3,0.1,0.1],
+              "nutella":[0.2,0.4,0.2,0.1,0.1],
+              "coke":[0.3,0.1,0.4,0.1,0.1],
+              "lipton":[0.1,0.1,0.1,0.6,0.1],
+              "bleach":[0.1,0.1,0.1,0.1,0.6]
+
+            }
+
+        choice = np.random.choice(objects, size=1, 
+                p=item_probabilities[object_name])
+
+        return choice
+
 
     def redrawGameWindow(self):
         self.win.fill((255,255,255))
@@ -54,7 +74,7 @@ class environment:
 
     def execute_action(self, action):
         if action[0] == 'pick-up':
-            self.pick_up(action[1])
+            self.pick_up(self.action[1])
         elif action[0] == 'put-on-table':
             self.put_on_table(action[1])
         elif action[0] == 'put-on':
@@ -65,7 +85,27 @@ class environment:
             self.put_right(action[1], action[2])
 
 
+    def inspect_scene(self, progress):
+        for action in progress:
+            if action[0] == 'put-on-table':
+                self.check_on_table(action[1])
+            elif action[0] == 'put-on':
+                self.check_on(action[1],action[2])
+            elif action[0] == 'put-left':
+                self.check_left(action[1],action[2])
+            elif action[0] == 'put-right':
+                self.check_right(action[1],action[2])
+
+
+    def check_on_table(self,item):
+
+
+
+
+
+
     def run_simulation(self):
+        action_progress=[]
         f = Fast_Downward()
         plan = f.plan('/home/developer/uncertainty/pddl/dom.pddl', '/home/developer/uncertainty/pddl/prob.pddl')
         if plan is None:
@@ -73,10 +113,11 @@ class environment:
         else:
             raw_input('Plan computed. Execute plan?')
             for action in plan:
-                self.redrawGameWindow()
-                
+                self.redrawGameWindow()               
                 print('Performing action: '+str(action))
                 self.execute_action(action)
+                action_progress.append(action)
+                self.inspect_scene(action_progress)
                 time.sleep(1)
         pygame.quit()
 
@@ -132,12 +173,12 @@ class environment:
 
 
     def pick_up(self, item):
-        self.pick_motion(self.items[item])
+        self.pick_motion(self.sample_object(item))
 
 
     def put_on(self, topitem, bottomitem):
-        top = self.items[topitem]
-        bot = self.items[bottomitem]
+        top = self.sample_object(topitem)
+        bot = self.sample_object(bottomitem)
         orig_x = self.gripper.x
         orig_y = self.gripper.y
         while math.fabs(top.x - bot.x) > 0:
@@ -185,7 +226,7 @@ class environment:
 
 
     def put_on_table(self, topitem):
-        top = self.items[topitem]
+        top = self.sample_object(topitem)
         bot = self.items['table']
         orig_x = self.gripper.x
         orig_y = self.gripper.y
@@ -234,8 +275,8 @@ class environment:
 
 
     def put_left(self, focusitem, staticitem):
-        focus = self.items[focusitem]
-        static = self.items[staticitem]
+        focus = self.sample_object(focusitem)
+        static = self.sample_object(staticitem)
         orig_x = self.gripper.x
         orig_y = self.gripper.y
 
@@ -284,8 +325,8 @@ class environment:
 
 
     def put_right(self, focusitem, staticitem):
-        focus = self.items[focusitem]
-        static = self.items[staticitem]
+        focus = self.sample_object(focusitem)
+        static = self.sample_object(staticitem)
         orig_x = self.gripper.x
         orig_y = self.gripper.y
 
