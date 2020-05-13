@@ -22,7 +22,9 @@ class Grocery_item:
         self.item_at_left = None
         self.item_at_right = None
         self.item_on_top = None
+        self.item_on_bottom = None
         self.on_table = False
+        self.onsomething = False
         self.name = object_name
         self.holding = None #only for gripper
 
@@ -105,58 +107,78 @@ class environment:
             self.put_left(action[1],action[2])
         elif action[0] == 'put-right':
             self.put_right(action[1], action[2])
+        elif action[0] == 'drop-in-clutter':
+            self.drop_in_clutter(action[1])
 
 
-    def inspect_scene(self, progress):
+    def inspect_scene(self, action):
         result = True
-        for action in progress:
-            if action[0] == 'put-on-table':
-                result = result and self.check_on_table(action[1])
-            elif action[0] == 'put-on':
-                result = result and self.check_on(action[1],action[2])
-            elif action[0] == 'put-left':
-                result = result and self.check_left(action[1],action[2])
-            elif action[0] == 'put-right':
-                result = result and self.check_right(action[1],action[2])
+        # for action in progress:
+        if action[0] == 'put-on-table':
+            result = result and self.check_on_table(action[1])
+            if not result:
+                print("ERROR in put-on-table")
+        elif action[0] == 'put-on':
+            result = result and self.check_on(action[1],action[2])
+            if not result:
+                print("ERROR in put-on")
+        elif action[0] == 'put-left':
+            result = result and self.check_left(action[1],action[2])
+            if not result:
+                print("ERROR in put-left")
+        elif action[0] == 'put-right':
+            result = result and self.check_right(action[1],action[2])
+            if not result:
+                print("ERROR in put-right")
+        elif action[0] == 'pick-up':
+            result = result and (self.gripper.holding == action[1])
+            if not result:
+                print("ERROR in holding")
         return result
 
 
     def check_on_table(self, item_name):
         item = self.items[item_name]
-        if item.y == 260:
-            return True
-        else:
-            return False
+        return item.on_table
+        # if item.y == 260:
+        #     return True
+        # else:
+        #     return False
 
 
     def check_left(self, left_item_name, right_item_name):
         left_item = self.items[left_item_name]
         right_item = self.items[right_item_name]
 
-        if (right_item.x - left_item.x) == 50:
-            return True
-        else:
-            return False
+        return (right_item.item_at_left == left_item_name)
+        # if (right_item.x - left_item.x) == 50:
+        #     return True
+        # else:
+        #     return False
 
 
     def check_right(self, left_item_name, right_item_name):
         left_item = self.items[left_item_name]
         right_item = self.items[right_item_name]
 
-        if (left_item.x - right_item.x) == 50:
-            return True
-        else:
-            return False
+        return (right_item.item_at_right == left_item_name)
+
+        # if (left_item.x - right_item.x) == 50:
+        #     return True
+        # else:
+        #     return False
 
 
     def check_on(self, top_item_name, bot_item_name):
         top_item = self.items[top_item_name]
         bot_item = self.items[bot_item_name]
 
-        if (bot_item.y - top_item.y) == 64:
-            return True
-        else:
-            return False
+        return (bot_item.item_on_top == top_item_name)
+
+        # if (bot_item.y - top_item.y) == 64:
+        #     return True
+        # else:
+        #     return False
 
 
     def get_current_packing_state(self):
@@ -179,6 +201,10 @@ class environment:
 
             if item.on_table:
                 init+=" (ontable "+item.name+")"
+
+            if item.onsomething:
+                init+=" (onsomething "+item.name+")"
+
         if self.gripper.holding == None:
             init+=" (handempty) "
         else:
@@ -189,23 +215,25 @@ class environment:
 
 
     def run_simulation(self,domain_path, problem_path):
-        action_progress=[] 
+        # action_progress=[] 
         f = Fast_Downward()
         plan = f.plan(domain_path, problem_path)
         count = 0
         if plan is None:
             print('No valid plan found')
         else:
-            raw_input('Plan computed. Execute plan?')
+            # raw_input('Plan computed. Execute plan?')
             for action in plan:
                 self.redrawGameWindow()               
                 print('Performing action: '+str(action))
                 self.execute_action(action)
-                action_progress.append(action)
-                count +=1
+                # action_progress.append(action)
+                # count +=1
                 # print(self.inspect_scene(action_progress))
-                if count == 3:
-                # if not self.inspect_scene(action_progress):
+                # if count == 3:
+                # time.sleep(1)
+                inspection_result = self.inspect_scene(action)
+                if not inspection_result:
                     '''
                     #replan
                     1. get current state
@@ -228,7 +256,7 @@ class environment:
                     self.run_simulation(self.domain_path, prob_path)
 
 
-        
+        print("***GROCERY PACKING COMPLETE***")
         time.sleep(60)
         pygame.quit()
 
@@ -236,7 +264,6 @@ class environment:
     def pick_motion(self, item):
         orig_x = self.gripper.x
         orig_y = self.gripper.y 
-
         while math.fabs(item.x - (self.gripper.x+26)) > 0:
             if item.x - (self.gripper.x+26) > 0:
                 self.gripper.x += 1
@@ -284,15 +311,37 @@ class environment:
 
 
     def pick_up(self, item):
-        self.gripper.holding = item
-        self.pick_motion(self.sample_object(item))
+        s_item = self.sample_object(item)
+        s_item.item_on_bottom=None
+        s_item.item_on_top=None
+        s_item.item_at_left=None
+        s_item.item_at_right=None
+        s_item.on_table=False
+        s_item.onsomething=False
+
+        for it in self.objects_list:
+            if it.item_on_top == item:
+                it.item_on_top = None
+            elif it.item_on_bottom == item:
+                it.item_on_bottom = None
+            elif it.item_at_right == item:
+                it.item_at_right = None
+            elif it.item_at_left == item:
+                it.item_at_left = None
+        self.gripper.holding = s_item.name
+        self.pick_motion(s_item)
 
         #put top on botton
     def put_on(self, topitem, bottomitem):
-        top = self.sample_object(topitem)
-        bot = self.sample_object(bottomitem)
+        if topitem == bottomitem:
+            return
+        top = self.items[topitem]
+        bot = self.items[bottomitem]
+        if (not bot.on_table) and (bot.item_on_bottom == None) :
+            return
         self.gripper.holding = None
         bot.item_on_top = topitem
+
         orig_x = self.gripper.x
         orig_y = self.gripper.y
         while math.fabs(top.x - bot.x) > 0:
@@ -337,12 +386,18 @@ class environment:
                 self.gripper.x -= 1
             self.redrawGameWindow()
             self.clock.tick(self.rate)
+        top.item_on_bottom = bot.name
+        top.onsomething=True
 
 
     def put_on_table(self, topitem):
-        top = self.sample_object(topitem)
+        top = self.items[topitem]
+        if not (self.gripper.holding == topitem):
+            return
         self.gripper.holding = None
         top.on_table = True
+        top.onsomething=True
+
         bot = self.items['table']
         orig_x = self.gripper.x
         orig_y = self.gripper.y
@@ -390,12 +445,88 @@ class environment:
             self.clock.tick(self.rate)
 
 
+    def drop_in_clutter(self, topitem):
+        top = self.items[topitem]
+        if not (self.gripper.holding == topitem):
+            return
+        self.gripper.holding = None
+        top.item_on_bottom=None
+        top.item_on_top=None
+        top.item_at_left=None
+        top.item_at_right=None
+        top.on_table=False
+        top.onsomething=False
+
+        for it in self.objects_list:
+            if it.item_on_top == topitem:
+                it.item_on_top = None
+            elif it.item_on_bottom == topitem:
+                it.item_on_bottom = None
+            elif it.item_at_right == topitem:
+                it.item_at_right = None
+            elif it.item_at_left == topitem:
+                it.item_at_left = None
+
+
+        
+        orig_x = self.gripper.x
+        orig_y = self.gripper.y
+        while math.fabs(top.x - 25) > 0:
+            if (top.x - 25) > 0:
+                top.x-=1
+                self.gripper.x -=1
+
+            elif (top.x - 25) < 0:
+                top.x += 1
+                self.gripper.x +=1
+            
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+
+        while math.fabs(top.y - 400) > 0:
+            if (top.y - 400) > 0:
+                top.y-=1
+                self.gripper.y -=1
+
+            elif (top.y - 400) < 0:
+                top.y += 1
+                self.gripper.y +=1
+            
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+
+        # print('moving back')
+        while math.fabs(orig_y - self.gripper.y) > 0:
+            if (orig_y - self.gripper.y) > 0:
+                self.gripper.y += 1
+            elif (orig_y - self.gripper.y) < 0:
+                self.gripper.y -= 1
+
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+
+
+        while math.fabs(orig_x - self.gripper.x) > 0:
+            if (orig_x - self.gripper.x) > 0:
+                self.gripper.x += 1
+            elif (orig_y - self.gripper.x) < 0:
+                self.gripper.x -= 1
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+
+
     def put_left(self, focusitem, staticitem):
-        focus = self.sample_object(focusitem)
-        static = self.sample_object(staticitem)
+        if focusitem==staticitem:
+            return
+        focus = self.items[focusitem]
+        static = self.items[staticitem]
+        if not static.on_table:
+            return
         self.gripper.holding = None
         static.item_at_left = focusitem
         focus.item_at_right = staticitem
+        focus.onsomething=True
+        focus.on_table = True
         orig_x = self.gripper.x
         orig_y = self.gripper.y
 
@@ -444,11 +575,17 @@ class environment:
 
 
     def put_right(self, focusitem, staticitem):
-        focus = self.sample_object(focusitem)
-        static = self.sample_object(staticitem)
+        if focusitem==staticitem:
+            return
+        focus = self.items[focusitem]
+        static = self.items[staticitem]
+        if not static.on_table:
+            return
         self.gripper.holding = None
         static.item_at_right = focusitem
         focus.item_at_left = staticitem
+        focus.onsomething=True
+        focus.on_table=True
         orig_x = self.gripper.x
         orig_y = self.gripper.y
 
@@ -509,7 +646,7 @@ class environment:
 
 
 if __name__ == '__main__':
-    g = environment(bool_certain=True)
+    g = environment(bool_certain=False)
     g.run_simulation(g.domain_path, g.problem_path)
 
 

@@ -10,6 +10,7 @@
 		(clearright ?x - item)
 		(toleft ?x - item ?y - item)
 		(toright ?x - item ?y - item)
+		(onsomething ?x - item)
 		)
 		
 	(:action pick-up
@@ -19,7 +20,8 @@
 	        (and (not (ontable ?x))
 	            (not (handempty))
 	            (not (cleartop ?x))
-	            (holding ?x)))
+	            (holding ?x)
+	            (not (onsomething ?x))))
 	            
 	(:action put-on-table
 	    :parameters (?x - item)
@@ -28,17 +30,30 @@
 	    (and (not (holding ?x))
 	    (cleartop ?x)
 	    (handempty)
-	    (ontable ?x)))
+	    (ontable ?x)
+	    (onsomething ?x)))
+
+
+	(:action drop-in-clutter
+		:parameters (?x - item)
+		:precondition (holding ?x)
+		:effect
+		(and (not (holding ?x))
+		(cleartop ?x)
+		(clearleft ?x)
+		(clearright ?x)
+		(handempty)))
 	    
 	
 	(:action put-on 
 	        :parameters (?x - item ?y - item)
-	        :precondition (and (holding ?x) (cleartop ?y) )
+	        :precondition (and (holding ?x) (cleartop ?y) (onsomething ?y))
 	        :effect
 	        (and (not (holding ?x))
 	        (not (cleartop ?y))
 	        (cleartop ?x)
 	        (handempty)
+	        (onsomething ?x)
 	        (on ?x ?y)))
 	        
 	        
@@ -50,6 +65,7 @@
 	        (not (clearleft ?y))
 	        (clearleft ?x)
 	        (handempty)
+	        (onsomething ?x)
 	        (toleft ?x ?y)))
 	
 	(:action put-right
@@ -60,6 +76,7 @@
 	        (not (clearright ?y))
 	        (clearright ?x)
 	        (handempty)
+	        (onsomething ?x)
 	        (toright ?x ?y)))
 	        
 )
