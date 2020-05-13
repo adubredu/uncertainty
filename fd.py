@@ -57,7 +57,7 @@ class Fast_Downward:
         self.default_max_time = 30 # INF
         self.default_planner = 'dijkstra'
         self.max_fd_cost = 1e8
-        self.plan_file = '/home/developer/uncertainty/sas_plan'
+        self.plan_file = '/home/developer/uncertainty/simulation/sas_plan'
         self.fd_path = '/home/developer/garage/FastDownward/fast-downward.py'
 
 
@@ -72,7 +72,7 @@ class Fast_Downward:
             print('Search runtime:', time.time() - start_time)
         time.sleep(3)
         plan = self.read(self.plan_file)
-        return plan[:-1]
+        return plan
 
 
     def read(self, filename):
