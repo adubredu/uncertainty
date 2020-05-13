@@ -80,6 +80,16 @@ class environment:
         choice = np.random.choice(self.objects_list, size=1, 
                 p=item_probabilities[object_name])
 
+        count = 0
+        while choice[0].onsomething:
+            # print("not choosing "+choice[0].name+". Choosing from clutter")
+            choice = np.random.choice(self.objects_list, size=1, 
+                p=item_probabilities[object_name])
+            count+=1
+            if count > 20:
+                return self.items[object_name]
+
+
         return choice[0]
 
 
@@ -646,7 +656,7 @@ class environment:
 
 
 if __name__ == '__main__':
-    g = environment(bool_certain=False)
+    g = environment(bool_certain=True)
     g.run_simulation(g.domain_path, g.problem_path)
 
 
