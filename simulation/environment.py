@@ -94,13 +94,17 @@ class environment:
 
 
     def initialize_clutter(self):
-        choice = np.random.randint(4)
+        choice = 0#np.random.randint(4)
 
         if choice == 0:
             self.bleach.item_at_left = "lipton"
+            self.lipton.item_at_right = "bleach"
             self.bleach.item_on_top = "coke"
             self.bleach.item_at_right = "pepsi"
+            self.pepsi.item_at_left = "bleach"
             self.pepsi.item_on_top = "nutella"
+            self.coke.item_at_right = "nutella"
+            self.nutella.item_at_left = "coke"
 
         elif choice == 1:
             self.lipton.item_at_left = "coke"
@@ -120,6 +124,9 @@ class environment:
             self.coke.item_on_top = "bleach"
             self.coke.item_at_right = "nutella"
 
+        elif choice == 4:
+            self.bleach.item_on_top = "coke"
+
 
 
     def redrawGameWindow(self):
@@ -137,6 +144,8 @@ class environment:
 
     def execute_action(self, action):
         if action[0] == 'pick-up':
+            self.pick_up(action[1])
+        elif action[0] == 'pick-up-from-on':
             self.pick_up(action[1])
         elif action[0] == 'put-on-table':
             self.put_on_table(action[1])
@@ -173,6 +182,10 @@ class environment:
             result = result and (self.gripper.holding == action[1])
             if not result:
                 print("ERROR in holding")
+        elif action[0] == 'pick-up-from-on':
+            result = result and (self.gripper.holding == action[1])
+            if not result:
+                print("ERROR in pick-up-from")
         return result
 
 
@@ -267,15 +280,40 @@ class environment:
     def clutter_optimistic_planning(self):
         self.initialize_clutter()
         problem = self.form_problem_from_current_scene()
-        self.run_simulation(self.domain_path, problem)
+        self.run_grocery_packing(self.domain_path, problem)
 
 
     def declutter_before_clutter_planning(self):
         self.initialize_clutter()
+        init = self.get_current_packing_state()
+        goal = "\n(:goal (and (cleartop coke) \
+        (cleartop lipton) (cleartop nutella) \
+        (cleartop pepsi) (cleartop bleach))))"
+        problem = self.definition+init+goal
+        file = open("declutterprob.pddl",'w')
+        file.write(problem)
+        file.close()
+        clutter_prob_path = os.path.dirname(os.path.realpath(__file__))+\
+                    "/"+"declutterprob.pddl"
+        f = Fast_Downward() 
+        self.run_grocery_packing(self.domain_path, clutter_prob_path)
+        print("***Declutter Complete***")
+
+
+        inits = self.get_current_packing_state()
+        problems = self.definition+inits+self.goal_def
+        file = open("probs.pddl",'w')
+        file.write(problems)
+        file.close()
+        probs_path = os.path.dirname(os.path.realpath(__file__))+\
+                    "/"+"probs.pddl"
+        self.run_grocery_packing(self.domain_path, probs_path)
+        print("***GROCERY PACKING COMPLETE***")
+        pygame.quit()
+
         
 
-
-    def run_simulation(self,domain_path, problem_path):
+    def run_grocery_packing(self,domain_path, problem_path):
         # action_progress=[] 
         f = Fast_Downward()
         plan = f.plan(domain_path, problem_path)
@@ -294,12 +332,11 @@ class environment:
                     print('****************')
                     time.sleep(3)
                     prob_path = self.form_problem_from_current_scene()
-                    self.run_simulation(self.domain_path, prob_path)
+                    self.run_grocery_packing(domain_path, prob_path)
 
 
-        print("***GROCERY PACKING COMPLETE***")
-        time.sleep(60)
-        pygame.quit()
+        
+        time.sleep(2)
 
 
     def pick_motion(self, item):
@@ -371,6 +408,7 @@ class environment:
                 it.item_at_left = None
         self.gripper.holding = s_item.name
         self.pick_motion(s_item)
+
 
         #put top on botton
     def put_on(self, topitem, bottomitem):
@@ -688,7 +726,8 @@ class environment:
 
 if __name__ == '__main__':
     g = environment(bool_certain=False)
-    g.run_simulation(g.domain_path, g.problem_path)
+    # g.run_simulation(g.domain_path, g.problem_path)
+    g.declutter_before_clutter_planning()
 
 
 
