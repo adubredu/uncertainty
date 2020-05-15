@@ -93,6 +93,35 @@ class environment:
         return choice[0]
 
 
+    def initialize_clutter(self):
+        choice = np.random.randint(4)
+
+        if choice == 0:
+            self.bleach.item_at_left = "lipton"
+            self.bleach.item_on_top = "coke"
+            self.bleach.item_at_right = "pepsi"
+            self.pepsi.item_on_top = "nutella"
+
+        elif choice == 1:
+            self.lipton.item_at_left = "coke"
+            self.lipton.item_on_top = "nutella"
+            self.lipton.item_at_right = "bleach"
+            self.bleach.item_at_right = "pepsi"
+
+        elif choice == 2:
+            self.lipton.item_at_left = "nutella"
+            self.lipton.item_at_right = "pepsi"
+            self.lipton.item_on_top = "coke"
+            self.coke.item_on_top = "bleach"
+
+        elif choice == 3:
+            self.lipton.item_on_top = "pepsi"
+            self.lipton.item.item_at_right = "coke"
+            self.coke.item_on_top = "bleach"
+            self.coke.item_at_right = "nutella"
+
+
+
     def redrawGameWindow(self):
         self.win.fill((255,255,255))
         self.win.blit(self.logo.body, (self.logo.x, self.logo.y))
@@ -223,6 +252,28 @@ class environment:
         return init
 
 
+    def form_problem_from_current_scene(self):
+        init = self.get_current_packing_state()
+        prob = self.definition+init+self.goal_def
+        f = open("newprob.pddl","w")
+        f.write(prob)
+        f.close()
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        prob_path = dir_path+"/"+"newprob.pddl"
+        
+        return prob_path
+
+
+    def clutter_optimistic_planning(self):
+        self.initialize_clutter()
+        problem = self.form_problem_from_current_scene()
+        self.run_simulation(self.domain_path, problem)
+
+
+    def declutter_before_clutter_planning(self):
+        self.initialize_clutter()
+        
+
 
     def run_simulation(self,domain_path, problem_path):
         # action_progress=[] 
@@ -232,37 +283,17 @@ class environment:
         if plan is None:
             print('No valid plan found')
         else:
-            # raw_input('Plan computed. Execute plan?')
             for action in plan:
                 self.redrawGameWindow()               
                 print('Performing action: '+str(action))
                 self.execute_action(action)
-                # action_progress.append(action)
-                # count +=1
-                # print(self.inspect_scene(action_progress))
-                # if count == 3:
-                # time.sleep(1)
                 inspection_result = self.inspect_scene(action)
                 if not inspection_result:
-                    '''
-                    #replan
-                    1. get current state
-                    2. form it into init, keep original problem 
-                        and save it as newprob.pddl
-                    3. pass domain_path and newprob.pddl into
-                        run_simulation
-                    '''
                     print('****************')
                     print('REPLANNING...')
                     print('****************')
                     time.sleep(3)
-                    init = self.get_current_packing_state()
-                    prob = self.definition+init+self.goal_def
-                    f = open("newprob.pddl","w")
-                    f.write(prob)
-                    f.close()
-                    dir_path = os.path.dirname(os.path.realpath(__file__))
-                    prob_path = dir_path+"/"+"newprob.pddl"
+                    prob_path = self.form_problem_from_current_scene()
                     self.run_simulation(self.domain_path, prob_path)
 
 
@@ -656,7 +687,7 @@ class environment:
 
 
 if __name__ == '__main__':
-    g = environment(bool_certain=True)
+    g = environment(bool_certain=False)
     g.run_simulation(g.domain_path, g.problem_path)
 
 
