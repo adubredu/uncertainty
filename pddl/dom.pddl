@@ -43,6 +43,19 @@
 		(clearleft ?x)
 		(clearright ?x)
 		(handempty)))
+		
+    
+    (:action pick-up-from-on
+		:parameters (?x - item ?y - item)
+		:precondition (and (on ?x ?y) (handempty))
+		:effect
+		(and
+		(not (ontable ?x))
+	            (not (handempty))
+	            (not (cleartop ?x))
+	            (holding ?x)
+	            (cleartop ?y)
+	            (not (onsomething ?x))))
 	    
 	
 	(:action put-on 
