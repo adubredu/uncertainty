@@ -17,14 +17,16 @@ class Grocery_item:
         self.x = x
         self.y = y
         self.width = image_width
-        self.image_height = image_height
+        self.height = image_height
         self.body = pygame.image.load(image_path)
         self.item_at_left = None
         self.item_at_right = None
         self.item_on_top = None
         self.item_on_bottom = None
         self.on_table = False
+        self.on_clutter_or_table = False
         self.onsomething = False
+        self.being_held = False
         self.name = object_name
         self.holding = None #only for gripper
 
@@ -69,9 +71,9 @@ class environment:
             return self.items[object_name]
 
         item_probabilities = {
-             "pepsi":[0.4, 0.1,0.3,0.1,0.1],
+             "pepsi":[0.5, 0.1,0.2,0.1,0.1],
               "nutella":[0.2,0.4,0.2,0.1,0.1],
-              "coke":[0.3,0.1,0.4,0.1,0.1],
+              "coke":[0.2,0.1,0.5,0.1,0.1],
               "lipton":[0.1,0.1,0.1,0.6,0.1],
               "bleach":[0.1,0.1,0.1,0.1,0.6]
 
@@ -99,12 +101,17 @@ class environment:
         if choice == 0:
             self.bleach.item_at_left = "lipton"
             self.lipton.item_at_right = "bleach"
-            self.bleach.item_on_top = "coke"
-            self.bleach.item_at_right = "pepsi"
-            self.pepsi.item_at_left = "bleach"
-            self.pepsi.item_on_top = "nutella"
-            self.coke.item_at_right = "nutella"
+            self.bleach.item_on_top = "pepsi"
+            self.pepsi.onsomething = True
+            self.bleach.item_at_right = "coke"
+            self.coke.item_at_left = "bleach"
+            self.coke.item_on_top = "nutella"
+            self.nutella.onsomething = True
+            self.pepsi.item_at_right = "nutella"
             self.nutella.item_at_left = "coke"
+            self.lipton.on_clutter_or_table = True
+            self.bleach.on_clutter_or_table = True
+            self.coke.on_clutter_or_table = True
 
         elif choice == 1:
             self.lipton.item_at_left = "coke"
@@ -126,6 +133,63 @@ class environment:
 
         elif choice == 4:
             self.bleach.item_on_top = "coke"
+
+        self.draw_init_clutter(choice)
+
+
+    def draw_init_clutter(self, choice):
+        if choice == 0:
+            self.lipton.x = 10
+            self.lipton.y = 480-self.lipton.height
+            self.bleach.x = 10+self.lipton.width
+            self.bleach.y = 480-self.bleach.height
+            self.coke.x = 10+self.lipton.width+self.bleach.width
+            self.coke.y = 480-self.coke.height
+            self.pepsi.x = 10+self.lipton.width
+            self.pepsi.y = 480-self.bleach.height-self.pepsi.height
+            self.nutella.x = 10+self.lipton.width+self.bleach.width
+            self.nutella.y = 480 - self.coke.height-self.nutella.height
+
+        elif choice ==1:
+            self.coke.x = 10
+            self.lipton.x = 10+self.coke.width 
+            self.bleach.x = 10+self.coke.width+self.lipton.width
+            self.pepsi.x = 10+self.coke.width+self.lipton.width+self.bleach.width
+            self.nutella.x = 10+self.coke.width 
+
+            self.coke.y = 480-self.coke.height 
+            self.lipton.y = 480-self.lipton.height 
+            self.bleach.y = 480-self.bleach.height 
+            self.pepsi.y = 480-self.pepsi.height 
+            self.nutella.y = 480-self.lipton.height-self.nutella.height
+
+        elif choice == 2:
+            self.nutella.x = 10
+            self.lipton.x = 10+self.nutella.width 
+            self.pepsi.x = 10+self.nutella.width +self.lipton.width
+            self.coke.x = 10+self.nutella.width
+            self.bleach.x = 10+self.nutella.width
+
+            self.nutella.y = 480-self.nutella.height 
+            self.lipton.y = 480-self.lipton.height
+            self.pepsi.y = 480-self.pepsi.height 
+            self.coke.y = 480-self.lipton.height-self.coke.height 
+            self.bleach.y = 480-self.lipton.height-self.coke.height-self.bleach.height
+
+        elif choice == 3:
+            self.lipton.x = 10
+            self.coke.x = 10+self.lipton.width
+            self.nutella.x = 10+self.lipton.width+self.coke.width 
+            self.pepsi.x = 10
+            self.bleach.x = 10+self.lipton.width
+
+            self.lipton.y = 480 - self.lipton.height
+            self.coke.y = 480-self.coke.height
+            self.nutella.y = 480-self.nutella.height 
+            self.pepsi.y = 480 - self.lipton.height-self.pepsi.height 
+            self.bleach.y = 480-self.coke.height - self.bleach.height
+
+
 
 
 
@@ -246,6 +310,7 @@ class environment:
             else:
                 init+=" (toright "+item.item_at_right+" "+item.name+")"
 
+            
             if item.item_on_top == None:
                 init+=" (cleartop "+item.name+")"
             else:
@@ -253,6 +318,10 @@ class environment:
 
             if item.on_table:
                 init+=" (ontable "+item.name+")"
+
+            if item.on_clutter_or_table:
+                init+=" (onclutterortable "+item.name+")"
+
 
             if item.onsomething:
                 init+=" (onsomething "+item.name+")"
@@ -294,8 +363,7 @@ class environment:
         file.write(problem)
         file.close()
         clutter_prob_path = os.path.dirname(os.path.realpath(__file__))+\
-                    "/"+"declutterprob.pddl"
-        f = Fast_Downward() 
+                    "/"+"declutterprob.pddl" 
         self.run_grocery_packing(self.domain_path, clutter_prob_path)
         print("***Declutter Complete***")
 
@@ -317,7 +385,7 @@ class environment:
         # action_progress=[] 
         f = Fast_Downward()
         plan = f.plan(domain_path, problem_path)
-        count = 0
+        print(plan)
         if plan is None:
             print('No valid plan found')
         else:
@@ -390,12 +458,21 @@ class environment:
 
     def pick_up(self, item):
         s_item = self.sample_object(item)
+
+        if not (s_item.item_on_top == None):
+            print("won't pick "+s_item.name)
+            return
+
         s_item.item_on_bottom=None
         s_item.item_on_top=None
         s_item.item_at_left=None
         s_item.item_at_right=None
         s_item.on_table=False
         s_item.onsomething=False
+        s_item.on_clutter_or_table=False
+        s_item.being_held = True
+
+        item = s_item.name
 
         for it in self.objects_list:
             if it.item_on_top == item:
@@ -416,7 +493,7 @@ class environment:
             return
         top = self.items[topitem]
         bot = self.items[bottomitem]
-        if (not bot.on_table) and (bot.item_on_bottom == None) :
+        if (not bot.onsomething) and (bot.item_on_bottom == None) :
             return
         self.gripper.holding = None
         bot.item_on_top = topitem
@@ -535,6 +612,7 @@ class environment:
         top.item_at_right=None
         top.on_table=False
         top.onsomething=False
+        top.on_clutter_or_table=True
 
         for it in self.objects_list:
             if it.item_on_top == topitem:
@@ -727,8 +805,7 @@ class environment:
 if __name__ == '__main__':
     g = environment(bool_certain=False)
     # g.run_simulation(g.domain_path, g.problem_path)
-    g.declutter_before_clutter_planning()
-
+    g.clutter_optimistic_planning()
 
 
 
