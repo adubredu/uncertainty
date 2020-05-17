@@ -5,17 +5,21 @@ import pygame
 import time
 import math
 import numpy as np
+import random
 from fd import Fast_Downward
 
+np.random.seed(437)
 pygame.init()
 pygame.display.set_caption("Grocery Packing")
 
 
 class Grocery_item:
     def __init__(self, x, y, image_path,image_width,image_height,
-                object_name):
+                object_name,cx):
         self.x = x
         self.y = y
+        self.cx = cx
+        self.cy= 480-image_height
         self.width = image_width
         self.height = image_height
         self.body = pygame.image.load(image_path)
@@ -31,6 +35,7 @@ class Grocery_item:
         self.holding = None #only for gripper
 
 
+
     def move_to(self, x, y):
         self.x = x
         self.y = y
@@ -39,14 +44,14 @@ class Grocery_item:
 
 class environment:
     def __init__(self, bool_certain):
-        self.table = Grocery_item(150,300,'assets/table.jpg',419,144,"table")
-        self.pepsi = Grocery_item(10, 400,'assets/pepsi.jpg',26,49,"pepsi")
-        self.nutella = Grocery_item(15, 400,'assets/nutella.jpg',26,37,"nutella")
-        self.coke = Grocery_item(20, 400, 'assets/coke.jpg',28,52,"coke")
-        self.lipton = Grocery_item(25, 400, 'assets/lipton.jpg',58,28,"lipton")
-        self.bleach = Grocery_item(13, 400, 'assets/bleach.jpg',26,64,"bleach")
-        self.gripper = Grocery_item(330, 0,'assets/gripper.png',75,75,"gripper")
-        self.logo = Grocery_item(100,0, 'assets/4progress.png',535,78,"logo")
+        self.table = Grocery_item(150,300,'assets/table.jpg',419,144,"table",0)
+        self.pepsi = Grocery_item(10, 400,'assets/pepsi.jpg',26,49,"pepsi",200)
+        self.nutella = Grocery_item(15, 400,'assets/nutella.jpg',26,37,"nutella",250)
+        self.coke = Grocery_item(20, 400, 'assets/coke.jpg',28,52,"coke",300)
+        self.lipton = Grocery_item(25, 400, 'assets/lipton.jpg',58,28,"lipton",350)
+        self.bleach = Grocery_item(13, 400, 'assets/bleach.jpg',26,64,"bleach",400)
+        self.gripper = Grocery_item(330, 0,'assets/gripper.png',75,75,"gripper",0)
+        self.logo = Grocery_item(100,0, 'assets/4progress.png',535,78,"logo",0)
 
         self.certainty = bool_certain
         self.domain_path='/home/developer/uncertainty/pddl/dom.pddl'
@@ -71,9 +76,9 @@ class environment:
             return self.items[object_name]
 
         item_probabilities = {
-             "pepsi":[0.5, 0.1,0.2,0.1,0.1],
-              "nutella":[0.2,0.4,0.2,0.1,0.1],
-              "coke":[0.2,0.1,0.5,0.1,0.1],
+             "pepsi":[0.4, 0.15,0.3,0.1,0.05],
+              "nutella":[0.2,0.5,0.2,0.05,0.05],
+              "coke":[0.3,0.15,0.4,0.1,0.05],
               "lipton":[0.1,0.1,0.1,0.6,0.1],
               "bleach":[0.1,0.1,0.1,0.1,0.6]
 
@@ -82,8 +87,10 @@ class environment:
         choice = np.random.choice(self.objects_list, size=1, 
                 p=item_probabilities[object_name])
 
+        decision = choice[0]
+
         count = 0
-        while choice[0].onsomething:
+        while decision.onsomething:
             # print("not choosing "+choice[0].name+". Choosing from clutter")
             choice = np.random.choice(self.objects_list, size=1, 
                 p=item_probabilities[object_name])
@@ -92,7 +99,7 @@ class environment:
                 return self.items[object_name]
 
 
-        return choice[0]
+        return decision
 
 
     def initialize_clutter(self):
@@ -347,12 +354,16 @@ class environment:
 
 
     def clutter_optimistic_planning(self):
+        start_time = time.time()
         self.initialize_clutter()
         problem = self.form_problem_from_current_scene()
         self.run_grocery_packing(self.domain_path, problem)
+        duration = time.time() - start_time
+        print("\n\n DURATION OF OPTIMISTIC IS "+str(duration)+" seconds")
 
 
     def declutter_before_clutter_planning(self):
+        start_time = time.time()
         self.initialize_clutter()
         init = self.get_current_packing_state()
         goal = "\n(:goal (and (cleartop coke) \
@@ -376,7 +387,9 @@ class environment:
         probs_path = os.path.dirname(os.path.realpath(__file__))+\
                     "/"+"probs.pddl"
         self.run_grocery_packing(self.domain_path, probs_path)
-        print("***GROCERY PACKING COMPLETE***")
+        # print("***GROCERY PACKING COMPLETE***")
+        duration = time.time() - start_time
+        print("\n\nDURATION OF DECLUTTER IS "+str(duration)+" seconds")
         pygame.quit()
 
         
@@ -385,9 +398,10 @@ class environment:
         # action_progress=[] 
         f = Fast_Downward()
         plan = f.plan(domain_path, problem_path)
-        print(plan)
-        if plan is None:
+        # print(plan)
+        if plan is None or len(plan)==0:
             print('No valid plan found')
+            return
         else:
             for action in plan:
                 self.redrawGameWindow()               
@@ -401,6 +415,7 @@ class environment:
                     time.sleep(3)
                     prob_path = self.form_problem_from_current_scene()
                     self.run_grocery_packing(domain_path, prob_path)
+            return
 
 
         
@@ -458,7 +473,7 @@ class environment:
 
     def pick_up(self, item):
         s_item = self.sample_object(item)
-
+        # print("picking "+s_item.name)
         if not (s_item.item_on_top == None):
             print("won't pick "+s_item.name)
             return
@@ -628,24 +643,24 @@ class environment:
         
         orig_x = self.gripper.x
         orig_y = self.gripper.y
-        while math.fabs(top.x - 25) > 0:
-            if (top.x - 25) > 0:
+        while math.fabs(top.x - top.cx) > 0:
+            if (top.x - top.cx) > 0:
                 top.x-=1
                 self.gripper.x -=1
 
-            elif (top.x - 25) < 0:
+            elif (top.x - top.cx) < 0:
                 top.x += 1
                 self.gripper.x +=1
             
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
-        while math.fabs(top.y - 400) > 0:
-            if (top.y - 400) > 0:
+        while math.fabs(top.y - top.cy) > 0:
+            if (top.y - top.cy) > 0:
                 top.y-=1
                 self.gripper.y -=1
 
-            elif (top.y - 400) < 0:
+            elif (top.y - top.cy) < 0:
                 top.y += 1
                 self.gripper.y +=1
             
@@ -805,7 +820,8 @@ class environment:
 if __name__ == '__main__':
     g = environment(bool_certain=False)
     # g.run_simulation(g.domain_path, g.problem_path)
-    g.clutter_optimistic_planning()
+    # g.clutter_optimistic_planning()
+    g.declutter_before_clutter_planning()
 
 
 
