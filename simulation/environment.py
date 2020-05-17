@@ -202,6 +202,9 @@ class environment:
 
     def redrawGameWindow(self):
         self.win.fill((255,255,255))
+        self.win.blit(pygame.image.load('assets/box.jpg'), (280,160))
+        self.win.blit(pygame.image.load('assets/box.jpg'), (390,160))
+        self.win.blit(pygame.image.load('assets/box_lat.jpg'), (290,290))
         self.win.blit(self.logo.body, (self.logo.x, self.logo.y))
         self.win.blit(self.table.body,(self.table.x, self.table.y))
         self.win.blit(self.pepsi.body,(self.pepsi.x, self.pepsi.y))
@@ -210,6 +213,7 @@ class environment:
         self.win.blit(self.lipton.body,(self.lipton.x, self.lipton.y))
         self.win.blit(self.bleach.body,(self.bleach.x, self.bleach.y))
         self.win.blit(self.gripper.body,(self.gripper.x, self.gripper.y))
+        
         
         pygame.display.update()
 
@@ -527,12 +531,13 @@ class environment:
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
-        while math.fabs(top.y+64 - bot.y) > 0:
-            if (top.y+64 - bot.y) > 0:
+        ymargin = top.y + top.height
+        while math.fabs(top.y + top.height - bot.y) > 0:
+            if (top.y + top.height - bot.y) > 0:
                 top.y-=1
                 self.gripper.y -=1
 
-            elif (top.y+64 - bot.y) < 0:
+            elif (top.y + top.height - bot.y) < 0:
                 top.y += 1
                 self.gripper.y +=1
             
@@ -584,12 +589,13 @@ class environment:
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
-        while math.fabs(top.y - 260) > 0:
-            if (top.y - 260) > 0:
+        ymargin = self.table.y - top.height-10
+        while math.fabs(top.y - ymargin) > 0:
+            if (top.y - ymargin) > 0:
                 top.y-=1
                 self.gripper.y -=1
 
-            elif (top.y - 260) < 0:
+            elif (top.y - ymargin) < 0:
                 top.y += 1
                 self.gripper.y +=1
             
@@ -702,24 +708,26 @@ class environment:
         orig_x = self.gripper.x
         orig_y = self.gripper.y
 
-        while math.fabs(focus.x - (static.x-50)) > 0:
-            if (focus.x - (static.x-50)) > 0:
+        margin = (static.x - focus.width)
+        while math.fabs(focus.x - (static.x - focus.width)) > 0:
+            if (focus.x - (static.x - focus.width)) > 0:
                 focus.x -= 1
                 self.gripper.x -=1
 
-            elif (focus.x - (static.x-50)) < 0:
+            elif (focus.x - (static.x - focus.width)) < 0:
                 focus.x += 1
                 self.gripper.x +=1 
 
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
-        while math.fabs(focus.y - static.y) > 0:
-            if (focus.y - static.y) > 0:
+        ymargin = self.table.y - focus.height-10
+        while math.fabs(focus.y - ymargin) > 0:
+            if (focus.y - ymargin) > 0:
                 focus.y -= 1
                 self.gripper.y -=1
 
-            elif (focus.y - static.y) < 0:
+            elif (focus.y - ymargin) < 0:
                 focus.y += 1
                 self.gripper.y +=1 
 
@@ -761,24 +769,26 @@ class environment:
         orig_x = self.gripper.x
         orig_y = self.gripper.y
 
-        while math.fabs(focus.x - (static.x+50)) > 0:
-            if (focus.x - (static.x+50)) > 0:
+        xmargin = (static.x + static.width)
+        while math.fabs(focus.x - (static.x + static.width)) > 0:
+            if (focus.x - (static.x + static.width)) > 0:
                 focus.x -= 1
                 self.gripper.x -=1
 
-            elif (focus.x - (static.x+50)) < 0:
+            elif (focus.x - (static.x + static.width)) < 0:
                 focus.x += 1
                 self.gripper.x +=1 
 
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
-        while math.fabs(focus.y - static.y) > 0:
-            if (focus.y - static.y) > 0:
+        ymargin = (self.table.y - focus.height-10)
+        while math.fabs(focus.y - ymargin) > 0:
+            if (focus.y - ymargin) > 0:
                 focus.y -= 1
                 self.gripper.y -=1
 
-            elif (focus.y - static.y) < 0:
+            elif (focus.y - ymargin) < 0:
                 focus.y += 1
                 self.gripper.y +=1 
 
@@ -820,8 +830,10 @@ class environment:
 if __name__ == '__main__':
     g = environment(bool_certain=False)
     # g.run_simulation(g.domain_path, g.problem_path)
-    # g.clutter_optimistic_planning()
-    g.declutter_before_clutter_planning()
+    g.clutter_optimistic_planning()
+    # g.declutter_before_clutter_planning()
+    # while True:
+    #     g.redrawGameWindow()
 
 
 
