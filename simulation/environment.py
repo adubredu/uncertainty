@@ -8,7 +8,7 @@ import numpy as np
 import random
 from fd import Fast_Downward
 
-np.random.seed(437)
+# np.random.seed(437)
 pygame.init()
 pygame.display.set_caption("Grocery Packing")
 
@@ -43,7 +43,7 @@ class Grocery_item:
 
 
 class environment:
-    def __init__(self, bool_certain=False, declutter=False):
+    def __init__(self, uncertain="low", declutter=False, order=0):
         self.table = Grocery_item(150,300,'assets/table.jpg',419,144,"table",0)
         self.pepsi = Grocery_item(10, 400,'assets/pepsi.jpg',26,49,"pepsi",200)
         self.nutella = Grocery_item(15, 400,'assets/nutella.jpg',26,37,"nutella",250)
@@ -53,13 +53,14 @@ class environment:
         self.gripper = Grocery_item(330, 0,'assets/gripper.png',75,75,"gripper",0)
         self.logo = Grocery_item(100,0, 'assets/4progress.png',535,78,"logo",0)
 
-        self.certainty = bool_certain
+        self.uncertainty = uncertain 
         self.declutter = declutter
+        self.init_order = order
         self.domain_path='/home/developer/uncertainty/pddl/dom.pddl'
         self.problem_path='/home/developer/uncertainty/pddl/prob.pddl'
         self.definition = "(define (problem PACKED-GROCERY) \n (:domain GROCERY) \
                             \n (:objects bleach nutella coke pepsi lipton - item) \n"
-        self.goal_def = "\n(:goal (and (on coke bleach) (on lipton coke) (toleft nutella bleach) (toright pepsi bleach))))\n"
+        self.goal_def = "\n(:goal (and (on pepsi bleach) (on lipton pepsi) (toleft coke bleach) (toright nutella bleach))))\n"
 
 
         self.items = {"pepsi":self.pepsi, "nutella":self.nutella,
@@ -69,29 +70,43 @@ class environment:
                     self.bleach]
         self.clock = pygame.time.Clock()
         self.current_action = "Action: (put-on coke bleach)"
-        self.certainty_level = "Certainty Level: Medium" if bool_certain else "Certainty Level: Low"
+        self.certainty_level = "Uncertainty Level: "+uncertain
         self.clutter_strategy = "Clutter Strategy: Declutter first" if declutter else "Clutter Strategy: Optimistic"
         self.start_time = time.time()
         self.win = pygame.display.set_mode((700,480))
         self.rate = 120
 
 
+    def run(self):
+        if self.declutter:
+            self.declutter_before_clutter_planning()
+        else:
+            self.clutter_optimistic_planning()
 
     def sample_object(self, object_name):
-        if self.certainty:
+        if self.uncertainty == "low":
             return self.items[object_name]
-
-        item_probabilities = {
-             "pepsi":[0.4, 0.15,0.3,0.1,0.05],
-              "nutella":[0.2,0.5,0.2,0.05,0.05],
-              "coke":[0.3,0.15,0.4,0.1,0.05],
-              "lipton":[0.1,0.1,0.1,0.6,0.1],
+        # print("UNCERTAIN")
+        mid_item_probabilities = {
+             "pepsi":[0.35, 0.15,0.3,0.1,0.1],
+              "nutella":[0.2,0.4,0.2,0.1,0.1],
+              "coke":[0.3,0.15,0.35,0.1,0.1],
+              "lipton":[0.2,0.1,0.1,0.4,0.2],
               "bleach":[0.1,0.1,0.1,0.1,0.6]
 
             }
+        high_item_probabilities = {
+             "pepsi":[0.35, 0.15,0.3,0.1,0.1],
+              "nutella":[0.2,0.4,0.2,0.1,0.1],
+              "coke":[0.3,0.15,0.35,0.1,0.1],
+              "lipton":[0.2,0.1,0.1,0.4,0.2],
+              "bleach":[0.1,0.1,0.1,0.1,0.6]
+
+            }
+        probabilities = mid_item_probabilities if self.uncertainty=="medium" else high_item_probabilities
 
         choice = np.random.choice(self.objects_list, size=1, 
-                p=item_probabilities[object_name])
+                p=probabilities[object_name])
 
         decision = choice[0]
 
@@ -99,7 +114,7 @@ class environment:
         while decision.onsomething:
             # print("not choosing "+choice[0].name+". Choosing from clutter")
             choice = np.random.choice(self.objects_list, size=1, 
-                p=item_probabilities[object_name])
+                p=probabilities[object_name])
             count+=1
             if count > 20:
                 return self.items[object_name]
@@ -109,7 +124,8 @@ class environment:
 
 
     def initialize_clutter(self):
-        choice = 0#np.random.randint(4)
+        # choice = 0#np.random.randint(4)
+        choice = self.init_order
 
         if choice == 0:
             self.bleach.item_at_left = "lipton"
@@ -128,24 +144,50 @@ class environment:
 
         elif choice == 1:
             self.lipton.item_at_left = "coke"
+            self.coke.item_at_right = "lipton"
             self.lipton.item_on_top = "nutella"
+            self.nutella.onsomething = True
             self.lipton.item_at_right = "bleach"
+            self.bleach.item_at_left = "lipton"
             self.bleach.item_at_right = "pepsi"
+            self.pepsi.item_at_left = "bleach"
+            self.coke.on_clutter_or_table = True
+            self.lipton.on_clutter_or_table = True
+            self.bleach.on_clutter_or_table = True
+            self.pepsi.on_clutter_or_table = True
 
         elif choice == 2:
             self.lipton.item_at_left = "nutella"
+            self.nutella.item_at_right = "lipton"
+
             self.lipton.item_at_right = "pepsi"
+            self.pepsi.item_at_left = "lipton"
+
             self.lipton.item_on_top = "coke"
+            self.coke.onsomething = True
             self.coke.item_on_top = "bleach"
+            self.bleach.onsomething  =True
+
+            self.nutella.on_clutter_or_table = True
+            self.lipton.on_clutter_or_table = True 
+            self.pepsi.on_clutter_or_table = True
 
         elif choice == 3:
             self.lipton.item_on_top = "pepsi"
-            self.lipton.item.item_at_right = "coke"
-            self.coke.item_on_top = "bleach"
-            self.coke.item_at_right = "nutella"
+            self.pepsi.onsomething = True
 
-        elif choice == 4:
-            self.bleach.item_on_top = "coke"
+            self.lipton.item_at_right = "coke"
+            self.coke.item_at_left = "lipton"
+
+            self.coke.item_on_top = "bleach"
+            self.bleach.onsomething = True
+
+            self.coke.item_at_right = "nutella"
+            self.nutella.item_at_left = "coke"
+
+            self.lipton.on_clutter_or_table = True
+            self.coke.on_clutter_or_table = True
+            self.nutella.on_clutter_or_table = True
 
         self.draw_init_clutter(choice)
 
@@ -204,9 +246,9 @@ class environment:
 
 
     def display_text(self,textcontent,w):
-        font = pygame.font.Font('freesansbold.ttf',12)
+        font = pygame.font.Font('freesansbold.ttf',14)
         text = font.render(textcontent, True, (0,0,0))
-        self.win.blit(text, (5,w))
+        self.win.blit(text, (430,200+w))
 
 
 
@@ -215,7 +257,7 @@ class environment:
         self.win.blit(pygame.image.load('assets/box.jpg'), (280,160))
         self.win.blit(pygame.image.load('assets/box.jpg'), (390,160))
         self.win.blit(pygame.image.load('assets/box_lat.jpg'), (290,290))
-        self.win.blit(self.logo.body, (self.logo.x+60, self.logo.y))
+        self.win.blit(self.logo.body, (self.logo.x, self.logo.y))
         self.win.blit(self.table.body,(self.table.x, self.table.y))
         self.win.blit(self.pepsi.body,(self.pepsi.x, self.pepsi.y))
         self.win.blit(self.nutella.body,(self.nutella.x, self.nutella.y))
@@ -223,12 +265,12 @@ class environment:
         self.win.blit(self.lipton.body,(self.lipton.x, self.lipton.y))
         self.win.blit(self.bleach.body,(self.bleach.x, self.bleach.y))
         self.win.blit(self.gripper.body,(self.gripper.x, self.gripper.y))
-        self.display_text(self.current_action,12)
+        self.display_text(self.current_action,0)
         self.duration = int(time.time()-self.start_time)
-        self.duration_in_sec = "Duration: "+str(self.duration)
-        self.display_text(self.duration_in_sec, 24)
-        self.display_text(self.certainty_level, 36)
-        self.display_text(self.clutter_strategy, 48)
+        self.duration_in_sec = "Duration: "+str(self.duration)+ " seconds"
+        self.display_text(self.duration_in_sec, 20)
+        self.display_text(self.certainty_level, 40)
+        self.display_text(self.clutter_strategy, 60)
         
         
         
@@ -375,7 +417,7 @@ class environment:
 
 
     def clutter_optimistic_planning(self):
-        # start_time = time.time()
+        start_time = time.time()
         self.initialize_clutter()
         problem = self.form_problem_from_current_scene()
         self.run_grocery_packing(self.domain_path, problem) 
@@ -429,16 +471,19 @@ class environment:
             for action in plan:
                 self.redrawGameWindow()               
                 print('Performing action: '+str(action))
+                self.current_action = "Action: "+str(action)
                 self.execute_action(action)
                 inspection_result = self.inspect_scene(action)
                 if not inspection_result:
+                    self.current_action = "Action: REPLANNING..."
+                    self.redrawGameWindow()
                     print('****************')
                     print('REPLANNING...')
                     print('****************')
                     time.sleep(3)
                     prob_path = self.form_problem_from_current_scene()
                     self.run_grocery_packing(domain_path, prob_path)
-            return
+            # return
 
 
         
@@ -847,12 +892,22 @@ class environment:
 
 
 if __name__ == '__main__':
-    g = environment(bool_certain=False)
-    # g.run_simulation(g.domain_path, g.problem_path)
-    # g.clutter_optimistic_planning()
-    # g.declutter_before_clutter_planning()
-    while True:
-        g.redrawGameWindow()
+    args = sys.argv
+    if len(args) != 4:
+        print("Arguments should be level_of_certainty, clutter_strategy and init_order_num")
+    else:        
+        uncertainty = args[1]
+        clutter_strategy = False if args[2]=="optimistic" else True
+        order = int(args[3])
+        g = environment(uncertain=uncertainty, 
+                        declutter=clutter_strategy, 
+                        order=order)
+        g.run()
+        # g.run_simulation(g.domain_path, g.problem_path)
+        # g.clutter_optimistic_planning()
+        # g.declutter_before_clutter_planning()
+        # while True:
+        #     g.redrawGameWindow()
 
 
 
