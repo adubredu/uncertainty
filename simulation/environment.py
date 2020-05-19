@@ -43,7 +43,7 @@ class Grocery_item:
 
 
 class environment:
-    def __init__(self, bool_certain):
+    def __init__(self, bool_certain=False, declutter=False):
         self.table = Grocery_item(150,300,'assets/table.jpg',419,144,"table",0)
         self.pepsi = Grocery_item(10, 400,'assets/pepsi.jpg',26,49,"pepsi",200)
         self.nutella = Grocery_item(15, 400,'assets/nutella.jpg',26,37,"nutella",250)
@@ -54,6 +54,7 @@ class environment:
         self.logo = Grocery_item(100,0, 'assets/4progress.png',535,78,"logo",0)
 
         self.certainty = bool_certain
+        self.declutter = declutter
         self.domain_path='/home/developer/uncertainty/pddl/dom.pddl'
         self.problem_path='/home/developer/uncertainty/pddl/prob.pddl'
         self.definition = "(define (problem PACKED-GROCERY) \n (:domain GROCERY) \
@@ -67,8 +68,13 @@ class environment:
         self.objects_list = [self.pepsi, self.nutella,self.coke,self.lipton,
                     self.bleach]
         self.clock = pygame.time.Clock()
+        self.current_action = "Action: (put-on coke bleach)"
+        self.certainty_level = "Certainty Level: Medium" if bool_certain else "Certainty Level: Low"
+        self.clutter_strategy = "Clutter Strategy: Declutter first" if declutter else "Clutter Strategy: Optimistic"
+        self.start_time = time.time()
         self.win = pygame.display.set_mode((700,480))
         self.rate = 120
+
 
 
     def sample_object(self, object_name):
@@ -197,6 +203,10 @@ class environment:
             self.bleach.y = 480-self.coke.height - self.bleach.height
 
 
+    def display_text(self,textcontent,w):
+        font = pygame.font.Font('freesansbold.ttf',12)
+        text = font.render(textcontent, True, (0,0,0))
+        self.win.blit(text, (5,w))
 
 
 
@@ -205,7 +215,7 @@ class environment:
         self.win.blit(pygame.image.load('assets/box.jpg'), (280,160))
         self.win.blit(pygame.image.load('assets/box.jpg'), (390,160))
         self.win.blit(pygame.image.load('assets/box_lat.jpg'), (290,290))
-        self.win.blit(self.logo.body, (self.logo.x, self.logo.y))
+        self.win.blit(self.logo.body, (self.logo.x+60, self.logo.y))
         self.win.blit(self.table.body,(self.table.x, self.table.y))
         self.win.blit(self.pepsi.body,(self.pepsi.x, self.pepsi.y))
         self.win.blit(self.nutella.body,(self.nutella.x, self.nutella.y))
@@ -213,6 +223,13 @@ class environment:
         self.win.blit(self.lipton.body,(self.lipton.x, self.lipton.y))
         self.win.blit(self.bleach.body,(self.bleach.x, self.bleach.y))
         self.win.blit(self.gripper.body,(self.gripper.x, self.gripper.y))
+        self.display_text(self.current_action,12)
+        self.duration = int(time.time()-self.start_time)
+        self.duration_in_sec = "Duration: "+str(self.duration)
+        self.display_text(self.duration_in_sec, 24)
+        self.display_text(self.certainty_level, 36)
+        self.display_text(self.clutter_strategy, 48)
+        
         
         
         pygame.display.update()
@@ -358,12 +375,14 @@ class environment:
 
 
     def clutter_optimistic_planning(self):
-        start_time = time.time()
+        # start_time = time.time()
         self.initialize_clutter()
         problem = self.form_problem_from_current_scene()
-        self.run_grocery_packing(self.domain_path, problem)
+        self.run_grocery_packing(self.domain_path, problem) 
         duration = time.time() - start_time
         print("\n\n DURATION OF OPTIMISTIC IS "+str(duration)+" seconds")
+        time.sleep(120)
+        pygame.quit()
 
 
     def declutter_before_clutter_planning(self):
@@ -391,7 +410,7 @@ class environment:
         probs_path = os.path.dirname(os.path.realpath(__file__))+\
                     "/"+"probs.pddl"
         self.run_grocery_packing(self.domain_path, probs_path)
-        # print("***GROCERY PACKING COMPLETE***")
+        print("***GROCERY PACKING COMPLETE***")
         duration = time.time() - start_time
         print("\n\nDURATION OF DECLUTTER IS "+str(duration)+" seconds")
         pygame.quit()
@@ -830,10 +849,10 @@ class environment:
 if __name__ == '__main__':
     g = environment(bool_certain=False)
     # g.run_simulation(g.domain_path, g.problem_path)
-    g.clutter_optimistic_planning()
+    # g.clutter_optimistic_planning()
     # g.declutter_before_clutter_planning()
-    # while True:
-    #     g.redrawGameWindow()
+    while True:
+        g.redrawGameWindow()
 
 
 
