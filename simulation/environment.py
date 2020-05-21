@@ -6,6 +6,7 @@ import time
 import math
 import numpy as np
 import random
+import copy
 from fd import Fast_Downward
 
 # np.random.seed(437)
@@ -50,8 +51,9 @@ class environment:
         self.coke = Grocery_item(20, 400, 'assets/coke.jpg',28,52,"coke",300)
         self.lipton = Grocery_item(25, 400, 'assets/lipton.jpg',58,28,"lipton",350)
         self.bleach = Grocery_item(13, 400, 'assets/bleach.jpg',26,64,"bleach",400)
-        self.gripper = Grocery_item(330, 0,'assets/gripper.png',75,75,"gripper",0)
-        self.logo = Grocery_item(100,0, 'assets/4progress.png',535,78,"logo",0)
+        self.gripper = Grocery_item(350, 0,'assets/gripper.png',75,75,"gripper",0)
+        self.logo = Grocery_item(0,0, 'assets/4progress.png',535,78,"logo",0)
+        self.perceived = None
 
         self.uncertainty = uncertain 
         self.declutter = declutter
@@ -69,7 +71,7 @@ class environment:
         self.objects_list = [self.pepsi, self.nutella,self.coke,self.lipton,
                     self.bleach]
         self.clock = pygame.time.Clock()
-        self.current_action = "Action: (put-on coke bleach)"
+        self.current_action = "Action: (pick-up-from-on nutella bleach)"
         self.certainty_level = "Uncertainty Level: "+uncertain
         self.clutter_strategy = "Clutter Strategy: Declutter first" if declutter else "Clutter Strategy: Optimistic"
         self.start_time = time.time()
@@ -248,7 +250,7 @@ class environment:
     def display_text(self,textcontent,w):
         font = pygame.font.Font('freesansbold.ttf',14)
         text = font.render(textcontent, True, (0,0,0))
-        self.win.blit(text, (430,200+w))
+        self.win.blit(text, (410,200+w))
 
 
 
@@ -258,6 +260,7 @@ class environment:
         self.win.blit(pygame.image.load('assets/box.jpg'), (390,160))
         self.win.blit(pygame.image.load('assets/box_lat.jpg'), (290,290))
         self.win.blit(self.logo.body, (self.logo.x, self.logo.y))
+        self.win.blit(pygame.image.load('assets/rt.jpg'), (550,10))
         self.win.blit(self.table.body,(self.table.x, self.table.y))
         self.win.blit(self.pepsi.body,(self.pepsi.x, self.pepsi.y))
         self.win.blit(self.nutella.body,(self.nutella.x, self.nutella.y))
@@ -269,9 +272,11 @@ class environment:
         self.duration = int(time.time()-self.start_time)
         self.duration_in_sec = "Duration: "+str(self.duration)+ " seconds"
         self.display_text(self.duration_in_sec, 20)
-        self.display_text(self.certainty_level, 40)
+        self.display_text("Uncertainty Level: "+self.uncertainty, 40)
         self.display_text(self.clutter_strategy, 60)
-        
+
+        if self.perceived is not None:
+            self.win.blit(pygame.transform.scale(self.perceived.body,(15,30)),(585,20))        
         
         
         pygame.display.update()
@@ -454,8 +459,11 @@ class environment:
         file.close()
         clutter_prob_path = os.path.dirname(os.path.realpath(__file__))+\
                     "/"+"declutterprob.pddl" 
+        uncert = copy.deepcopy(self.uncertainty)
+        self.uncertainty = 'low'
         self.run_dec_grocery_packing(self.domain_path, clutter_prob_path)
         print("***Declutter Complete***")
+        self.uncertainty = uncert
 
 
         inits = self.get_current_packing_state()
@@ -579,11 +587,19 @@ class environment:
 
 
     def pick_up(self, item):
+        fp = np.random.randint(20)
+        if fp == 10:  #5% probability of false positive localization
+            self.missed_pick()
+            return
+
         s_item = self.sample_object(item)
+        self.perceived = s_item
         # print("picking "+s_item.name)
         if not (s_item.item_on_top == None):
             print("won't pick "+s_item.name)
             return
+        
+        
 
         s_item.item_on_bottom=None
         s_item.item_on_top=None
@@ -917,6 +933,50 @@ class environment:
             self.redrawGameWindow()
             self.clock.tick(self.rate)
 
+
+    def missed_pick(self):
+        orig_x = self.gripper.x
+        orig_y = self.gripper.y 
+        while math.fabs(100 - (self.gripper.x+26)) > 0:
+            if 100 - (self.gripper.x+26) > 0:
+                self.gripper.x += 1
+            elif 100 - (self.gripper.x+26) < 0:
+                self.gripper.x -= 1
+
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+        # print('done moving left')
+
+        while math.fabs(400 - (self.gripper.y+90)) > 0:
+            if 400 - (self.gripper.y+90) > 0:
+                self.gripper.y += 1
+            elif 400 - (self.gripper.y+90) < 0:
+                self.gripper.y -= 1
+
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+
+        # print('done moving right')
+        # time.sleep(2)
+        # print('moving back')
+        while math.fabs(orig_y - self.gripper.y) > 0:
+            if (orig_y - self.gripper.y) > 0:
+                self.gripper.y += 1
+            elif (orig_y - self.gripper.y) < 0:
+                self.gripper.y -= 1
+
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
+
+
+        while math.fabs(orig_x - self.gripper.x) > 0:
+            if (orig_x - self.gripper.x) > 0:
+                self.gripper.x += 1
+            elif (orig_y - self.gripper.x) < 0:
+                self.gripper.x -= 1
+
+            self.redrawGameWindow()
+            self.clock.tick(self.rate)
 
 
 
