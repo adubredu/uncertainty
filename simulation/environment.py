@@ -88,19 +88,19 @@ class environment:
             return self.items[object_name]
         # print("UNCERTAIN")
         mid_item_probabilities = {
-             "pepsi":[0.35, 0.15,0.3,0.1,0.1],
+             "pepsi":[0.4, 0.1,0.3,0.1,0.1],
               "nutella":[0.2,0.4,0.2,0.1,0.1],
-              "coke":[0.3,0.15,0.35,0.1,0.1],
+              "coke":[0.3,0.2,0.4,0.05,0.05],
               "lipton":[0.2,0.1,0.1,0.4,0.2],
               "bleach":[0.1,0.1,0.1,0.1,0.6]
 
             }
         high_item_probabilities = {
-             "pepsi":[0.35, 0.15,0.3,0.1,0.1],
-              "nutella":[0.2,0.4,0.2,0.1,0.1],
-              "coke":[0.3,0.15,0.35,0.1,0.1],
-              "lipton":[0.2,0.1,0.1,0.4,0.2],
-              "bleach":[0.1,0.1,0.1,0.1,0.6]
+             "pepsi":[0.25, 0.2,0.2,0.2,0.15],
+              "nutella":[0.2,0.25,0.2,0.2,0.15],
+              "coke":[0.2,0.2,0.25,0.15,0.2],
+              "lipton":[0.2,0.15,0.2,0.25,0.2],
+              "bleach":[0.2,0.2,0.2,0.15,0.25]
 
             }
         probabilities = mid_item_probabilities if self.uncertainty=="medium" else high_item_probabilities
@@ -415,6 +415,20 @@ class environment:
         
         return prob_path
 
+    def form_dec_problem_from_current_scene(self):
+        init = self.get_current_packing_state()
+        goal = "\n(:goal (and (cleartop coke) \
+        (cleartop lipton) (cleartop nutella) \
+        (cleartop pepsi) (cleartop bleach))))"
+        prob = self.definition+init+goal
+        f = open("newprob.pddl","w")
+        f.write(prob)
+        f.close()
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        prob_path = dir_path+"/"+"newprob.pddl"
+        
+        return prob_path
+
 
     def clutter_optimistic_planning(self):
         start_time = time.time()
@@ -423,7 +437,7 @@ class environment:
         self.run_grocery_packing(self.domain_path, problem) 
         duration = time.time() - start_time
         print("\n\n DURATION OF OPTIMISTIC IS "+str(duration)+" seconds")
-        time.sleep(120)
+        time.sleep(3)
         pygame.quit()
 
 
@@ -440,7 +454,7 @@ class environment:
         file.close()
         clutter_prob_path = os.path.dirname(os.path.realpath(__file__))+\
                     "/"+"declutterprob.pddl" 
-        self.run_grocery_packing(self.domain_path, clutter_prob_path)
+        self.run_dec_grocery_packing(self.domain_path, clutter_prob_path)
         print("***Declutter Complete***")
 
 
@@ -488,6 +502,31 @@ class environment:
 
         
         time.sleep(2)
+
+    def run_dec_grocery_packing(self,domain_path, problem_path):
+        # action_progress=[] 
+        f = Fast_Downward()
+        plan = f.plan(domain_path, problem_path)
+        # print(plan)
+        if plan is None or len(plan)==0:
+            print('No valid plan found')
+            return
+        else:
+            for action in plan:
+                self.redrawGameWindow()               
+                print('Performing action: '+str(action))
+                self.current_action = "Action: "+str(action)
+                self.execute_action(action)
+                inspection_result = self.inspect_scene(action)
+                if not inspection_result:
+                    self.current_action = "Action: REPLANNING..."
+                    self.redrawGameWindow()
+                    print('****************')
+                    print('REPLANNING...')
+                    print('****************')
+                    time.sleep(3)
+                    prob_path = self.form_dec_problem_from_current_scene()
+                    self.run_dec_grocery_packing(domain_path, prob_path)
 
 
     def pick_motion(self, item):
@@ -893,12 +932,12 @@ class environment:
 
 if __name__ == '__main__':
     args = sys.argv
-    if len(args) != 4:
+    if len(args) != 3:
         print("Arguments should be level_of_certainty, clutter_strategy and init_order_num")
     else:        
         uncertainty = args[1]
         clutter_strategy = False if args[2]=="optimistic" else True
-        order = int(args[3])
+        order = np.random.randint(4)#int(args[3])
         g = environment(uncertain=uncertainty, 
                         declutter=clutter_strategy, 
                         order=order)
