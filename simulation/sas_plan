@@ -1,1 +1,6 @@
-; cost = 0 (unit cost)
+(put-on pepsi bleach)
+(pick-up coke)
+(put-left coke bleach)
+(pick-up lipton)
+(put-on lipton pepsi)
+; cost = 5 (unit cost)
