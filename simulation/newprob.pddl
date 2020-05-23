@@ -2,6 +2,6 @@
  (:domain GROCERY)                             
  (:objects bleach nutella coke pepsi lipton - item) 
 
-(:init  (clearleft pepsi) (clearright pepsi) (cleartop pepsi) (toleft bleach nutella) (clearright nutella) (cleartop nutella) (ontable nutella) (onsomething nutella) (toleft lipton coke) (clearright coke) (cleartop coke) (onclutterortable coke) (clearleft lipton) (toright coke lipton) (cleartop lipton) (onclutterortable lipton) (clearleft bleach) (toright nutella bleach) (cleartop bleach) (ontable bleach) (onsomething bleach) (holding pepsi) )
+(:init  (toleft lipton bleach) (clearright bleach) (cleartop bleach) (onclutterortable bleach) (clearleft nutella) (toright lipton nutella) (cleartop nutella) (onclutterortable nutella) (clearleft pepsi) (clearright pepsi) (on coke pepsi) (onsomething pepsi) (toleft nutella lipton) (toright bleach lipton) (on pepsi lipton) (onclutterortable lipton) (clearleft coke) (clearright coke) (cleartop coke) (onsomething coke) (handempty) )
 
 (:goal (and (on pepsi bleach) (on lipton pepsi) (toleft coke bleach) (toright nutella bleach))))

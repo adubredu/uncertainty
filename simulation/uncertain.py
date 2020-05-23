@@ -95,15 +95,15 @@ class environment:
         self.current_action = "Action: (pick-up-from-on nutella bleach)"
         self.certainty_level = "Uncertainty Level: "+uncertain
         self.clutter_strategy = "Clutter Strategy: Declutter first" if declutter else "Clutter Strategy: Optimistic"
-        self.populate_stocastic_scene()
-        self.start_time = time.time()
-        self.initialize_clutter()
-        
         self.win = pygame.display.set_mode((700,480))
+        self.populate_belief_space()
+        self.start_time = time.time()
+        self.initialize_clutter()   
+        
         self.rate = 120
 
 
-    def populate_stocastic_scene(self):
+    def populate_belief_space(self):
         self.belief_space = {"pepsi":{"belief":"pepsi", "weights":[], "un":''}, 
                             "nutella":{"belief":"nutella", "weights":[], "un":''},
                             "coke": {"belief":"coke", "weights":[], "un":''}, 
@@ -130,6 +130,23 @@ class environment:
                     self.belief_space[key]['belief'] = name
                     break
             print(key+":"+self.belief_space[key]['belief']+':'+self.belief_space[key]['un'])
+        
+
+    def display_icon(self, body, x,y):
+        self.win.blit(pygame.transform.scale(body,(15,30)),(x,y))
+
+
+    def display_belief_space(self):
+        ix = 410+30
+        iy = 200+30
+        self.display_text('GroundTruth --> Belief',110,150,12)
+        y=96
+        for true_state in self.belief_space:
+            ts = true_state
+            bf = self.belief_space[true_state]['belief']
+            self.display_icon(self.items[ts].body, ix+160, iy+y)
+            self.display_icon(self.items[bf].body, ix+160+50, iy+y)
+            y+=30
 
 
 
@@ -301,10 +318,10 @@ class environment:
             self.bleach.y = 480-self.coke.height - self.bleach.height
 
 
-    def display_text(self,textcontent,w):
-        font = pygame.font.Font('freesansbold.ttf',14)
+    def display_text(self,textcontent,w,h,font):
+        font = pygame.font.Font('freesansbold.ttf',font)
         text = font.render(textcontent, True, (0,0,0))
-        self.win.blit(text, (410,200+w))
+        self.win.blit(text, (410+h,200+w))
 
 
 
@@ -322,12 +339,13 @@ class environment:
         self.win.blit(self.lipton.body,(self.lipton.x, self.lipton.y))
         self.win.blit(self.bleach.body,(self.bleach.x, self.bleach.y))
         self.win.blit(self.gripper.body,(self.gripper.x, self.gripper.y))
-        self.display_text(self.current_action,0)
+        self.display_text(self.current_action,0,0,14)
         self.duration = int(time.time()-self.start_time)
         self.duration_in_sec = "Duration: "+str(self.duration)+ " seconds"
-        self.display_text(self.duration_in_sec, 20)
-        self.display_text("Uncertainty Level: "+self.uncertainty, 40)
-        self.display_text(self.clutter_strategy, 60)
+        self.display_text(self.duration_in_sec, 20,0,14)
+        self.display_text("Uncertainty Level: "+self.uncertainty, 40,0,14)
+        self.display_text(self.clutter_strategy, 60,0,14)
+        self.display_belief_space()
 
         if self.perceived is not None:
             self.win.blit(pygame.transform.scale(self.perceived.body,(15,30)),(585,20))        
@@ -429,30 +447,30 @@ class environment:
         init = "\n(:init "
         for item in self.objects_list:
             if item.item_at_left == None:
-                init+=" (clearleft "+item.name+")"
+                init+=" (clearleft "+self.belief_space[item.name]['belief']+")"
             else:
-                init+=" (toleft "+item.item_at_left+" "+ item.name+")"
+                init+=" (toleft "+self.belief_space[item.item_at_left]['belief']+" "+ self.belief_space[item.name]['belief']+")"
 
             if item.item_at_right == None:
-                init+=" (clearright "+item.name+")"
+                init+=" (clearright "+self.belief_space[item.name]['belief']+")"
             else:
-                init+=" (toright "+item.item_at_right+" "+item.name+")"
+                init+=" (toright "+self.belief_space[item.item_at_right]['belief']+" "+self.belief_space[item.name]['belief']+")"
 
             
             if item.item_on_top == None:
-                init+=" (cleartop "+item.name+")"
+                init+=" (cleartop "+self.belief_space[item.name]['belief']+")"
             else:
-                init+=" (on "+item.item_on_top+" "+item.name+")"
+                init+=" (on "+self.belief_space[item.item_on_top]['belief']+" "+self.belief_space[item.name]['belief']+")"
 
             if item.on_table:
-                init+=" (ontable "+item.name+")"
+                init+=" (ontable "+self.belief_space[item.name]['belief']+")"
 
             if item.on_clutter_or_table:
-                init+=" (onclutterortable "+item.name+")"
+                init+=" (onclutterortable "+self.belief_space[item.name]['belief']+")"
 
 
             if item.onsomething:
-                init+=" (onsomething "+item.name+")"
+                init+=" (onsomething "+self.belief_space[item.name]['belief']+")"
 
         if self.gripper.holding == None:
             init+=" (handempty) "
@@ -538,7 +556,7 @@ class environment:
         # action_progress=[] 
         f = Fast_Downward()
         plan = f.plan(domain_path, problem_path)
-        self.populate_stocastic_scene()
+        self.populate_belief_space()
         # print(plan)
         if plan is None or len(plan)==0:
             print('No valid plan found')
@@ -1053,7 +1071,7 @@ if __name__ == '__main__':
     # g = environment(uncertain="low", 
     #                     declutter="optimistic", 
     #                     order=0)
-    # g.populate_stocastic_scene()
+    # g.populate_belief_space()
     # for key in g.belief_space:
     #     print(key+" "+g.belief_space[key].name)
     args = sys.argv

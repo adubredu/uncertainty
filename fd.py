@@ -76,18 +76,18 @@ class Fast_Downward:
 
 
     def read(self, filename):
+      try:
         with open(filename, 'r') as f:
-          try:
             plan = f.read()
-          except:
-            return None
-        p = plan.split('\n')[:-2]
-        retplan = []
-        for act in p:
-          tup = act.replace(')','').replace('(','').split(' ')
-          tup = tuple(tup)
-          retplan.append(tup)
-        return retplan
+      except:
+        return None
+      p = plan.split('\n')[:-2]
+      retplan = []
+      for act in p:
+        tup = act.replace(')','').replace('(','').split(' ')
+        tup = tuple(tup)
+        retplan.append(tup)
+      return retplan
 
 
 
