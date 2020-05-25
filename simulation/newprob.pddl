@@ -1,7 +1,5 @@
 (define (problem PACKED-GROCERY) 
- (:domain GROCERY)                             
- (:objects bleach nutella coke pepsi lipton - item) 
-
-(:init  (toleft lipton bleach) (clearright bleach) (cleartop bleach) (onclutterortable bleach) (clearleft nutella) (toright lipton nutella) (cleartop nutella) (onclutterortable nutella) (clearleft pepsi) (clearright pepsi) (on coke pepsi) (onsomething pepsi) (toleft nutella lipton) (toright bleach lipton) (on pepsi lipton) (onclutterortable lipton) (clearleft coke) (clearright coke) (cleartop coke) (onsomething coke) (handempty) )
-
-(:goal (and (on pepsi bleach) (on lipton pepsi) (toleft coke bleach) (toright nutella bleach))))
+(:domain GROCERY) 
+ (:objects m1 m0 h0 - item)
+(:init (handempty) (topfree m0) (inclutter m0) (topfree m1) (inclutter m1) (topfree h0) (inclutter h0) )
+(:goal (and (inbox h0)  (and (inbox m0) (inbox m1) ))))

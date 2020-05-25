@@ -18,12 +18,16 @@ class Box:
     def __init__(self, bottom_capacity):
         self.cpty = bottom_capacity
         self.index = 0
+        self.old_index = 0
         self.lx = 280 
         self.ly = 290
         self.heights = [self.ly for i in range(self.cpty)]
         self.widths = [290, 326, 361]
+        self.items_added = {}
+        self.to_resolve = False
 
     def add_item(self, item):
+        self.items_added[item.name] = self.index%self.cpty
         if self.index < self.cpty:
             x = self.widths[self.index%self.cpty]
             y = self.ly - item.height 
@@ -34,7 +38,19 @@ class Box:
             y = self.heights[self.index%self.cpty] - item.height
             self.heights[self.index%self.cpty] = y
         self.index += 1
+        if self.to_resolve:
+            self.index = copy.deepcopy(self.old_index)
+            self.to_resolve = False
         return (x,y)
+
+    def remove_item(self, item):
+        if item.name in self.items_added:
+            self.old_index = copy.deepcopy(self.index)
+            self.index = self.items_added[item.name]
+            self.to_resolve = True
+            self.items_added.pop(item.name)
+
+
 
 
 
@@ -80,11 +96,13 @@ class environment:
         self.gripper = Grocery_item(350, 0,'assets/gripper.png',75,75,"gripper",0,'heavy')
         self.logo = Grocery_item(0,0, 'assets/4progress.png',535,78,"logo",0,'heavy')
         self.perceived = None
+        self.false_positive_detections = False
+        self.box = Box(3)
 
         self.uncertainty = uncertain 
         self.declutter = declutter
         self.init_order = order
-        self.domain_path='/home/developer/uncertainty/pddl/dom.pddl'
+        self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
         self.problem_path='/home/developer/uncertainty/pddl/prob.pddl'
         self.definition = "(define (problem PACKED-GROCERY) \n (:domain GROCERY) \
                             \n (:objects bleach nutella coke pepsi lipton - item) \n"
@@ -111,9 +129,11 @@ class environment:
         self.items = {"pepsi":self.pepsi, "nutella":self.nutella,
                       "coke": self.coke, "lipton": self.lipton,
                       "bleach": self.bleach, "table":self.table}
-        self.belief_space = {"pepsi":copy.deepcopy(self.pepsi), "nutella":copy.deepcopy(self.nutella),
-                      "coke": copy.deepcopy(self.coke), "lipton": copy.deepcopy(self.lipton),
-                      "bleach": copy.deepcopy(self.bleach)}
+        self.belief_space = {"pepsi":{"belief":"pepsi", "weights":[], "un":''}, 
+                            "nutella":{"belief":"nutella", "weights":[], "un":''},
+                            "coke": {"belief":"coke", "weights":[], "un":''}, 
+                            "lipton": {"belief":"lipton", "weights":[], "un":''},
+                            "bleach": {"belief":"bleach", "weights":[], "un":''}}
         self.objects_list = [self.pepsi, self.nutella,self.coke,self.lipton,
                     self.bleach]
         self.clock = pygame.time.Clock()
@@ -121,9 +141,9 @@ class environment:
         self.certainty_level = "Uncertainty Level: "+uncertain
         self.clutter_strategy = "Clutter Strategy: Declutter first" if declutter else "Clutter Strategy: Optimistic"
         self.win = pygame.display.set_mode((700,480))
-        self.populate_belief_space()
+        # self.populate_belief_space()
         self.start_time = time.time()
-        # self.initialize_clutter()   
+        self.initialize_clutter()   
         
         self.rate = 120
 
@@ -383,7 +403,7 @@ class environment:
         elif action[0] == 'pick-up-from-on':
             self.pick_up(action[1])
         elif action[0] == 'put-on-table':
-            self.put_on_table(action[1])
+            self.put_in_box(action[1])
         elif action[0] == 'put-on':
             self.put_on(action[1], action[2])
         elif action[0] == 'put-left':
@@ -688,21 +708,19 @@ class environment:
 
 
     def pick_up(self, item):
-        fp = np.random.randint(20)
-        if fp == 10:  #5% probability of false positive localization
-            self.missed_pick()
-            print("false detection")
-            return
-        # s_item = self.sample_object(item)
+        if self.false_positive_detections:
+            fp = np.random.randint(20)
+            if fp == 10:  #5% probability of false positive localization
+                self.missed_pick()
+                print("false detection")
+                return
+
         s_item = self.items[self.belief_space[item]['belief']]
         self.perceived = self.items[s_item.name]
-        # print("picking "+s_item.name)
         if not (s_item.item_on_top == None):
             print("won't pick "+s_item.name)
             return
         
-        
-
         s_item.item_on_bottom=None
         s_item.item_on_top=None
         s_item.item_at_left=None
@@ -787,7 +805,7 @@ class environment:
         top.onsomething=True
 
 
-    def put_on_table(self, topitem, gx, gy):
+    def put_in_box(self, topitem, gx, gy):
         top = self.items[topitem]
         if not (self.gripper.holding == topitem):
             return
@@ -1083,17 +1101,39 @@ class environment:
             self.clock.tick(self.rate)
 
 
-    def put_in_box(self, item_list):
+    def put_in_box_test(self, item_list):
         box = Box(3)
         for it in item_list:
             item = self.items[it]
             x,y = box.add_item(item)
             self.pick_up(item.name)
-            self.put_on_table(item.name,x,y)
+            self.put_in_box(item.name,x,y)
             time.sleep(0.5)
 
 
-    def select_foci_and_classify_weights(self):
+    def test_box(self):
+        box = Box(3)
+        x,y = box.add_item(self.coke)
+        self.pick_up('coke')
+        self.put_in_box('coke', x, y)
+        x2,y2 = box.add_item(self.pepsi)
+        self.pick_up('pepsi')
+        self.put_in_box('pepsi', x2, y2)
+        x3,y3 = box.add_item(self.nutella)
+        self.pick_up('nutella')
+        self.put_in_box('nutella', x3, y3)
+        self.pick_up('coke')
+        box.remove_item(self.coke)
+        self.drop_in_clutter('coke')
+        x4,y4 = box.add_item(self.bleach)
+        self.pick_up('bleach')
+        self.put_in_box('bleach', x4, y4)
+        x5,y5 = box.add_item(self.lipton)
+        self.pick_up('lipton')
+        self.put_in_box('lipton', x5, y5)
+
+
+    def select_perceived_objects_and_classify_weights(self):
         #1
         inbox = []
         topfree = []
@@ -1222,7 +1262,66 @@ class environment:
 
         problem = definition + init + goal
 
-        return problem
+        f = open("newprob.pddl","w")
+        f.write(problem)
+        f.close()
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        prob_path = dir_path+"/"+"newprob.pddl"
+        
+        swapped_alias  = dict([(value, key) for key, value in alias.items()]) 
+        return prob_path, swapped_alias
+
+
+    def perform_optimistic_grocery_packing(self):
+        inboxlist, topfreelist, mediumlist, heavylist = \
+                self.select_perceived_objects_and_classify_weights()
+        problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
+                                            mediumlist, heavylist)
+        self.plan_and_run_belief_space_planning(self.domain_path, 
+                                                    problem_path, alias)
+
+
+    def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias):
+        f = Fast_Downward()
+        plan = f.plan(domain_path, problem_path)
+
+        if plan is None or len(plan) == 0:
+            print('NO  VALID PLAN FOUND')
+            return
+
+        for action in plan:
+            self.redrawGameWindow()
+            print('Performing action: '+str(action))
+            self.current_action = "Action: "+str(action)
+            self.belief_execute_action(action, alias)
+
+
+    def belief_execute_action(self, action, alias):
+        if action[0] == 'pick-up':
+            self.pick_up(alias[action[1]])
+            self.box.remove_item(self.items[alias[action[1]]])
+
+        elif action[0] == 'pick-from':
+            self.pick_up(alias[action[1]])
+            self.box.remove_item(self.items[alias[action[1]]])
+
+        elif action[0] == 'put-in-box':
+            x,y = self.box.add_item(self.items[alias[action[1]]])
+            self.put_in_box(alias[action[1]],x,y)
+
+        elif action[0] == 'put-in-clutter':
+            self.drop_in_clutter(alias[action[1]])
+
+        elif action[0] == 'put-on':
+            self.put_on(alias[action[1]], alias[action[2]])
+
+
+
+
+
+
+
+
 
 
 
@@ -1263,10 +1362,11 @@ if __name__ == '__main__':
         g = environment(uncertain=uncertainty, 
                         declutter=clutter_strategy, 
                         order=order)
+        g.perform_optimistic_grocery_packing()
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
-        print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
-                                 ['pepsi','nutella','bleach','lipton','coke'],[]))
+        # print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
+        #                          ['pepsi','nutella','bleach','lipton','coke'],[]))
         # g.run_simulation(g.domain_path, g.problem_path)
         # g.clutter_optimistic_planning()
         # g.declutter_before_clutter_planning()
