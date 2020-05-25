@@ -77,8 +77,8 @@ class environment:
         self.coke = Grocery_item(20, 400, 'assets/coke.jpg',28,52,"coke",300,'medium')
         self.lipton = Grocery_item(25, 400, 'assets/lipton.jpg',58,28,"lipton",350,'medium')
         self.bleach = Grocery_item(13, 400, 'assets/bleach.jpg',26,64,"bleach",400, 'heavy')
-        self.gripper = Grocery_item(350, 0,'assets/gripper.png',75,75,"gripper",0)
-        self.logo = Grocery_item(0,0, 'assets/4progress.png',535,78,"logo",0)
+        self.gripper = Grocery_item(350, 0,'assets/gripper.png',75,75,"gripper",0,'heavy')
+        self.logo = Grocery_item(0,0, 'assets/4progress.png',535,78,"logo",0,'heavy')
         self.perceived = None
 
         self.uncertainty = uncertain 
@@ -1128,7 +1128,105 @@ class environment:
 
     
     def create_pddl_problem(self, inbox, topfree, mediumlist, heavylist):
-        
+        itlist = heavylist+mediumlist
+        alias = {}
+        hc = 0
+        for item in heavylist:
+            alias[item] = 'h'+str(hc)
+            hc+=1
+
+        mc = 0
+        for item in mediumlist:
+            alias[item] = 'm'+str(mc)
+            mc+=1
+
+        init = "(:init (handempty) "
+        for item in inbox:
+            init += "(inbox "+alias[item]+") "
+            it = self.items[item].item_on_top
+            if it != None:
+                init+= "(on "+alias[it]+" "+alias[item]+") "
+            else:
+                init += "(topfree "+alias[item]+") "
+
+
+        for item in topfree:
+            init += "(topfree "+alias[item]+") "
+            init += "(inclutter "+alias[item]+") "
+
+        init +=  ")\n"    
+
+        goal = "(:goal (and "
+        for h in heavylist:
+            goal += "(inbox "+alias[h]+") "
+            
+        mlen=len(mediumlist)
+        hlen=len(heavylist)
+        stop = hlen
+        goal += " (and "
+        if hlen > 2:
+            for m in mediumlist[:stop]:
+                goal += "(or "
+                for h in heavylist:
+                    goal += "(on "+alias[m]+" "+alias[h]+") "
+                goal +=") "
+            # goal+=")"
+            for m in mediumlist[stop:]:
+                goal+="(or "
+                for mm in mediumlist[:stop]:
+                    goal += "(on "+alias[m]+" "+alias[mm]+") "
+                goal+=") "
+            goal +="))))"
+
+        elif hlen == 1:
+            for m in mediumlist[:stop+1]:
+                h = heavylist[0]
+                goal += "(inbox "+alias[m]+") "
+            for m in mediumlist[stop+1:]:
+                goal+="(or "
+                for mm in heavylist+mediumlist[:stop+1]:
+                    goal += "(on "+alias[m]+" "+alias[mm]+") "
+                goal+=") "
+            goal +="))))"
+
+        elif hlen == 2:
+            for m in mediumlist[:stop]:
+                h = heavylist[0]
+                goal += "(inbox "+alias[m]+") "
+            for m in mediumlist[stop:]:
+                goal+="(or "
+                for mm in heavylist+mediumlist[:stop]:
+                    goal += "(on "+alias[m]+" "+alias[mm]+") "
+                goal+=") "
+            goal +="))))"
+
+        else:
+            for m in mediumlist[:3]:
+                goal += "(inbox "+alias[m]+") "
+            for m in mediumlist[3:]:
+                goal+="(or "
+                for mm in mediumlist[:stop]:
+                    goal += "(on "+alias[m]+" "+alias[mm]+") "
+                goal+=") "
+            goal +="))))"
+
+
+
+        definition = "(define (problem PACKED-GROCERY) \n(:domain GROCERY) \n (:objects "
+        for al in alias.values():
+            definition += al+" "
+        definition += "- item)\n"
+
+        problem = definition + init + goal
+
+        return problem
+
+
+
+
+
+
+
 
 
 
@@ -1162,7 +1260,9 @@ if __name__ == '__main__':
         g = environment(uncertain=uncertainty, 
                         declutter=clutter_strategy, 
                         order=order)
-        g.run()
+        # g.run()
+        print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
+                                 ['pepsi','coke','nutella','lipton'], ['bleach']))
         # g.run_simulation(g.domain_path, g.problem_path)
         # g.clutter_optimistic_planning()
         # g.declutter_before_clutter_planning()
