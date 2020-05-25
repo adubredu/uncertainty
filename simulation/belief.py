@@ -1163,7 +1163,8 @@ class environment:
         mlen=len(mediumlist)
         hlen=len(heavylist)
         stop = hlen
-        goal += " (and "
+        if mlen > 1:
+            goal += " (and "
         if hlen > 2:
             for m in mediumlist[:stop]:
                 goal += "(or "
@@ -1190,12 +1191,11 @@ class environment:
             goal +="))))"
 
         elif hlen == 2:
-            for m in mediumlist[:stop]:
-                h = heavylist[0]
+            for m in mediumlist[:stop-1]:
                 goal += "(inbox "+alias[m]+") "
-            for m in mediumlist[stop:]:
+            for m in mediumlist[stop-1:]:
                 goal+="(or "
-                for mm in heavylist+mediumlist[:stop]:
+                for mm in heavylist+mediumlist[:stop-1]:
                     goal += "(on "+alias[m]+" "+alias[mm]+") "
                 goal+=") "
             goal +="))))"
@@ -1205,10 +1205,13 @@ class environment:
                 goal += "(inbox "+alias[m]+") "
             for m in mediumlist[3:]:
                 goal+="(or "
-                for mm in mediumlist[:stop]:
+                for mm in mediumlist[:3]:
                     goal += "(on "+alias[m]+" "+alias[mm]+") "
                 goal+=") "
             goal +="))))"
+
+        if mlen < 2:
+            goal = goal[:-1]
 
 
 
@@ -1261,8 +1264,9 @@ if __name__ == '__main__':
                         declutter=clutter_strategy, 
                         order=order)
         # g.run()
+        # self, inbox, topfree, mediumlist, heavylist
         print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
-                                 ['pepsi','coke','nutella','lipton'], ['bleach']))
+                                 ['pepsi','nutella','bleach','lipton','coke'],[]))
         # g.run_simulation(g.domain_path, g.problem_path)
         # g.clutter_optimistic_planning()
         # g.declutter_before_clutter_planning()
