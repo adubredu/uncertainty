@@ -25,9 +25,11 @@ class Box:
         self.widths = [290, 326, 361]
         self.items_added = {}
         self.to_resolve = False
+        self.num_items = 0
 
     def add_item(self, item):
         self.items_added[item.name] = self.index%self.cpty
+        self.num_items+=1
         if self.index < self.cpty:
             x = self.widths[self.index%self.cpty]
             y = self.ly - item.height 
@@ -49,6 +51,7 @@ class Box:
             self.index = self.items_added[item.name]
             self.to_resolve = True
             self.items_added.pop(item.name)
+            self.num_items-=1
 
 
 
@@ -125,6 +128,7 @@ class environment:
 
         }
 
+        self.items_in_clutter = 5
 
         self.items = {"pepsi":self.pepsi, "nutella":self.nutella,
                       "coke": self.coke, "lipton": self.lipton,
@@ -146,6 +150,25 @@ class environment:
         self.initialize_clutter()   
         
         self.rate = 120
+
+    def update_items_left(self):
+        inbox = []
+        for item in self.objects_list:
+            if item.on_table:
+                inbox.append(item.name)
+        for item in self.objects_list:
+            if item.item_on_bottom in inbox:
+                inbox.append(item.name)
+        for item in self.objects_list:
+            if item.item_on_bottom in inbox:
+                inbox.append(item.name)
+        for item in self.objects_list:
+            if item.item_on_bottom in inbox:
+                inbox.append(item.name)
+        inbox = list(set(inbox))
+        return self.items_in_clutter == len(inbox)
+
+
 
 
     def populate_belief_space(self):
@@ -721,6 +744,7 @@ class environment:
             print("won't pick "+s_item.name)
             return
         
+        self.box.remove_item(s_item)
         s_item.item_on_bottom=None
         s_item.item_on_top=None
         s_item.item_at_left=None
@@ -1194,6 +1218,9 @@ class environment:
             init += "(topfree "+alias[item]+") "
             init += "(inclutter "+alias[item]+") "
 
+        if self.box.num_items >= 3:
+            init += "(boxfull)"
+
         init +=  ")\n"    
 
         goal = "(:goal (and "
@@ -1273,12 +1300,16 @@ class environment:
 
 
     def perform_optimistic_grocery_packing(self):
-        inboxlist, topfreelist, mediumlist, heavylist = \
-                self.select_perceived_objects_and_classify_weights()
-        problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
-                                            mediumlist, heavylist)
-        self.plan_and_run_belief_space_planning(self.domain_path, 
-                                                    problem_path, alias)
+        empty_clutter = self.update_items_left()
+
+        while not empty_clutter:
+            inboxlist, topfreelist, mediumlist, heavylist = \
+                    self.select_perceived_objects_and_classify_weights()
+            problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
+                                                mediumlist, heavylist)
+            self.plan_and_run_belief_space_planning(self.domain_path, 
+                                                        problem_path, alias)
+            empty_clutter = self.update_items_left()
 
 
     def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias):
@@ -1297,7 +1328,11 @@ class environment:
 
 
     def belief_execute_action(self, action, alias):
-        if action[0] == 'pick-up':
+        if action[0] == 'pick-from-clutter':
+            self.pick_up(alias[action[1]])
+            self.box.remove_item(self.items[alias[action[1]]])
+
+        elif action[0] == 'pick-from-box':
             self.pick_up(alias[action[1]])
             self.box.remove_item(self.items[alias[action[1]]])
 
@@ -1361,7 +1396,7 @@ if __name__ == '__main__':
         order = np.random.randint(4)#int(args[3])
         g = environment(uncertain=uncertainty, 
                         declutter=clutter_strategy, 
-                        order=order)
+                        order=0)
         g.perform_optimistic_grocery_packing()
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
