@@ -121,35 +121,51 @@ class environment:
                             \n (:objects bleach nutella coke pepsi lipton - item) \n"
         self.goal_def = "\n(:goal (and (on pepsi bleach) (on lipton pepsi) (toleft coke bleach) (toright nutella bleach))))\n"
         self.mid_matrix = {
-             "pepsi":[0.4, 0.1,0.3,0.1,0.1,0,0,0,0,0,0,0],
-              "nutella":[0.2,0.4,0.2,0.1,0.1,0,0,0,0,0,0,0],
-              "coke":[0.3,0.2,0.4,0.05,0.05,0,0,0,0,0,0,0],
-              "lipton":[0.2,0.1,0.1,0.4,0.2,0,0,0,0,0,0,0],
-              "bleach":[0.1,0.1,0.1,0.1,0.6,0,0,0,0,0,0,0],
-              "ambrosia":[0.1,0.1,0.1,0.1,0,0.6,0,0,0,0,0,0],
-              "banana":[0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0,0],
-              "cereal":[0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0],
-              "lysol":[0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0],
-              "milk":[0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0],
-              "oreo":[0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0],
-              "tangerine":[0,0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6]
+                "pepsi":[0.4, 0.1,0.3,0.1,0.1,0,0,0,0,0,0,0],
+                "nutella":[0.2,0.4,0.2,0.1,0.1,0,0,0,0,0,0,0],
+                "coke":[0.3,0.2,0.4,0.05,0.05,0,0,0,0,0,0,0],
+                "lipton":[0.2,0.1,0.1,0.4,0.2,0,0,0,0,0,0,0],
+                "bleach":[0.1,0.1,0.1,0.1,0.6,0,0,0,0,0,0,0],
+                "ambrosia":[0.1,0.1,0.1,0.1,0,0.6,0,0,0,0,0,0],
+                "banana":[0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0,0],
+                "cereal":[0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0],
+                "lysol":[0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0],
+                "milk":[0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0],
+                "oreo":[0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0],
+                "tangerine":[0,0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6]
             }
 
         self.low_matrix = {
-            "pepsi":[0.9, 0.025,0.025,0.025,0.025],
-          "nutella":[0.025,0.9,0.025,0.025,0.025],
-          "coke":[0.025,0.025,0.9,0.025,0.025],
-          "lipton":[0.025,0.025,0.025,0.9,0.025],
-          "bleach":[0.025,0.025,0.025,0.025,0.9],
-          "ambrosia":[0.1,0.1,0.1,0.1,0,0.6,0,0,0,0,0,0],
-          "banana":[0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0,0],
-          "cereal":[0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0],
-          "lysol":[0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0],
-          "milk":[0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0],
-          "oreo":[0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0],
-          "tangerine":[0,0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6]
+                "pepsi":[0.9, 0.025,0.025,0.025,0.025,0,0,0,0,0,0,0],
+                "nutella":[0.025,0.9,0.025,0.025,0.025,0,0,0,0,0,0,0],
+                "coke":[0.025,0.025,0.9,0.025,0.025,0,0,0,0,0,0,0],
+                "lipton":[0.025,0.025,0.025,0.9,0.025,0,0,0,0,0,0,0],
+                "bleach":[0.025,0.025,0.025,0.025,0.9,0,0,0,0,0,0,0],
+                "ambrosia":[0.1,0.1,0.1,0.1,0,0.6,0,0,0,0,0,0],
+                "banana":[0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0,0],
+                "cereal":[0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0],
+                "lysol":[0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0],
+                "milk":[0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0],
+                "oreo":[0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0],
+                "tangerine":[0,0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6]
 
         }
+
+        self.high_matrix = {
+                "pepsi":[0.25, 0.2,0.2,0.2,0.15,0,0,0,0,0,0,0],
+                "nutella":[0.2,0.25,0.2,0.2,0.15,0,0,0,0,0,0,0],
+                "coke":[0.2,0.2,0.25,0.15,0.2,0,0,0,0,0,0,0],
+                "lipton":[0.2,0.15,0.2,0.25,0.2,0,0,0,0,0,0,0],
+                "bleach":[0.2,0.2,0.2,0.15,0.25,0,0,0,0,0,0,0],
+                "ambrosia":[0.1,0.1,0.1,0.1,0,0.6,0,0,0,0,0,0],
+                "banana":[0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0,0],
+                "cereal":[0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0],
+                "lysol":[0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0],
+                "milk":[0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0],
+                "oreo":[0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0],
+                "tangerine":[0,0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6]
+
+            }
 
         self.items_in_clutter = 5
 
@@ -172,9 +188,12 @@ class environment:
                             "lysol": {"belief":"lysol", "weights":[], "un":''},
                             "milk": {"belief":"milk", "weights":[], "un":''},
                             "oreo": {"belief":"oreo", "weights":[], "un":''},
-                            "tangerine": {"belief":"tangerine", "weights":[], "un":''},}
+                            "tangerine": {"belief":"tangerine", "weights":[], "un":''}}
+
         self.objects_list = [self.pepsi, self.nutella,self.coke,self.lipton,
-                    self.bleach]
+                    self.bleach, self.ambrosia, self.banana, self.cereal, self.lysol,
+                    self.milk, self.oreo, self.tangerine]
+
         self.clock = pygame.time.Clock()
         self.current_action = "Action: (pick-up-from-on nutella bleach)"
         self.certainty_level = "Uncertainty Level: "+uncertain
@@ -207,12 +226,6 @@ class environment:
 
 
     def populate_belief_space(self):
-        self.belief_space = {"pepsi":{"belief":"pepsi", "weights":[], "un":''}, 
-                            "nutella":{"belief":"nutella", "weights":[], "un":''},
-                            "coke": {"belief":"coke", "weights":[], "un":''}, 
-                            "lipton": {"belief":"lipton", "weights":[], "un":''},
-                            "bleach": {"belief":"bleach", "weights":[], "un":''}}
-
         for key  in self.belief_space:
             if self.items[key].item_on_top == None:
                 self.belief_space[key]['weights'] =  self.low_matrix[key]
@@ -262,24 +275,8 @@ class environment:
     def sample_object(self, object_name):
         if self.uncertainty == "low":
             return self.items[object_name]
-        # print("UNCERTAIN")
-        mid_item_probabilities = {
-             "pepsi":[0.4, 0.1,0.3,0.1,0.1],
-              "nutella":[0.2,0.4,0.2,0.1,0.1],
-              "coke":[0.3,0.2,0.4,0.05,0.05],
-              "lipton":[0.2,0.1,0.1,0.4,0.2],
-              "bleach":[0.1,0.1,0.1,0.1,0.6]
 
-            }
-        high_item_probabilities = {
-             "pepsi":[0.25, 0.2,0.2,0.2,0.15],
-              "nutella":[0.2,0.25,0.2,0.2,0.15],
-              "coke":[0.2,0.2,0.25,0.15,0.2],
-              "lipton":[0.2,0.15,0.2,0.25,0.2],
-              "bleach":[0.2,0.2,0.2,0.15,0.25]
-
-            }
-        probabilities = mid_item_probabilities if self.uncertainty=="medium" else high_item_probabilities
+        probabilities = self.mid_matrix if self.uncertainty=="medium" else self.high_matrix
 
         choice = np.random.choice(self.objects_list, size=1, 
                 p=probabilities[object_name])
@@ -436,11 +433,20 @@ class environment:
         self.win.blit(self.logo.body, (self.logo.x, self.logo.y))
         self.win.blit(pygame.image.load('assets/rt.jpg'), (550,10))
         self.win.blit(self.table.body,(self.table.x, self.table.y))
+
         self.win.blit(self.pepsi.body,(self.pepsi.x, self.pepsi.y))
         self.win.blit(self.nutella.body,(self.nutella.x, self.nutella.y))
         self.win.blit(self.coke.body,(self.coke.x, self.coke.y))
         self.win.blit(self.lipton.body,(self.lipton.x, self.lipton.y))
         self.win.blit(self.bleach.body,(self.bleach.x, self.bleach.y))
+        self.win.blit(self.ambrosia.body,(self.ambrosia.x, self.ambrosia.y))
+        self.win.blit(self.banana.body,(self.banana.x, self.banana.y))
+        self.win.blit(self.cereal.body,(self.cereal.x, self.cereal.y))
+        self.win.blit(self.lysol.body,(self.lysol.x, self.lysol.y))
+        self.win.blit(self.oreo.body,(self.oreo.x, self.oreo.y))
+        self.win.blit(self.tangerine.body,(self.tangerine.x, self.tangerinea.y))
+        self.win.blit(self.mild.body,(self.milk.x, self.milk.y))
+
         self.win.blit(self.gripper.body,(self.gripper.x, self.gripper.y))
         self.display_text(self.current_action,0,0,14)
         self.duration = int(time.time()-self.start_time)
@@ -626,7 +632,9 @@ class environment:
         init = self.get_current_packing_state()
         goal = "\n(:goal (and (cleartop coke) \
         (cleartop lipton) (cleartop nutella) \
-        (cleartop pepsi) (cleartop bleach))))"
+        (cleartop pepsi) (cleartop bleach) (cleartop ambrosia)\
+        (cleartop banana) (cleartop cereal) (cleartop lysol)\
+        (cleartop milk) (cleartop oreo) (cleartop tangerine))))"
         problem = self.definition+init+goal
         file = open("declutterprob.pddl",'w')
         file.write(problem)
