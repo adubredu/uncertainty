@@ -96,6 +96,15 @@ class environment:
         self.coke = Grocery_item(20, 400, 'assets/coke.jpg',28,52,"coke",300,'medium')
         self.lipton = Grocery_item(25, 400, 'assets/lipton.jpg',58,28,"lipton",350,'medium')
         self.bleach = Grocery_item(13, 400, 'assets/bleach.jpg',26,64,"bleach",400, 'heavy')
+
+        self.ambrosia = Grocery_item(13, 400, 'assets/ambrosia.jpg',41,58,"ambrosia",430, 'heavy')
+        self.banana = Grocery_item(13, 400, 'assets/banana.jpg',70,58,"banana",460, 'heavy')
+        self.cereal = Grocery_item(13, 400, 'assets/cereal.jpg',30,48,"cereal",490, 'heavy')
+        self.lysol = Grocery_item(13, 400, 'assets/lysol.jpg',42,74,"lysol",520, 'heavy')
+        self.milk = Grocery_item(13, 400, 'assets/milk.jpg',45,66,"milk",550, 'heavy')
+        self.oreo = Grocery_item(13, 400, 'assets/oreo.jpg',28,17,"oreo",580, 'medium')
+        self.tangerine = Grocery_item(13, 400, 'assets/tangerine.jpg',49,39,"tangerine",610, 'heavy')
+
         self.gripper = Grocery_item(350, 0,'assets/gripper.png',75,75,"gripper",0,'heavy')
         self.logo = Grocery_item(0,0, 'assets/4progress.png',535,78,"logo",0,'heavy')
         self.perceived = None
@@ -112,12 +121,18 @@ class environment:
                             \n (:objects bleach nutella coke pepsi lipton - item) \n"
         self.goal_def = "\n(:goal (and (on pepsi bleach) (on lipton pepsi) (toleft coke bleach) (toright nutella bleach))))\n"
         self.mid_matrix = {
-             "pepsi":[0.4, 0.1,0.3,0.1,0.1],
-              "nutella":[0.2,0.4,0.2,0.1,0.1],
-              "coke":[0.3,0.2,0.4,0.05,0.05],
-              "lipton":[0.2,0.1,0.1,0.4,0.2],
-              "bleach":[0.1,0.1,0.1,0.1,0.6]
-
+             "pepsi":[0.4, 0.1,0.3,0.1,0.1,0,0,0,0,0,0,0],
+              "nutella":[0.2,0.4,0.2,0.1,0.1,0,0,0,0,0,0,0],
+              "coke":[0.3,0.2,0.4,0.05,0.05,0,0,0,0,0,0,0],
+              "lipton":[0.2,0.1,0.1,0.4,0.2,0,0,0,0,0,0,0],
+              "bleach":[0.1,0.1,0.1,0.1,0.6,0,0,0,0,0,0,0],
+              "ambrosia":[0.1,0.1,0.1,0.1,0,0.6,0,0,0,0,0,0],
+              "banana":[0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0,0],
+              "cereal":[0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0],
+              "lysol":[0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0],
+              "milk":[0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0],
+              "oreo":[0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0],
+              "tangerine":[0,0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6]
             }
 
         self.low_matrix = {
@@ -125,7 +140,14 @@ class environment:
           "nutella":[0.025,0.9,0.025,0.025,0.025],
           "coke":[0.025,0.025,0.9,0.025,0.025],
           "lipton":[0.025,0.025,0.025,0.9,0.025],
-          "bleach":[0.025,0.025,0.025,0.025,0.9]
+          "bleach":[0.025,0.025,0.025,0.025,0.9],
+          "ambrosia":[0.1,0.1,0.1,0.1,0,0.6,0,0,0,0,0,0],
+          "banana":[0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0,0],
+          "cereal":[0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0],
+          "lysol":[0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0],
+          "milk":[0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0],
+          "oreo":[0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0],
+          "tangerine":[0,0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6]
 
         }
 
@@ -133,12 +155,24 @@ class environment:
 
         self.items = {"pepsi":self.pepsi, "nutella":self.nutella,
                       "coke": self.coke, "lipton": self.lipton,
-                      "bleach": self.bleach, "table":self.table}
+                      "bleach": self.bleach, "table":self.table,
+                      "ambrosia":self.ambrosia, "banana":self.banana,
+                      "cereal":self.cereal, "lysol":self.lysol,
+                      "milk":self.milk, "oreo":self.oreo,
+                      "tangerine":self.tangerine}
+
         self.belief_space = {"pepsi":{"belief":"pepsi", "weights":[], "un":''}, 
                             "nutella":{"belief":"nutella", "weights":[], "un":''},
                             "coke": {"belief":"coke", "weights":[], "un":''}, 
                             "lipton": {"belief":"lipton", "weights":[], "un":''},
-                            "bleach": {"belief":"bleach", "weights":[], "un":''}}
+                            "bleach": {"belief":"bleach", "weights":[], "un":''},
+                            "ambrosia": {"belief":"ambrosia", "weights":[], "un":''},
+                            "banana": {"belief":"banana", "weights":[], "un":''},
+                            "cereal": {"belief":"cereal", "weights":[], "un":''},
+                            "lysol": {"belief":"lysol", "weights":[], "un":''},
+                            "milk": {"belief":"milk", "weights":[], "un":''},
+                            "oreo": {"belief":"oreo", "weights":[], "un":''},
+                            "tangerine": {"belief":"tangerine", "weights":[], "un":''},}
         self.objects_list = [self.pepsi, self.nutella,self.coke,self.lipton,
                     self.bleach]
         self.clock = pygame.time.Clock()
