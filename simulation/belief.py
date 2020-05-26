@@ -99,7 +99,7 @@ class environment:
 
         self.ambrosia = Grocery_item(13, 400, 'assets/ambrosia.jpg',41,58,"ambrosia",430, 'heavy')
         self.banana = Grocery_item(13, 400, 'assets/banana.jpg',70,58,"banana",460, 'heavy')
-        self.cereal = Grocery_item(13, 400, 'assets/cereal.jpg',30,48,"cereal",490, 'heavy')
+        self.cereal = Grocery_item(13, 400, 'assets/cereal.jpg',30,48,"cereal",490, 'medium')
         self.lysol = Grocery_item(13, 400, 'assets/lysol.jpg',42,74,"lysol",520, 'heavy')
         self.milk = Grocery_item(13, 400, 'assets/milk.jpg',45,66,"milk",550, 'heavy')
         self.oreo = Grocery_item(13, 400, 'assets/oreo.jpg',28,17,"oreo",580, 'medium')
@@ -118,7 +118,7 @@ class environment:
         self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
         self.problem_path='/home/developer/uncertainty/pddl/prob.pddl'
         self.definition = "(define (problem PACKED-GROCERY) \n (:domain GROCERY) \
-                            \n (:objects bleach nutella coke pepsi lipton - item) \n"
+                            \n (:objects bleach nutella coke pepsi lipton ambrosia banana cereal lysol milk tangerine oreo - item) \n"
         self.goal_def = "\n(:goal (and (on pepsi bleach) (on lipton pepsi) (toleft coke bleach) (toright nutella bleach))))\n"
         self.mid_matrix = {
                 "pepsi":[0.4, 0.1,0.3,0.1,0.1,0,0,0,0,0,0,0],
@@ -167,7 +167,7 @@ class environment:
 
             }
 
-        self.items_in_clutter = 5
+        self.items_in_clutter = 12
 
         self.items = {"pepsi":self.pepsi, "nutella":self.nutella,
                       "coke": self.coke, "lipton": self.lipton,
@@ -657,7 +657,7 @@ class environment:
 
             
             if item.item_on_top == None:
-                init+=" (cleartop "+self.belief_space[item.name]['belief']+")"
+                init+=" (topfree "+self.belief_space[item.name]['belief']+")"
             else:
                 init+=" (on "+self.belief_space[item.item_on_top]['belief']+" "+self.belief_space[item.name]['belief']+")"
 
@@ -679,6 +679,17 @@ class environment:
         return init
 
 
+    def get_scene_for_declutter(self):
+        init = "\n(:init (handempty)"
+        for item in self.objects_list:
+            if item.item_on_top == None:
+                init+=" (topfree "+self.belief_space[item.name]['belief']+")"
+            else:
+                init+=" (on "+self.belief_space[item.item_on_top]['belief']+" "+self.belief_space[item.name]['belief']+")"
+            init += " (inclutter "+self.belief_space[item.name]['belief']+")"
+        init += ")\n"
+        return init 
+
     def form_problem_from_current_scene(self):
         init = self.get_current_packing_state()
         prob = self.definition+init+self.goal_def
@@ -692,9 +703,9 @@ class environment:
 
     def form_dec_problem_from_current_scene(self):
         init = self.get_current_packing_state()
-        goal = "\n(:goal (and (cleartop coke) \
-        (cleartop lipton) (cleartop nutella) \
-        (cleartop pepsi) (cleartop bleach))))"
+        goal = "\n(:goal (and (topfree coke) \
+        (topfree lipton) (topfree nutella) \
+        (topfree pepsi) (topfree bleach))))"
         prob = self.definition+init+goal
         f = open("newprob.pddl","w")
         f.write(prob)
@@ -717,12 +728,17 @@ class environment:
 
 
     def perform_declutter(self):
-        init = self.get_current_packing_state()
-        goal = "\n(:goal (and (cleartop coke) \
-        (cleartop lipton) (cleartop nutella) \
-        (cleartop pepsi) (cleartop bleach) (cleartop ambrosia)\
-        (cleartop banana) (cleartop cereal) (cleartop lysol)\
-        (cleartop milk) (cleartop oreo) (cleartop tangerine))))"
+        init = self.get_scene_for_declutter()
+        goal = "\n(:goal (and (topfree coke) \
+        (topfree lipton) (topfree nutella) \
+        (topfree pepsi) (topfree bleach) (topfree ambrosia)\
+        (topfree banana) (topfree cereal) (topfree lysol)\
+        (topfree milk) (topfree oreo) (topfree tangerine)\
+        (inclutter nutella) (inclutter pepsi) (inclutter bleach) \
+        (inclutter coke) (inclutter lipton)\
+        (inclutter ambrosia) (inclutter banana) (inclutter milk)\
+        (inclutter cereal) (inclutter oreo)\
+        (inclutter tangerine) (inclutter lysol))))"
         problem = self.definition+init+goal
         file = open("declutterprob.pddl",'w')
         file.write(problem)
@@ -731,7 +747,7 @@ class environment:
                     "/"+"declutterprob.pddl" 
         uncert = copy.deepcopy(self.uncertainty)
         self.uncertainty = 'low'
-        self.run_dec_grocery_packing(self.declutter_domain, clutter_prob_path)
+        self.run_dec_grocery_packing(self.domain_path, clutter_prob_path)
         print("***Declutter Complete***")
         self.uncertainty = uncert
 
@@ -740,9 +756,9 @@ class environment:
         start_time = time.time()
         self.initialize_clutter()
         init = self.get_current_packing_state()
-        goal = "\n(:goal (and (cleartop coke) \
-        (cleartop lipton) (cleartop nutella) \
-        (cleartop pepsi) (cleartop bleach))))"
+        goal = "\n(:goal (and (topfree coke) \
+        (topfree lipton) (topfree nutella) \
+        (topfree pepsi) (topfree bleach))))"
         problem = self.definition+init+goal
         file = open("declutterprob.pddl",'w')
         file.write(problem)
@@ -816,7 +832,7 @@ class environment:
                 self.redrawGameWindow()               
                 print('Performing action: '+str(action))
                 self.current_action = "Action: "+str(action)
-                self.execute_action(action)
+                self.declutter_belief_execute_action(action)
                 inspection_result = self.inspect_scene(action)
                 if not inspection_result:
                     self.current_action = "Action: REPLANNING..."
@@ -1503,6 +1519,30 @@ class environment:
             self.put_on(alias[action[1]], alias[action[2]])
 
 
+    def declutter_belief_execute_action(self, action):
+        if action[0] == 'pick-from-clutter':
+            self.pick_up(action[1])
+            self.box.remove_item(self.items[action[1]])
+
+        elif action[0] == 'pick-from-box':
+            self.pick_up(action[1])
+            self.box.remove_item(self.items[action[1]])
+
+        elif action[0] == 'pick-from':
+            self.pick_up(action[1])
+            self.box.remove_item(self.items[action[1]])
+
+        elif action[0] == 'put-in-box':
+            x,y = self.box.add_item(self.items[action[1]])
+            self.put_in_box(action[1],x,y)
+
+        elif action[0] == 'put-in-clutter':
+            self.drop_in_clutter(action[1])
+
+        elif action[0] == 'put-on':
+            self.put_on(action[1], action[2])
+
+
 
 
 
@@ -1550,6 +1590,7 @@ if __name__ == '__main__':
                         declutter=clutter_strategy, 
                         order=order)
         # g.perform_declutter_belief_grocery_packing()
+        g.perform_optimistic_belief_grocery_packing()
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
         # print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
@@ -1557,8 +1598,8 @@ if __name__ == '__main__':
         # g.run_simulation(g.domain_path, g.problem_path)
         # g.clutter_optimistic_planning()
         # g.declutter_before_clutter_planning()
-        while True:
-            g.redrawGameWindow()
+        # while True:
+        #     g.redrawGameWindow()
 
 
 
