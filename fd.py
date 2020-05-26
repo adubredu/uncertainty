@@ -20,7 +20,7 @@ class Fast_Downward:
 
             # Suboptimal
             'ff-astar': '--heuristic "h=ff(transform=adapt_costs(cost_type=NORMAL))" '
-                        '--search "astar(h,cost_type=NORMAL,max_time=30)"',
+                        '--search "astar(h,cost_type=NORMAL,max_time=90)"',
             'ff-eager': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
                         '--search "eager_greedy([h],max_time=%s,bound=%s)"',
             'ff-eager-pref': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
@@ -55,7 +55,7 @@ class Fast_Downward:
                            'preferred_successors_first=true,cost_type=PLUSONE,max_time=%s,bound=%s)"'.format(w)
 
         self.default_max_time = 30 # INF
-        self.default_planner = 'dijkstra'
+        self.default_planner = 'ff-astar'
         self.max_fd_cost = 1e8
         self.plan_file = '/home/developer/uncertainty/simulation/sas_plan'
         self.fd_path = '/home/developer/garage/FastDownward/fast-downward.py'

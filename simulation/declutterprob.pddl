@@ -1,7 +1,7 @@
 (define (problem PACKED-GROCERY) 
  (:domain GROCERY)                             
- (:objects bleach nutella coke pepsi lipton - item) 
+ (:objects bleach nutella coke pepsi lipton ambrosia banana cereal lysol milk tangerine oreo - item) 
 
-(:init  (clearleft pepsi) (toright nutella pepsi) (cleartop pepsi) (onsomething pepsi) (toleft coke nutella) (clearright nutella) (cleartop nutella) (onsomething nutella) (toleft bleach coke) (clearright coke) (on nutella coke) (onclutterortable coke) (clearleft lipton) (toright bleach lipton) (cleartop lipton) (onclutterortable lipton) (toleft lipton bleach) (toright coke bleach) (on pepsi bleach) (onclutterortable bleach) (handempty) )
+(:init (handempty) (on oreo pepsi) (inclutter pepsi) (on ambrosia nutella) (inclutter nutella) (on tangerine coke) (inclutter coke) (on nutella lipton) (inclutter lipton) (on milk bleach) (inclutter bleach) (topfree ambrosia) (inclutter ambrosia) (topfree banana) (inclutter banana) (topfree cereal) (inclutter cereal) (topfree lysol) (inclutter lysol) (on lysol milk) (inclutter milk) (on cereal oreo) (inclutter oreo) (on banana tangerine) (inclutter tangerine))
 
-(:goal (and (cleartop coke)         (cleartop lipton) (cleartop nutella)         (cleartop pepsi) (cleartop bleach))))
+(:goal (and (topfree coke)         (topfree lipton) (topfree nutella)         (topfree pepsi) (topfree bleach) (topfree ambrosia)        (topfree banana) (topfree cereal) (topfree lysol)        (topfree milk) (topfree oreo) (topfree tangerine)        (inclutter nutella) (inclutter pepsi) (inclutter bleach)         (inclutter coke) (inclutter lipton)        (inclutter ambrosia) (inclutter banana) (inclutter milk)        (inclutter cereal) (inclutter oreo)        (inclutter tangerine) (inclutter lysol))))
