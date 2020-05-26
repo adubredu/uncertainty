@@ -105,6 +105,7 @@ class environment:
         self.uncertainty = uncertain 
         self.declutter = declutter
         self.init_order = order
+        self.declutter_domain = '/home/developer/uncertainty/pddl/dom.pddl'
         self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
         self.problem_path='/home/developer/uncertainty/pddl/prob.pddl'
         self.definition = "(define (problem PACKED-GROCERY) \n (:domain GROCERY) \
@@ -587,6 +588,24 @@ class environment:
         pygame.quit()
 
 
+    def perform_declutter(self):
+        init = self.get_current_packing_state()
+        goal = "\n(:goal (and (cleartop coke) \
+        (cleartop lipton) (cleartop nutella) \
+        (cleartop pepsi) (cleartop bleach))))"
+        problem = self.definition+init+goal
+        file = open("declutterprob.pddl",'w')
+        file.write(problem)
+        file.close()
+        clutter_prob_path = os.path.dirname(os.path.realpath(__file__))+\
+                    "/"+"declutterprob.pddl" 
+        uncert = copy.deepcopy(self.uncertainty)
+        self.uncertainty = 'low'
+        self.run_dec_grocery_packing(self.declutter_domain, clutter_prob_path)
+        print("***Declutter Complete***")
+        self.uncertainty = uncert
+
+
     def declutter_before_clutter_planning(self):
         start_time = time.time()
         self.initialize_clutter()
@@ -605,7 +624,6 @@ class environment:
         self.run_dec_grocery_packing(self.domain_path, clutter_prob_path)
         print("***Declutter Complete***")
         self.uncertainty = uncert
-
 
         inits = self.get_current_packing_state()
         problems = self.definition+inits+self.goal_def
@@ -1189,7 +1207,6 @@ class environment:
 
         return (inbox, topfree, mediumlist, heavylist)
 
-
     
     def create_pddl_problem(self, inbox, topfree, mediumlist, heavylist):
         itlist = heavylist+mediumlist
@@ -1299,7 +1316,7 @@ class environment:
         return prob_path, swapped_alias
 
 
-    def perform_optimistic_grocery_packing(self):
+    def perform_optimistic_belief_grocery_packing(self):
         empty_clutter = self.update_items_left()
 
         while not empty_clutter:
@@ -1310,6 +1327,11 @@ class environment:
             self.plan_and_run_belief_space_planning(self.domain_path, 
                                                         problem_path, alias)
             empty_clutter = self.update_items_left()
+
+
+    def perform_declutter_belief_grocery_packing(self):
+        self.perform_declutter()
+        self.perform_optimistic_belief_grocery_packing()
 
 
     def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias):
@@ -1396,8 +1418,8 @@ if __name__ == '__main__':
         order = np.random.randint(4)#int(args[3])
         g = environment(uncertain=uncertainty, 
                         declutter=clutter_strategy, 
-                        order=0)
-        g.perform_optimistic_grocery_packing()
+                        order=order)
+        g.perform_declutter_belief_grocery_packing()
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
         # print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
