@@ -408,13 +408,13 @@ class environment:
             self.bleach.y = 480-self.bleach.height
             self.coke.x = 10+self.lipton.width+self.bleach.width
             self.coke.y = 480-self.coke.height
-            self.pepsi.x = 10+self.lipton.width
+            self.pepsi.x = 10+self.milk.width
             self.pepsi.y = 480-self.bleach.height-self.pepsi.height
             self.cereal.x = 10+self.banana.width
             self.cereal.y = 480-self.bleach.height-self.pepsi.height-self.cereal.height
-            self.nutella.x = 10+self.lipton.width+self.bleach.width
+            self.nutella.x = 10+self.milk.width+self.pepsi.width
             self.nutella.y = 480 - self.coke.height-self.nutella.height
-            self.lysol.x = 10+self.lipton.width+self.bleach.width
+            self.lysol.x = 10+self.banana.width+self.cereal.width
             self.lysol.y = 480 - self.coke.height-self.nutella.height-self.lysol.height 
             self.tangerine.x = 10+self.lipton.width+self.bleach.width+self.coke.width
             self.tangerine.y = 480-self.tangerine.height
@@ -431,7 +431,7 @@ class environment:
             self.ambrosia.x = 10+self.banana.width
             self.bleach.x = 10+self.coke.width+self.lipton.width
             self.pepsi.x = 10+self.coke.width+self.lipton.width+self.bleach.width
-            self.nutella.x = 10+self.coke.width 
+            self.nutella.x = 10+self.tangerine.width 
             self.milk.x = 10+self.tangerine.width+self.nutella.width 
             self.lysol.x = 10+self.banana.width+self.ambrosia.width
             self.oreo.x = 10+self.tangerine.width+self.nutella.width+self.milk.width
@@ -459,10 +459,10 @@ class environment:
             self.pepsi.x = 10+self.nutella.width +self.lipton.width
             self.cereal.x = 10+self.nutella.width +self.lipton.width+self.pepsi.width 
             self.oreo.x = 10+self.nutella.width +self.lipton.width+self.pepsi.width+self.cereal.width
-            self.coke.x = 10+self.nutella.width
+            self.coke.x = 10+self.tangerine.width
             self.lysol.x = 10+self.tangerine.width+self.coke.width 
             self.ambrosia.x = 10+self.tangerine.width+self.coke.width+self.lysol.width
-            self.bleach.x = 10+self.nutella.width
+            self.bleach.x = 10+self.milk.width
             self.banana.x = 10+self.milk.width
 
             self.nutella.y = 480-self.nutella.height 
@@ -532,8 +532,8 @@ class environment:
         self.win.blit(self.cereal.body,(self.cereal.x, self.cereal.y))
         self.win.blit(self.lysol.body,(self.lysol.x, self.lysol.y))
         self.win.blit(self.oreo.body,(self.oreo.x, self.oreo.y))
-        self.win.blit(self.tangerine.body,(self.tangerine.x, self.tangerinea.y))
-        self.win.blit(self.mild.body,(self.milk.x, self.milk.y))
+        self.win.blit(self.tangerine.body,(self.tangerine.x, self.tangerine.y))
+        self.win.blit(self.milk.body,(self.milk.x, self.milk.y))
 
         self.win.blit(self.gripper.body,(self.gripper.x, self.gripper.y))
         self.display_text(self.current_action,0,0,14)
@@ -1549,7 +1549,7 @@ if __name__ == '__main__':
         g = environment(uncertain=uncertainty, 
                         declutter=clutter_strategy, 
                         order=order)
-        g.perform_declutter_belief_grocery_packing()
+        # g.perform_declutter_belief_grocery_packing()
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
         # print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
@@ -1557,8 +1557,8 @@ if __name__ == '__main__':
         # g.run_simulation(g.domain_path, g.problem_path)
         # g.clutter_optimistic_planning()
         # g.declutter_before_clutter_planning()
-        # while True:
-        #     g.redrawGameWindow()
+        while True:
+            g.redrawGameWindow()
 
 
 
