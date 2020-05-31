@@ -19,10 +19,10 @@ class Box:
         self.cpty = bottom_capacity
         self.index = 0
         self.old_index = 0
-        self.lx = 280 
+        self.lx = 260 
         self.ly = 290
         self.heights = [self.ly for i in range(self.cpty)]
-        self.widths = [290, 326, 361]
+        self.widths = [self.lx for i in range(self.cpty)]
         self.items_added = {}
         self.to_resolve = False
         self.num_items = 0
@@ -31,14 +31,19 @@ class Box:
         self.items_added[item.name] = self.index%self.cpty
         self.num_items+=1
         if self.index < self.cpty:
-            x = self.widths[self.index%self.cpty]
+            x = self.widths[self.index%self.cpty] 
             y = self.ly - item.height 
             self.heights[self.index%self.cpty] = y
+            if self.index+1 < self.cpty:
+                self.widths[(self.index+1)%self.cpty] = x+ item.width
+            
+
 
         else:
             x = self.widths[self.index%self.cpty]
             y = self.heights[self.index%self.cpty] - item.height
             self.heights[self.index%self.cpty] = y
+            self.widths[(self.index+1)%self.cpty] = x+ item.width
         self.index += 1
         if self.to_resolve:
             self.index = copy.deepcopy(self.old_index)
@@ -72,6 +77,7 @@ class Grocery_item:
         self.item_at_right = None
         self.item_on_top = None
         self.item_on_bottom = None
+        self.inbox = False
         self.on_table = False
         self.on_clutter_or_table = False
         self.onsomething = False
@@ -90,6 +96,9 @@ class Grocery_item:
 
 class environment:
     def __init__(self, uncertain="low", declutter=False, order=0):
+        self.window_width = 1000
+        self.window_height = 480
+
         self.table = Grocery_item(150,300,'assets/table.jpg',419,144,"table",0,'heavy')
         self.pepsi = Grocery_item(10, 400,'assets/pepsi.jpg',26,49,"pepsi",200,'medium')
         self.nutella = Grocery_item(15, 400,'assets/nutella.jpg',26,37,"nutella",250,'medium')
@@ -109,7 +118,8 @@ class environment:
         self.logo = Grocery_item(0,0, 'assets/4progress.png',535,78,"logo",0,'heavy')
         self.perceived = None
         self.false_positive_detections = False
-        self.box = Box(3)
+        self.box = Box(5)
+        self.planning_time = 0
 
         self.uncertainty = uncertain 
         self.declutter = declutter
@@ -198,7 +208,8 @@ class environment:
         self.current_action = "Action: (pick-up-from-on nutella bleach)"
         self.certainty_level = "Uncertainty Level: "+uncertain
         self.clutter_strategy = "Clutter Strategy: Declutter first" if declutter else "Clutter Strategy: Optimistic"
-        self.win = pygame.display.set_mode((700,480))
+        
+        self.win = pygame.display.set_mode((self.window_width,self.window_height))
         # self.populate_belief_space()
         self.start_time = time.time()
         self.initialize_clutter()   
@@ -255,14 +266,28 @@ class environment:
     def display_belief_space(self):
         ix = 410+30
         iy = 200+30
-        self.display_text('GroundTruth --> Belief',110,150,12)
+        self.display_text('GroundTruth --> Belief',200,150,12)
         y=96
-        for true_state in self.belief_space:
+
+        d = self.belief_space
+        d1 = dict(d.items()[len(d)/2:])
+        d2 = dict(d.items()[:len(d)/2])
+
+        for true_state in d1:
+            # print(d1)
             ts = true_state
             bf = self.belief_space[true_state]['belief']
             self.display_icon(self.items[ts].body, ix+160, iy+y)
             self.display_icon(self.items[bf].body, ix+160+50, iy+y)
             y+=30
+
+        for true_state in d2:
+            ts = true_state
+            bf = self.belief_space[true_state]['belief']
+            self.display_icon(self.items[ts].body, ix+100+160, iy+y)
+            self.display_icon(self.items[bf].body, ix+160+100+50, iy+y)
+            y+=30
+
 
 
 
@@ -393,35 +418,52 @@ class environment:
             self.coke.on_clutter_or_table = True
             self.nutella.on_clutter_or_table = True
 
+        elif choice == 4:
+            self.milk.item_on_top = "bleach"
+            self.bleach.item_on_top = "oreo"
+            self.milk.on_clutter_or_table = True
+            self.milk.item_at_right = "tangerine"
+            self.tangerine.item_on_top = "lysol"
+            self.lysol.item_on_top = "pepsi"
+            self.tangerine.on_clutter_or_table = True 
+            self.tangerine.item_at_right = "ambrosia"
+            self.ambrosia.on_clutter_or_table = True 
+            self.ambrosia.item_on_top = "cereal"
+            self.cereal.item_on_top = "coke"
+            self.ambrosia.item_at_right = "banana"
+            self.banana.on_clutter_or_table = True 
+            self.banana.item_on_top = "nutella"
+            self.nutella.item_on_top = "lipton"
+
         self.draw_init_clutter(choice)
 
 
     def draw_init_clutter(self, choice):
         if choice == 0:
             self.lipton.x = 10
-            self.lipton.y = 480-self.lipton.height
+            self.lipton.y = self.window_height-self.lipton.height
             self.milk.x = 10 
-            self.milk.y = 480-self.lipton.height-self.milk.height
+            self.milk.y = self.window_height-self.lipton.height-self.milk.height
             self.banana.x = 10
-            self.banana.y = 480-self.lipton.height-self.milk.height - self.banana.height
+            self.banana.y = self.window_height-self.lipton.height-self.milk.height - self.banana.height
             self.bleach.x = 10+self.lipton.width
-            self.bleach.y = 480-self.bleach.height
+            self.bleach.y = self.window_height-self.bleach.height
             self.coke.x = 10+self.lipton.width+self.bleach.width
-            self.coke.y = 480-self.coke.height
+            self.coke.y = self.window_height-self.coke.height
             self.pepsi.x = 10+self.milk.width
-            self.pepsi.y = 480-self.bleach.height-self.pepsi.height
+            self.pepsi.y = self.window_height-self.bleach.height-self.pepsi.height
             self.cereal.x = 10+self.banana.width
-            self.cereal.y = 480-self.bleach.height-self.pepsi.height-self.cereal.height
+            self.cereal.y = self.window_height-self.bleach.height-self.pepsi.height-self.cereal.height
             self.nutella.x = 10+self.milk.width+self.pepsi.width
-            self.nutella.y = 480 - self.coke.height-self.nutella.height
+            self.nutella.y = self.window_height - self.coke.height-self.nutella.height
             self.lysol.x = 10+self.banana.width+self.cereal.width
-            self.lysol.y = 480 - self.coke.height-self.nutella.height-self.lysol.height 
+            self.lysol.y = self.window_height - self.coke.height-self.nutella.height-self.lysol.height 
             self.tangerine.x = 10+self.lipton.width+self.bleach.width+self.coke.width
-            self.tangerine.y = 480-self.tangerine.height
+            self.tangerine.y = self.window_height-self.tangerine.height
             self.oreo.x = 10+self.milk.width+self.pepsi.width+self.nutella.width 
-            self.oreo.y = 480-self.tangerine.height-self.oreo.height 
+            self.oreo.y = self.window_height-self.tangerine.height-self.oreo.height 
             self.ambrosia.x = 10+self.banana.width+self.cereal.width+self.lysol.width 
-            self.ambrosia.y = 480-self.tangerine.height-self.oreo.height-self.ambrosia.height
+            self.ambrosia.y = self.window_height-self.tangerine.height-self.oreo.height-self.ambrosia.height
 
         elif choice ==1:
             self.coke.x = 10
@@ -437,18 +479,18 @@ class environment:
             self.oreo.x = 10+self.tangerine.width+self.nutella.width+self.milk.width
             self.cereal.x = 10+self.banana.width+self.ambrosia.width+self.lysol.width
 
-            self.coke.y = 480-self.coke.height 
-            self.tangerine.y = 480-self.coke.height-self.tangerine.height
-            self.banana.y = 480-self.coke.height-self.tangerine.height-self.banana.height 
-            self.lipton.y = 480-self.lipton.height 
-            self.bleach.y = 480-self.bleach.height 
-            self.milk.y = 480-self.bleach.height-self.milk.height
-            self.lysol.y = 480-self.bleach.height-self.milk.height-self.lysol.height
-            self.pepsi.y = 480-self.pepsi.height 
-            self.oreo.y = 480-self.pepsi.height - self.oreo.height
-            self.cereal.y = 480-self.pepsi.height - self.oreo.height-self.cereal.height
-            self.nutella.y = 480-self.lipton.height-self.nutella.height
-            self.ambrosia.y = 480-self.lipton.height-self.nutella.height-self.ambrosia.height
+            self.coke.y = self.window_height-self.coke.height 
+            self.tangerine.y = self.window_height-self.coke.height-self.tangerine.height
+            self.banana.y = self.window_height-self.coke.height-self.tangerine.height-self.banana.height 
+            self.lipton.y = self.window_height-self.lipton.height 
+            self.bleach.y = self.window_height-self.bleach.height 
+            self.milk.y = self.window_height-self.bleach.height-self.milk.height
+            self.lysol.y = self.window_height-self.bleach.height-self.milk.height-self.lysol.height
+            self.pepsi.y = self.window_height-self.pepsi.height 
+            self.oreo.y = self.window_height-self.pepsi.height - self.oreo.height
+            self.cereal.y = self.window_height-self.pepsi.height - self.oreo.height-self.cereal.height
+            self.nutella.y = self.window_height-self.lipton.height-self.nutella.height
+            self.ambrosia.y = self.window_height-self.lipton.height-self.nutella.height-self.ambrosia.height
 
 
         elif choice == 2:
@@ -465,18 +507,18 @@ class environment:
             self.bleach.x = 10+self.milk.width
             self.banana.x = 10+self.milk.width
 
-            self.nutella.y = 480-self.nutella.height 
-            self.tangerine.y = 480-self.nutella.height-self.tangerine.height
-            self.milk.y = 480-self.nutella.height-self.tangerine.height-self.milk.height
-            self.lipton.y = 480-self.lipton.height
-            self.pepsi.y = 480-self.pepsi.height 
-            self.coke.y = 480-self.lipton.height-self.coke.height 
-            self.bleach.y = 480-self.lipton.height-self.coke.height-self.bleach.height
+            self.nutella.y = self.window_height-self.nutella.height 
+            self.tangerine.y = self.window_height-self.nutella.height-self.tangerine.height
+            self.milk.y = self.window_height-self.nutella.height-self.tangerine.height-self.milk.height
+            self.lipton.y = self.window_height-self.lipton.height
+            self.pepsi.y = self.window_height-self.pepsi.height 
+            self.coke.y = self.window_height-self.lipton.height-self.coke.height 
+            self.bleach.y = self.window_height-self.lipton.height-self.coke.height-self.bleach.height
             self.banana.y = self.bleach.y - self.banana.height
             self.lysol.y = self.pepsi.y-self.lysol.height
-            self.cereal.y = 480-self.cereal.height
+            self.cereal.y = self.window_height-self.cereal.height
             self.ambrosia.y = self.cereal.y-self.ambrosia.height
-            self.oreo.y = 480-self.oreo.height
+            self.oreo.y = self.window_height-self.oreo.height
 
         elif choice == 3:
             self.lipton.x = 10
@@ -492,18 +534,46 @@ class environment:
             self.cereal.x = self.ambrosia.x+self.cereal.width
             self.banana.x = self.cereal.x
 
-            self.lipton.y = 480 - self.lipton.height
-            self.coke.y = 480-self.coke.height
-            self.nutella.y = 480-self.nutella.height
-            self.lysol.y = 480-self.nutella.height-self.lysol.height
-            self.ambrosia.y = 480-self.ambrosia.height
-            self.cereal.y = 480-self.cereal.height
-            self.banana.y = 480-self.cereal.height-self.banana.height
-            self.pepsi.y = 480 - self.lipton.height-self.pepsi.height 
-            self.bleach.y = 480-self.coke.height - self.bleach.height
-            self.tangerine.y = 480-self.coke.height - self.bleach.height-self.tangerine.height
+            self.lipton.y = self.window_height - self.lipton.height
+            self.coke.y = self.window_height-self.coke.height
+            self.nutella.y = self.window_height-self.nutella.height
+            self.lysol.y = self.window_height-self.nutella.height-self.lysol.height
+            self.ambrosia.y = self.window_height-self.ambrosia.height
+            self.cereal.y = self.window_height-self.cereal.height
+            self.banana.y = self.window_height-self.cereal.height-self.banana.height
+            self.pepsi.y = self.window_height - self.lipton.height-self.pepsi.height 
+            self.bleach.y = self.window_height-self.coke.height - self.bleach.height
+            self.tangerine.y = self.window_height-self.coke.height - self.bleach.height-self.tangerine.height
             self.oreo.y = self.pepsi.y - self.oreo.height 
             self.milk.y = self.oreo.y - self.milk.height 
+
+        elif choice == 4:
+            self.milk.x = 10
+            self.tangerine.x = self.milk.x + self.milk.width 
+            self.ambrosia.x = self.tangerine.x + self.tangerine.width
+            self.banana.x =self.ambrosia.x + self.ambrosia.width
+            self.bleach.x = 10
+            self.lysol.x = self.bleach.x + self.bleach.width
+            self.cereal.x = self.lysol.x + self.lysol.width
+            self.nutella.x = self.cereal.x + self.cereal.width
+            self.oreo.x = 10
+            self.pepsi.x = self.oreo.x + self.oreo.width 
+            self.coke.x = self.pepsi.x + self.pepsi.width 
+            self.lipton.x = self.coke.x + self.coke.width 
+
+            self.milk.y = self.window_height - self.milk.height 
+            self.bleach.y = self.milk.y - self.bleach.height 
+            self.oreo.y = self.bleach.y - self.oreo.height 
+            self.tangerine.y = self.window_height - self.tangerine.height 
+            self.lysol.y = self.tangerine.y - self.lysol.height 
+            self.pepsi.y = self.lysol.y - self.pepsi.height 
+            self.ambrosia.y = self.window_height - self.ambrosia.height 
+            self.cereal.y = self.ambrosia.y - self.cereal.height 
+            self.coke.y = self.cereal.y - self.coke.height 
+            self.banana.y = self.window_height - self.banana.height 
+            self.nutella.y = self.banana.y - self.nutella.height 
+            self.lipton.y = self.nutella.y - self.lipton.height
+
 
 
     def display_text(self,textcontent,w,h,font):
@@ -515,12 +585,12 @@ class environment:
 
     def redrawGameWindow(self):
         self.win.fill((255,255,255))
-        self.win.blit(pygame.image.load('assets/box.jpg'), (280,160))
-        self.win.blit(pygame.image.load('assets/box.jpg'), (390,160))
-        self.win.blit(pygame.image.load('assets/box_lat.jpg'), (290,290))
+        self.win.blit(pygame.image.load('assets/box.jpg'), (250,160))
+        self.win.blit(pygame.image.load('assets/box.jpg'), (493,160))
+        self.win.blit(pygame.transform.scale(pygame.image.load('assets/box_lat.png'),(243,11)), (260,290))
         self.win.blit(self.logo.body, (self.logo.x, self.logo.y))
         self.win.blit(pygame.image.load('assets/rt.jpg'), (550,10))
-        self.win.blit(self.table.body,(self.table.x, self.table.y))
+        self.win.blit(self.table.body,(self.table.x+20, self.table.y))
 
         self.win.blit(self.pepsi.body,(self.pepsi.x, self.pepsi.y))
         self.win.blit(self.nutella.body,(self.nutella.x, self.nutella.y))
@@ -536,13 +606,14 @@ class environment:
         self.win.blit(self.milk.body,(self.milk.x, self.milk.y))
 
         self.win.blit(self.gripper.body,(self.gripper.x, self.gripper.y))
-        self.display_text(self.current_action,0,0,14)
+        
+        self.display_text(self.current_action,0,200,14)
         self.duration = int(time.time()-self.start_time)
         self.duration_in_sec = "Duration: "+str(self.duration)+ " seconds"
-        self.display_text(self.duration_in_sec, 20,0,14)
-        self.display_text("Uncertainty Level: "+self.uncertainty, 40,0,14)
-        self.display_text(self.clutter_strategy, 60,0,14)
-        self.display_belief_space()
+        self.display_text(self.duration_in_sec, 20,200,14)
+        self.display_text("Uncertainty Level: "+self.uncertainty, 40,200,14)
+        self.display_text(self.clutter_strategy, 60,200,14)
+        # self.display_belief_space()
 
         if self.perceived is not None:
             self.win.blit(pygame.transform.scale(self.perceived.body,(15,30)),(585,20))        
@@ -943,6 +1014,7 @@ class environment:
             return
         self.gripper.holding = None
         bot.item_on_top = topitem
+        top.inbox = True
 
         orig_x = self.gripper.x
         orig_y = self.gripper.y
@@ -1000,6 +1072,7 @@ class environment:
         self.gripper.holding = None
         top.on_table = True
         top.onsomething=True
+        top.inbox = True
 
         bot = self.items['table']
         orig_x = self.gripper.x
@@ -1300,22 +1373,34 @@ class environment:
 
 
     def test_box(self):
-        box = Box(3)
-        x,y = box.add_item(self.coke)
-        self.pick_up('coke')
-        self.put_in_box('coke', x, y)
-        x2,y2 = box.add_item(self.pepsi)
+        box = Box(5)
+        x,y = box.add_item(self.banana)
+        self.pick_up('banana')
+        self.put_in_box('banana', x, y)
+        x2,y2 = box.add_item(self.cereal)
+        self.pick_up('cereal')
+        self.put_in_box('cereal', x2, y2)
+        x3,y3 = box.add_item(self.lysol)
+        self.pick_up('lysol')
+        self.put_in_box('lysol', x3, y3)
+        # self.pick_up('banana')
+        # box.remove_item(self.banana)
+        # self.drop_in_clutter('banana')
+        x4,y4 = box.add_item(self.ambrosia)
+        self.pick_up('ambrosia')
+        self.put_in_box('ambrosia', x4, y4)
+        x5,y5 = box.add_item(self.milk)
+        self.pick_up('milk')
+        self.put_in_box('milk', x5, y5)
+        x5,y5 = box.add_item(self.pepsi)
         self.pick_up('pepsi')
-        self.put_in_box('pepsi', x2, y2)
-        x3,y3 = box.add_item(self.nutella)
+        self.put_in_box('pepsi', x5, y5)
+        x5,y5 = box.add_item(self.nutella)
         self.pick_up('nutella')
-        self.put_in_box('nutella', x3, y3)
-        self.pick_up('coke')
-        box.remove_item(self.coke)
-        self.drop_in_clutter('coke')
-        x4,y4 = box.add_item(self.bleach)
-        self.pick_up('bleach')
-        self.put_in_box('bleach', x4, y4)
+        self.put_in_box('nutella', x5, y5)
+        x5,y5 = box.add_item(self.oreo)
+        self.pick_up('oreo')
+        self.put_in_box('oreo', x5, y5)
         x5,y5 = box.add_item(self.lipton)
         self.pick_up('lipton')
         self.put_in_box('lipton', x5, y5)
@@ -1474,16 +1559,26 @@ class environment:
                                                         problem_path, alias)
             empty_clutter = self.update_items_left()
 
+    def perform_optimistic(self):
+        start = time.time()
+        self.perform_optimistic_belief_grocery_packing()
+        end = time.time()
+        total = end-start
+        print('PLANNING TIME FOR OPTIMISTIC: '+str(self.planning_time))
+        print('EXECUTION TIME FOR OPTIMISTIC: '+str(total - self.planning_time))
+
 
     def perform_declutter_belief_grocery_packing(self):
+        start = time.time()
         self.perform_declutter()
         self.perform_optimistic_belief_grocery_packing()
+        end = time.time()
+        total = end - start
+        print('PLANNING TIME FOR DECLUTTER: '+str(self.planning_time))
+        print('EXECUTION TIME FOR DECLUTTER: '+str(total - self.planning_time))
 
 
-    def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias):
-        f = Fast_Downward()
-        plan = f.plan(domain_path, problem_path)
-
+    def execute_plan(self, plan, alias):
         if plan is None or len(plan) == 0:
             print('NO  VALID PLAN FOUND')
             return
@@ -1494,6 +1589,13 @@ class environment:
             self.current_action = "Action: "+str(action)
             self.belief_execute_action(action, alias)
 
+
+    def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias):
+        f = Fast_Downward()
+        start = time.time()
+        plan = f.plan(domain_path, problem_path)
+        self.planning_time += time.time()-start
+        self.execute_plan(plan, alias)
 
     def belief_execute_action(self, action, alias):
         if action[0] == 'pick-from-clutter':
@@ -1543,6 +1645,71 @@ class environment:
             self.put_on(action[1], action[2])
 
 
+    def get_num_declutter_actions(self):
+        num_surface = 0
+        surface_items=[]
+        for item in self.objects_list:
+            if not item.inbox:
+                name = item.name 
+                if item.item_on_top == None:
+                    for it in self.objects_list:
+                        if it.item_on_top == name:
+                            num_surface+=1
+                            surface_items.append(name)
+                            break
+        return 2*num_surface, surface_items
+
+
+    def declutter_surface_items(self, itemslist):
+        for name in itemslist:
+            self.pick_up(name)
+            self.drop_in_clutter(name)
+
+
+    def perform_dynamic_grocery_packing(self):
+        st = time.time()
+        inboxlist, topfreelist, mediumlist, heavylist = \
+                    self.select_perceived_objects_and_classify_weights()
+        problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
+                                            mediumlist, heavylist)
+        self.plan_and_run_belief_space_planning(self.domain_path, 
+                                                        problem_path, alias)
+
+        empty_clutter = self.update_items_left()
+
+        while not empty_clutter:
+            inboxlist, topfreelist, mediumlist, heavylist = \
+                    self.select_perceived_objects_and_classify_weights()
+            problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
+                                                mediumlist, heavylist)
+            f = Fast_Downward()
+            start = time.time()
+            plan = f.plan(self.domain_path, problem_path)
+            self.planning_time += time.time() - start
+
+            N_o = len(plan)
+            N_d, surface_items = self.get_num_declutter_actions()
+
+            if (N_o < N_d) or N_d<6:
+                print('EXECUTING OPTIMISTIC')
+                self.execute_plan(plan, alias)
+
+            else:
+                print('PERFORMING SURFACE DECLUTTER: '+str(N_d)+'since opt is: '+str(N_o))
+                self.declutter_surface_items(surface_items)
+
+            
+            empty_clutter = self.update_items_left()
+        end = time.time()
+        total = end-st
+        print('PLANNING TIME FOR DYNAMIC: '+str(self.planning_time))
+        print('EXECUTION TIME FOR DYNAMIC: '+str(total-self.planning_time))
+
+
+
+
+
+
 
 
 
@@ -1588,9 +1755,11 @@ if __name__ == '__main__':
         order = np.random.randint(4)#int(args[3])
         g = environment(uncertain=uncertainty, 
                         declutter=clutter_strategy, 
-                        order=order)
+                        order=4)
+        # g.test_box()
         # g.perform_declutter_belief_grocery_packing()
-        g.perform_optimistic_belief_grocery_packing()
+        # g.perform_optimistic()
+        g.perform_dynamic_grocery_packing()
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
         # print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
