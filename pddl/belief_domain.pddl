@@ -41,6 +41,7 @@
             :effect
             (and (holding ?x)
                 (not (handempty))
+                (not (on ?x ?y))
                 (not (inbox ?x))
                 (not (inclutter ?x))
                 (not (topfree ?x))

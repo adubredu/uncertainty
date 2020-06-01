@@ -5,5 +5,5 @@
 (pick-from-clutter m2)
 (put-in-box m2)
 (pick-from-clutter m3)
-(put-on m3 m0)
+(put-in-box m3)
 ; cost = 8 (unit cost)

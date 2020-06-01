@@ -2,4 +2,4 @@
 (:domain GROCERY) 
  (:objects m1 m3 m2 m0 - item)
 (:init (handempty) (topfree m0) (inclutter m0) (topfree m1) (inclutter m1) (topfree m2) (inclutter m2) (topfree m3) (inclutter m3) )
-(:goal (and  (and (inbox m0) (inbox m1) (inbox m2) (or (on m3 m0) (on m3 m1) (on m3 m2) ) ))))
+(:goal (and (inbox m0) (inbox m1) (inbox m2) (inbox m3) )))
