@@ -208,7 +208,7 @@ class environment:
         self.win = pygame.display.set_mode((self.window_width,self.window_height))
         # self.populate_belief_space()
         self.start_time = time.time()
-        # self.initialize_clutter()   
+        self.initialize_clutter()   
         
         self.rate = 120
 
@@ -1479,58 +1479,37 @@ class environment:
             
         mlen=len(mediumlist)
         hlen=len(heavylist)
-        stop = hlen
-        if mlen > 1:
-            goal += " (and "
-        if hlen > 2:
+        stop = self.box.cpty - hlen
+
+
+        if mlen <= hlen or hlen == 0:
             for m in mediumlist[:stop]:
+                goal += "(inbox "+alias[m]+") "
+            for m in mediumlist[stop:]:
+                goal+="(or "
+                for mm in heavylist+mediumlist[:stop]:
+                    goal += "(on "+alias[m]+" "+alias[mm]+") "
+                goal+=") "
+            goal +=")))"
+
+        else:
+            rem = mlen - hlen
+            for m in mediumlist[:hlen]:
                 goal += "(or "
                 for h in heavylist:
                     goal += "(on "+alias[m]+" "+alias[h]+") "
-                goal +=") "
-            # goal+=")"
-            for m in mediumlist[stop:]:
-                goal+="(or "
-                for mm in mediumlist[:stop]:
-                    goal += "(on "+alias[m]+" "+alias[mm]+") "
                 goal+=") "
-            goal +="))))"
 
-        elif hlen == 1:
-            for m in mediumlist[:stop+1]:
-                h = heavylist[0]
-                goal += "(inbox "+alias[m]+") "
-            for m in mediumlist[stop+1:]:
-                goal+="(or "
-                for mm in heavylist+mediumlist[:stop+1]:
+            for m in mediumlist[hlen:]:
+                goal += "(or "
+                for mm in mediumlist[:hlen]:
                     goal += "(on "+alias[m]+" "+alias[mm]+") "
                 goal+=") "
-            goal +="))))"
+            goal +=")))"
 
-        elif hlen == 2:
-            for m in mediumlist[:stop-1]:
-                goal += "(inbox "+alias[m]+") "
-            for m in mediumlist[stop-1:]:
-                goal+="(or "
-                for mm in heavylist+mediumlist[:stop-1]:
-                    goal += "(on "+alias[m]+" "+alias[mm]+") "
-                goal+=") "
-            goal +="))))"
-
-        else:
-            for m in mediumlist[:3]:
-                goal += "(inbox "+alias[m]+") "
-            for m in mediumlist[3:]:
-                goal+="(or "
-                for mm in mediumlist[:3]:
-                    goal += "(on "+alias[m]+" "+alias[mm]+") "
-                goal+=") "
-            goal +="))))"
 
         if mlen < 2:
             goal = goal[:-1]
-
-
 
         definition = "(define (problem PACKED-GROCERY) \n(:domain GROCERY) \n (:objects "
         for al in alias.values():
@@ -1758,9 +1737,9 @@ if __name__ == '__main__':
         g = environment(uncertain=uncertainty, 
                         declutter=clutter_strategy, 
                         order=4)
-        g.test_box()
+        # g.test_box()
         # g.perform_declutter_belief_grocery_packing()
-        # g.perform_optimistic()
+        g.perform_optimistic()
         # g.perform_dynamic_grocery_packing()
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
