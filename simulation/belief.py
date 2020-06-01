@@ -22,7 +22,8 @@ class Box:
         self.lx = 260 
         self.ly = 290
         self.heights = [self.ly for i in range(self.cpty)]
-        self.widths = [self.lx for i in range(self.cpty)]
+        self.widths = [self.lx, self.lx+47, self.lx+2*47, self.lx+3*47, self.lx+4*47]
+        self.occupancy = [0 for i in range(self.cpty)]
         self.items_added = {}
         self.to_resolve = False
         self.num_items = 0
@@ -30,35 +31,30 @@ class Box:
     def add_item(self, item):
         self.items_added[item.name] = self.index%self.cpty
         self.num_items+=1
-        if self.index < self.cpty:
-            x = self.widths[self.index%self.cpty] 
+        xind = 99
+        for i in range(self.cpty):
+            if self.occupancy[i] == 0:
+                xind = i 
+                break
+        if xind != 99:
+            x = self.widths[xind]
             y = self.ly - item.height 
-            self.heights[self.index%self.cpty] = y
-            if self.index+1 < self.cpty:
-                self.widths[(self.index+1)%self.cpty] = x+ item.width
-            
-
-
+            self.heights[xind] = y
+            self.occupancy[xind] = 1
+            self.items_added[item.name] = xind
         else:
-            x = self.widths[self.index%self.cpty]
-            y = self.heights[self.index%self.cpty] - item.height
+            x = self.widths[self.index%self.cpty] 
+            y = self.heights[self.index%self.cpty]- item.height 
             self.heights[self.index%self.cpty] = y
-            self.widths[(self.index+1)%self.cpty] = x+ item.width
-        self.index += 1
-        if self.to_resolve:
-            self.index = copy.deepcopy(self.old_index)
-            self.to_resolve = False
-        return (x,y)
+            self.index +=1
+        return x,y
 
     def remove_item(self, item):
         if item.name in self.items_added:
-            self.old_index = copy.deepcopy(self.index)
-            self.index = self.items_added[item.name]
-            self.to_resolve = True
+            index = self.items_added[item.name]
+            self.occupancy[index] = 0
             self.items_added.pop(item.name)
             self.num_items-=1
-
-
 
 
 
@@ -112,7 +108,7 @@ class environment:
         self.lysol = Grocery_item(13, 400, 'assets/lysol.jpg',42,74,"lysol",520, 'heavy')
         self.milk = Grocery_item(13, 400, 'assets/milk.jpg',45,66,"milk",550, 'heavy')
         self.oreo = Grocery_item(13, 400, 'assets/oreo.jpg',28,17,"oreo",580, 'medium')
-        self.tangerine = Grocery_item(13, 400, 'assets/tangerine.jpg',49,39,"tangerine",610, 'heavy')
+        self.tangerine = Grocery_item(13, 400, 'assets/tangerine.jpg',49,39,"tangerine",610, 'medium')
 
         self.gripper = Grocery_item(350, 0,'assets/gripper.png',75,75,"gripper",0,'heavy')
         self.logo = Grocery_item(0,0, 'assets/4progress.png',535,78,"logo",0,'heavy')
@@ -212,7 +208,7 @@ class environment:
         self.win = pygame.display.set_mode((self.window_width,self.window_height))
         # self.populate_belief_space()
         self.start_time = time.time()
-        self.initialize_clutter()   
+        # self.initialize_clutter()   
         
         self.rate = 120
 
@@ -1390,6 +1386,12 @@ class environment:
         self.pick_up('ambrosia')
         self.put_in_box('ambrosia', x4, y4)
         x5,y5 = box.add_item(self.milk)
+        self.pick_up('banana')
+        box.remove_item(self.banana)
+        self.drop_in_clutter('banana')
+        self.pick_up('lysol')
+        box.remove_item(self.lysol)
+        self.drop_in_clutter('lysol')
         self.pick_up('milk')
         self.put_in_box('milk', x5, y5)
         x5,y5 = box.add_item(self.pepsi)
@@ -1756,10 +1758,10 @@ if __name__ == '__main__':
         g = environment(uncertain=uncertainty, 
                         declutter=clutter_strategy, 
                         order=4)
-        # g.test_box()
+        g.test_box()
         # g.perform_declutter_belief_grocery_packing()
         # g.perform_optimistic()
-        g.perform_dynamic_grocery_packing()
+        # g.perform_dynamic_grocery_packing()
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
         # print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
