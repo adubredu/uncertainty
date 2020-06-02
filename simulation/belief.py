@@ -44,7 +44,9 @@ class Box:
             self.items_added[item.name] = xind
         else:
             x = self.widths[self.index%self.cpty] 
-            y = self.heights[self.index%self.cpty]- item.height 
+            y = self.ly - item.height 
+            #uncomment to activate next height level putinbox
+            # y = self.heights[self.index%self.cpty]- item.height            
             self.heights[self.index%self.cpty] = y
             self.index +=1
         return x,y
@@ -1481,19 +1483,8 @@ class environment:
         hlen=len(heavylist)
         stop = self.box.cpty - hlen
 
+        if hlen == self.box.cpty and mlen > hlen:
 
-        if mlen <= hlen or hlen == 0:
-            for m in mediumlist[:stop]:
-                goal += "(inbox "+alias[m]+") "
-            for m in mediumlist[stop:]:
-                goal+="(or "
-                for mm in heavylist+mediumlist[:stop]:
-                    goal += "(on "+alias[m]+" "+alias[mm]+") "
-                goal+=") "
-            goal +=")))"
-
-        else:
-            rem = mlen - hlen
             for m in mediumlist[:hlen]:
                 goal += "(or "
                 for h in heavylist:
@@ -1503,6 +1494,16 @@ class environment:
             for m in mediumlist[hlen:]:
                 goal += "(or "
                 for mm in mediumlist[:hlen]:
+                    goal += "(on "+alias[m]+" "+alias[mm]+") "
+                goal+=") "
+            goal +=")))"
+
+        else:
+            for m in mediumlist[:stop]:
+                goal += "(inbox "+alias[m]+") "
+            for m in mediumlist[stop:]:
+                goal+="(or "
+                for mm in heavylist+mediumlist[:stop]:
                     goal += "(on "+alias[m]+" "+alias[mm]+") "
                 goal+=") "
             goal +=")))"
@@ -1739,8 +1740,9 @@ if __name__ == '__main__':
                         order=4)
         # g.test_box()
         # g.perform_declutter_belief_grocery_packing()
-        g.perform_optimistic()
-        # g.perform_dynamic_grocery_packing()
+        # g.perform_optimistic()
+        g.perform_dynamic_grocery_packing()
+        time.sleep(3)
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
         # print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
