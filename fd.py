@@ -20,7 +20,7 @@ class Fast_Downward:
 
             # Suboptimal
             'ff-astar': '--heuristic "h=ff(transform=adapt_costs(cost_type=NORMAL))" '
-                        '--search "astar(h,cost_type=NORMAL,max_time=180)"',
+                        '--search "astar(h,cost_type=NORMAL,max_time=300)"',
             'ff-eager': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
                         '--search "eager_greedy([h],max_time=%s,bound=%s)"',
             'ff-eager-pref': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
