@@ -105,7 +105,7 @@ class environment:
         self.bleach = Grocery_item(13, 400, 'assets/bleach.jpg',26,64,"bleach",400, 'heavy')
 
         self.ambrosia = Grocery_item(13, 400, 'assets/ambrosia.jpg',41,58,"ambrosia",430, 'heavy')
-        self.banana = Grocery_item(13, 400, 'assets/banana.jpg',70,58,"banana",460, 'heavy')
+        self.banana = Grocery_item(13, 400, 'assets/banana.jpg',32,32,"banana",460, 'medium')
         self.cereal = Grocery_item(13, 400, 'assets/cereal.jpg',30,48,"cereal",490, 'medium')
         self.lysol = Grocery_item(13, 400, 'assets/lysol.jpg',42,74,"lysol",520, 'heavy')
         self.milk = Grocery_item(13, 400, 'assets/milk.jpg',45,66,"milk",550, 'heavy')
@@ -118,6 +118,7 @@ class environment:
         self.false_positive_detections = False
         self.box = Box(5)
         self.planning_time = 0
+        self.should_declutter = False
 
         self.uncertainty = uncertain 
         self.declutter = declutter
@@ -160,18 +161,18 @@ class environment:
         }
 
         self.high_matrix = {
-                "pepsi":[0.25, 0.2,0.2,0.2,0.15,0,0,0,0,0,0,0],
-                "nutella":[0.2,0.25,0.2,0.2,0.15,0,0,0,0,0,0,0],
-                "coke":[0.2,0.2,0.25,0.15,0.2,0,0,0,0,0,0,0],
-                "lipton":[0.2,0.15,0.2,0.25,0.2,0,0,0,0,0,0,0],
-                "bleach":[0.2,0.2,0.2,0.15,0.25,0,0,0,0,0,0,0],
-                "ambrosia":[0.1,0.1,0.1,0.1,0,0.6,0,0,0,0,0,0],
-                "banana":[0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0,0],
-                "cereal":[0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0,0],
-                "lysol":[0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0,0],
-                "milk":[0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0,0],
-                "oreo":[0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6,0],
-                "tangerine":[0,0,0,0,0,0,0,0.1,0.1,0.1,0.1,0.6]
+                "pepsi":[0.12, 0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08],
+                "nutella":[0.08,0.12,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08],
+                "coke":[0.08,0.08,0.12,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08],
+                "lipton":[0.08,0.08,0.08,0.12,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08],
+                "bleach":[0.08,0.08,0.08,0.08,0.12,0.08,0.08,0.08,0.08,0.08,0.08,0.08],
+                "ambrosia":[0.08,0.08,0.08,0.08,0.08,0.12,0.08,0.08,0.08,0.08,0.08,0.08],
+                "banana":[0.08,0.08,0.08,0.08,0.08,0.08,0.12,0.08,0.08,0.08,0.08,0.08],
+                "cereal":[0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.12,0.08,0.08,0.08,0.08],
+                "lysol":[0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.12,0.08,0.08,0.08],
+                "milk":[0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.12,0.08,0.08],
+                "oreo":[0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.12,0.08],
+                "tangerine":[0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.08,0.12]
 
             }
 
@@ -294,6 +295,13 @@ class environment:
             self.declutter_before_clutter_planning()
         else:
             self.clutter_optimistic_planning()
+
+    def high_uncertainty_sample(self, object_name):
+        choice = np.random.choice(self.objects_list, size=1, 
+                p=self.high_matrix[object_name])
+        name = choice[0].name
+        return name
+
 
     def sample_object(self, object_name):
         if self.uncertainty == "low":
@@ -551,13 +559,13 @@ class environment:
             self.ambrosia.x = self.tangerine.x + self.tangerine.width
             self.banana.x =self.ambrosia.x + self.ambrosia.width
             self.bleach.x = 10
-            self.lysol.x = self.bleach.x + self.bleach.width
-            self.cereal.x = self.lysol.x + self.lysol.width
-            self.nutella.x = self.cereal.x + self.cereal.width
+            self.lysol.x = self.tangerine.x #self.bleach.x + self.bleach.width
+            self.cereal.x = self.ambrosia.x #self.lysol.x + self.lysol.width
+            self.nutella.x = self.banana.x #self.cereal.x + self.cereal.width
             self.oreo.x = 10
-            self.pepsi.x = self.oreo.x + self.oreo.width 
-            self.coke.x = self.pepsi.x + self.pepsi.width 
-            self.lipton.x = self.coke.x + self.coke.width 
+            self.pepsi.x = self.tangerine.x #self.oreo.x + self.oreo.width 
+            self.coke.x = self.ambrosia.x #self.pepsi.x + self.pepsi.width 
+            self.lipton.x = self.banana.x #self.coke.x + self.coke.width 
 
             self.milk.y = self.window_height - self.milk.height 
             self.bleach.y = self.milk.y - self.bleach.height 
@@ -918,6 +926,10 @@ class environment:
     def pick_motion(self, item):
         orig_x = self.gripper.x
         orig_y = self.gripper.y 
+        if self.should_declutter:
+            orig_x = 350; orig_y = 300;
+        else:
+            orig_x = 350; orig_y = 0;
         while math.fabs(item.x - (self.gripper.x+26)) > 0:
             if item.x - (self.gripper.x+26) > 0:
                 self.gripper.x += 1
@@ -1001,6 +1013,8 @@ class environment:
         self.gripper.holding = s_item.name
         self.pick_motion(s_item)
 
+
+    
 
         #put top on botton
     def put_on(self, topitem, bottomitem):
@@ -1501,16 +1515,21 @@ class environment:
         else:
             for m in mediumlist[:stop]:
                 goal += "(inbox "+alias[m]+") "
-            for m in mediumlist[stop:]:
+            for m in mediumlist[stop:stop+self.box.cpty]:
                 goal+="(or "
                 for mm in heavylist+mediumlist[:stop]:
+                    goal += "(on "+alias[m]+" "+alias[mm]+") "
+                goal+=") "
+            for m in mediumlist[stop+self.box.cpty:]:
+                goal += "(or "
+                for mm in mediumlist[stop:self.box.cpty]:
                     goal += "(on "+alias[m]+" "+alias[mm]+") "
                 goal+=") "
             goal +=")))"
 
 
-        if mlen < 2:
-            goal = goal[:-1]
+        # if mlen < 2:
+        #     goal = goal[:-1]
 
         definition = "(define (problem PACKED-GROCERY) \n(:domain GROCERY) \n (:objects "
         for al in alias.values():
@@ -1552,7 +1571,9 @@ class environment:
 
     def perform_declutter_belief_grocery_packing(self):
         start = time.time()
+        self.should_declutter = True
         self.perform_declutter()
+        self.should_declutter = False
         self.perform_optimistic_belief_grocery_packing()
         end = time.time()
         total = end - start
@@ -1642,20 +1663,60 @@ class environment:
         return 2*num_surface, surface_items
 
 
+    def estimate_clutter_content(self, surface_items, inbox_items):
+        sigma = 3
+        N_o = self.items_in_clutter - (len(surface_items)+len(inbox_items))
+        N_o_s = np.random.randint(low=N_o-sigma, high=N_o+1)
+        N_o_s = np.abs(N_o_s)
+        all_items = [x.name for x in self.objects_list]
+        occluded_items = [x for x in all_items if (x not in surface_items) and (x not in inbox_items)]
+        if len(occluded_items) == 0 or N_o_s == 0:
+            return 0.0,1.0
+        prob_occluded_items = np.random.choice(occluded_items, size=N_o_s, replace=False)
+
+        #one-time weighted sample. To change sampling strategy, alter 
+        #the function: self.high_uncertainty_sample(name)
+        sampled_occluded_items = [self.high_uncertainty_sample(object_name) \
+                                 for object_name in prob_occluded_items]
+
+        num_heavy = 0; num_light = 0;
+        for it in sampled_occluded_items:
+            if self.items[it].mass == 'heavy':
+                num_heavy +=1
+            else:
+                num_light += 1
+        #finding percentage of heavy and light
+        # print("NUM HEAVY: "+str(num_heavy)+" over "+str(N_o_s))
+        oh = (float(num_heavy)/float(N_o_s))
+
+        suh = 0
+        print('surface items:')
+        print(surface_items)
+        for it in surface_items:
+            if self.items[it].mass == 'heavy':
+                suh +=1
+
+        print("sNUM HEAVY: "+str(suh)+" over "+str(len(surface_items)))
+        sh = float(suh)/float(len(surface_items))
+        return oh, sh
+
+
     def declutter_surface_items(self, itemslist):
+        self.should_declutter = True
         for name in itemslist:
             self.pick_up(name)
             self.drop_in_clutter(name)
+        self.should_declutter = False
 
 
     def perform_dynamic_grocery_packing(self):
         st = time.time()
-        inboxlist, topfreelist, mediumlist, heavylist = \
-                    self.select_perceived_objects_and_classify_weights()
-        problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
-                                            mediumlist, heavylist)
-        self.plan_and_run_belief_space_planning(self.domain_path, 
-                                                        problem_path, alias)
+        # inboxlist, topfreelist, mediumlist, heavylist = \
+        #             self.select_perceived_objects_and_classify_weights()
+        # problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
+        #                                     mediumlist, heavylist)
+        # self.plan_and_run_belief_space_planning(self.domain_path, 
+                                                        # problem_path, alias)
 
         empty_clutter = self.update_items_left()
 
@@ -1664,20 +1725,22 @@ class environment:
                     self.select_perceived_objects_and_classify_weights()
             problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
                                                 mediumlist, heavylist)
-            f = Fast_Downward()
-            start = time.time()
-            plan = f.plan(self.domain_path, problem_path)
-            self.planning_time += time.time() - start
+            
+            unoccluded_items = topfreelist
+            oh, sh = self.estimate_clutter_content(unoccluded_items,inboxlist)
+            print("probs are "+str(oh)+" "+str(sh))
 
-            N_o = len(plan)
-            N_d, surface_items = self.get_num_declutter_actions()
-
-            if (N_o < N_d) or N_d<6:
-                print('EXECUTING OPTIMISTIC')
+            if sh > oh:
+                print('\nPERFORMING OPT\n')
+                
+                f = Fast_Downward()
+                start = time.time()
+                plan = f.plan(self.domain_path, problem_path)
+                self.planning_time += time.time() - start
                 self.execute_plan(plan, alias)
-
             else:
-                print('PERFORMING SURFACE DECLUTTER: '+str(N_d)+'since opt is: '+str(N_o))
+                print(('\nPERFORMING DECLUTTER\n'))
+                N_d, surface_items = self.get_num_declutter_actions()
                 self.declutter_surface_items(surface_items)
 
             
@@ -1739,9 +1802,9 @@ if __name__ == '__main__':
                         declutter=clutter_strategy, 
                         order=4)
         # g.test_box()
-        # g.perform_declutter_belief_grocery_packing()
+        g.perform_declutter_belief_grocery_packing()
         # g.perform_optimistic()
-        g.perform_dynamic_grocery_packing()
+        # g.perform_dynamic_grocery_packing()
         time.sleep(3)
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
