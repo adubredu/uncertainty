@@ -1,5 +1,5 @@
 (define (problem PACKED-GROCERY) 
 (:domain GROCERY) 
- (:objects h2 m6 m5 m7 m2 m1 m4 h1 m0 h0 m3 h3 - item)
-(:init (handempty) (topfree m0) (inclutter m0) (topfree m1) (inclutter m1) (topfree m2) (inclutter m2) (topfree m3) (inclutter m3) (topfree h0) (inclutter h0) (topfree h1) (inclutter h1) (topfree m4) (inclutter m4) (topfree m5) (inclutter m5) (topfree h2) (inclutter h2) (topfree h3) (inclutter h3) (topfree m6) (inclutter m6) (topfree m7) (inclutter m7) )
+ (:objects h1 m5 m4 m6 m2 m1 m7 h3 m0 h0 m3 h2 - item)
+(:init (handempty) (inbox m0) (on m5 m0) (inbox m1) (topfree m1) (inbox m2) (on m4 m2) (inbox m3) (topfree m3) (inbox h0) (on m1 h0) (inbox m4) (topfree m4) (inbox h1) (on m6 h1) (inbox h2) (on m3 h2) (inbox m5) (topfree m5) (inbox m6) (topfree m6) (topfree h3) (inclutter h3) (topfree m7) (inclutter m7) )
 (:goal (and (inbox h0) (inbox h1) (inbox h2) (inbox h3) (inbox m0) (or (on m1 h0) (on m1 h1) (on m1 h2) (on m1 h3) (on m1 m0) ) (or (on m2 h0) (on m2 h1) (on m2 h2) (on m2 h3) (on m2 m0) ) (or (on m3 h0) (on m3 h1) (on m3 h2) (on m3 h3) (on m3 m0) ) (or (on m4 h0) (on m4 h1) (on m4 h2) (on m4 h3) (on m4 m0) ) (or (on m5 h0) (on m5 h1) (on m5 h2) (on m5 h3) (on m5 m0) ) (or (on m6 m1) (on m6 m2) (on m6 m3) (on m6 m4) ) (or (on m7 m1) (on m7 m2) (on m7 m3) (on m7 m4) ) )))
