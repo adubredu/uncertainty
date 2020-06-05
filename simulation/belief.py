@@ -983,13 +983,13 @@ class environment:
             if fp == 10:  #5% probability of false positive localization
                 self.missed_pick()
                 print("false detection")
-                return
+                return False
 
         s_item = self.items[self.belief_space[item]['belief']]
         self.perceived = self.items[s_item.name]
         if not (s_item.item_on_top == None):
             print("won't pick "+s_item.name)
-            return
+            return False
         
         self.box.remove_item(s_item)
         s_item.item_on_bottom=None
@@ -1014,6 +1014,7 @@ class environment:
                 it.item_at_left = None
         self.gripper.holding = s_item.name
         self.pick_motion(s_item)
+        return True
 
 
     
@@ -1021,11 +1022,11 @@ class environment:
         #put top on botton
     def put_on(self, topitem, bottomitem):
         if topitem == bottomitem:
-            return
+            return False
         top = self.items[topitem]
         bot = self.items[bottomitem]
         if (not bot.onsomething) and (bot.item_on_bottom == None) :
-            return
+            return False
         self.gripper.holding = None
         bot.item_on_top = topitem
         top.inbox = True
@@ -1077,12 +1078,13 @@ class environment:
             self.clock.tick(self.rate)
         top.item_on_bottom = bot.name
         top.onsomething=True
+        return True
 
 
     def put_in_box(self, topitem, gx, gy):
         top = self.items[topitem]
         if not (self.gripper.holding == topitem):
-            return
+            return False
         self.gripper.holding = None
         top.on_table = True
         top.onsomething=True
@@ -1134,12 +1136,13 @@ class environment:
                 self.gripper.x -= 1
             self.redrawGameWindow()
             self.clock.tick(self.rate)
+        return True
 
 
     def drop_in_clutter(self, topitem):
         top = self.items[topitem]
         if not (self.gripper.holding == topitem):
-            return
+            return False
         self.gripper.holding = None
         top.item_on_bottom=None
         top.item_on_top=None
@@ -1158,8 +1161,6 @@ class environment:
                 it.item_at_right = None
             elif it.item_at_left == topitem:
                 it.item_at_left = None
-
-
         
         orig_x = self.gripper.x
         orig_y = self.gripper.y
@@ -1205,6 +1206,7 @@ class environment:
                 self.gripper.x -= 1
             self.redrawGameWindow()
             self.clock.tick(self.rate)
+        return True
 
 
     def put_left(self, focusitem, staticitem):
@@ -1458,7 +1460,139 @@ class environment:
 
         return (inbox, topfree, mediumlist, heavylist)
 
-    
+
+    def create_sbp_problem(self, inbox, topfree, mediumlist, heavylist):
+        itlist = heavylist+mediumlist
+        alias = {}
+        hc = 0
+        for item in heavylist:
+            alias[item] = 'h'+str(hc)
+            hc+=1
+
+        mc = 0
+        for item in mediumlist:
+            alias[item] = 'm'+str(mc)
+            mc+=1
+
+        init = "(:init (handempty) "
+        for item in inbox:
+            init += "(inbox "+alias[item]+") "
+            it = self.items[item].item_on_top
+            if it != None:
+                init+= "(on "+alias[it]+" "+alias[item]+") "
+            else:
+                init += "(topfree "+alias[item]+") "
+
+
+        for item in topfree:
+            init += "(topfree "+alias[item]+") "
+            init += "(inclutter "+alias[item]+") "
+
+        #generating scene hypotheses and choosing the hypothesis with
+        #highest weight
+        all_items = [x.name for x in self.objects_list]
+        possibly_occluded_items = [x for x in all_items if (x not in topfree) and (x not in inbox)]
+        N_o = len(possibly_occluded_items)
+        sigma = 2
+        scene_hypotheses = []
+        scene_actual_sampled = []
+        num_hypotheses = 5
+        hyp_scores = [0 for i in range(num_hypotheses)]
+
+        for i in range(num_hypotheses):
+            N_o_s = 0
+            while N_o_s == 0:
+                N_o_s = np.abs(np.random.randint(low=N_o-sigma, high=N_o+1))
+            prob_occluded_items = np.random.choice(possibly_occluded_items, 
+                                                size=N_o_s, replace=False)
+            perceived_occluded_objects = [self.high_uncertainty_sample(object_name) \
+                                     for object_name in prob_occluded_items]
+            scene_hypotheses.append(perceived_occluded_objects)
+            scene_actual_sampled.append(prob_occluded_items)
+
+        #score hypotheses and chose the one with the highest score
+        for i in range(num_hypotheses):
+            for j in range(len(scene_hypotheses[i])):
+                if scene_hypotheses[i][j] == scene_actual_sampled[i][j]:
+                    hyp_scores[i]+=0.12
+                else:
+                    hyp_scores[i]+=0.08
+
+        arg_scene = np.argmax(hyp_scores)
+        occluded_scene = scene_hypotheses[arg_scene]
+
+        #generate ids for occluded objects and assign them predicates
+        for obj in occluded_scene:
+            if self.items[obj].mass == 'heavy':
+                alias[obj] = 'h'+str(hc)
+                top = np.random.choice(topfree, size=1)
+                init+= "(on "+alias[top[0]]+" "+alias[obj]+") "
+                init += "(inclutter "+alias[obj]+") "
+                hc+=1
+            else:
+                alias[obj] = 'm'+str(mc)
+                top = np.random.choice(topfree, size=1)
+                init+= "(on "+alias[top[0]]+" "+alias[obj]+") "
+                init += "(inclutter "+alias[obj]+") "
+                mc+=1
+
+        init +=  ")\n"
+
+        goal = "(:goal (and "
+        for h in heavylist:
+            goal += "(inbox "+alias[h]+") "
+            
+        mlen=len(mediumlist)
+        hlen=len(heavylist)
+        stop = self.box.cpty - hlen
+
+        if hlen == self.box.cpty and mlen > hlen:
+
+            for m in mediumlist[:hlen]:
+                goal += "(or "
+                for h in heavylist:
+                    goal += "(on "+alias[m]+" "+alias[h]+") "
+                goal+=") "
+
+            for m in mediumlist[hlen:]:
+                goal += "(or "
+                for mm in mediumlist[:hlen]:
+                    goal += "(on "+alias[m]+" "+alias[mm]+") "
+                goal+=") "
+            goal +=")))"
+
+        else:
+            for m in mediumlist[:stop]:
+                goal += "(inbox "+alias[m]+") "
+            for m in mediumlist[stop:stop+self.box.cpty]:
+                goal+="(or "
+                for mm in heavylist+mediumlist[:stop]:
+                    goal += "(on "+alias[m]+" "+alias[mm]+") "
+                goal+=") "
+            for m in mediumlist[stop+self.box.cpty:]:
+                goal += "(or "
+                for mm in mediumlist[stop:self.box.cpty]:
+                    goal += "(on "+alias[m]+" "+alias[mm]+") "
+                goal+=") "
+            goal +=")))"
+
+        definition = "(define (problem PACKED-GROCERY) \n(:domain GROCERY) \n (:objects "
+        for al in alias.values():
+            definition += al+" "
+        definition += "- item)\n"
+
+        problem = definition + init + goal
+
+        f = open("newprob.pddl","w")
+        f.write(problem)
+        f.close()
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        prob_path = dir_path+"/"+"newprob.pddl"
+        
+        swapped_alias  = dict([(value, key) for key, value in alias.items()]) 
+        return prob_path, swapped_alias
+
+
     def create_pddl_problem(self, inbox, topfree, mediumlist, heavylist):
         itlist = heavylist+mediumlist
         alias = {}
@@ -1486,8 +1620,8 @@ class environment:
             init += "(topfree "+alias[item]+") "
             init += "(inclutter "+alias[item]+") "
 
-        if self.box.num_items >= 3:
-            init += "(boxfull)"
+        # if self.box.num_items >= 5:
+        #     init += "(boxfull)"
 
         init +=  ")\n"    
 
@@ -1811,6 +1945,78 @@ class environment:
         total = end-st
         print('PLANNING TIME FOR DYNAMIC: '+str(self.planning_time))
         print('EXECUTION TIME FOR DYNAMIC: '+str(total-self.planning_time))
+
+
+    def perform_sbp_grocery_packing(self):
+        st = time.time()
+
+        empty_clutter = self.update_items_left()
+
+        while not empty_clutter:
+            inboxlist, topfreelist, mediumlist, heavylist = \
+                    self.select_perceived_objects_and_classify_weights()
+            problem_path, alias = self.create_sbp_problem(inboxlist, topfreelist,
+                                                mediumlist, heavylist)
+            self.run_sbp(self.domain_path, problem_path)
+
+            empty_clutter = self.update_items_left()
+        end = time.time()
+        total = end-st
+        print('PLANNING TIME FOR SBP: '+str(self.planning_time))
+        print('EXECUTION TIME FOR SBP: '+str(total-self.planning_time))
+
+
+    def run_sbp(self, domain_path, problem_path)
+        f = Fast_Downward()
+        start = time.time()
+        plan = f.plan(domain_path, problem_path)
+        if len(plan) == 0 or plan == None:
+            print('NO PLAN FOUND')
+            return
+
+        self.planning_time += time.time() - start
+        for action in plan:
+            result = self.execute_sbp_action(action, alias)
+            if not result:
+                self.current_action = "Action: REPLANNING..."  
+                inboxlist, topfreelist, mediumlist, heavylist = \
+                    self.select_perceived_objects_and_classify_weights()
+                new_problem_path, alias = self.create_sbp_problem(inboxlist, topfreelist,
+                                                mediumlist, heavylist)
+                self.run_sbp(self.domain_path, new_problem_path)
+                break
+        return
+
+
+    def execute_sbp_action(action, alias):
+        success = True
+        if action[0] == 'pick-from-clutter':
+            success = self.pick_up(alias[action[1]])
+            self.box.remove_item(self.items[alias[action[1]]])
+
+        elif action[0] == 'pick-from-box':
+            success = self.pick_up(alias[action[1]])
+            self.box.remove_item(self.items[alias[action[1]]])
+
+        elif action[0] == 'pick-from':
+            success = self.pick_up(alias[action[1]])
+            self.box.remove_item(self.items[alias[action[1]]])
+
+        elif action[0] == 'put-in-box':
+            x,y = self.box.add_item(self.items[alias[action[1]]])
+            success = self.put_in_box(alias[action[1]],x,y)
+
+        elif action[0] == 'put-in-clutter':
+            success = self.drop_in_clutter(alias[action[1]])
+
+        elif action[0] == 'put-on':
+            success = self.put_on(alias[action[1]], alias[action[2]])
+
+        return success
+
+
+
+
 
 
 
