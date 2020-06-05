@@ -28,6 +28,7 @@ class Box:
         self.items_added = {}
         self.to_resolve = False
         self.num_items = 0
+        self.cascade = False
 
     def add_item(self, item):
         self.items_added[item.name] = self.index%self.cpty
@@ -44,10 +45,12 @@ class Box:
             self.occupancy[xind] = 1
             self.items_added[item.name] = xind
         else:
-            x = self.widths[self.index%self.cpty] 
-            y = self.ly - item.height 
-            #uncomment to activate next height level putinbox
-            # y = self.heights[self.index%self.cpty]- item.height            
+            x = self.widths[self.index%self.cpty]
+            if self.cascade: 
+                y = self.heights[self.index%self.cpty]- item.height                 
+            else:
+                y = self.ly - item.height 
+
             self.heights[self.index%self.cpty] = y
             self.index +=1
         return x,y
@@ -1210,6 +1213,20 @@ class environment:
         return True
 
 
+    def put_to_the_left(self, focusitem):
+        self.items[focusitem].cx = 200
+        self.items[focusitem].cy = self.window_height - self.items[focusitem].height
+        self.pick_up(focusitem)
+        self.drop_in_clutter(focusitem)
+
+
+    def put_to_the_right(self, focusitem):
+        self.items[focusitem].cx = 500
+        self.items[focusitem].cy = self.window_height- self.items[focusitem].height
+        self.pick_up(focusitem)
+        self.drop_in_clutter(focusitem)
+
+
     def put_left(self, focusitem, staticitem):
         if focusitem==staticitem:
             return
@@ -1460,6 +1477,29 @@ class environment:
 
 
         return (inbox, topfree, mediumlist, heavylist)
+
+
+    def get_objects_in_order(self):
+        items_in_order = []
+        all_items = [x.name for x in self.objects_list]
+
+        for item in self.objects_list:
+            if item.item_on_top == None:
+                items_in_order.append(item.name)
+                all_items.remove(item.name)       
+
+        while len(all_items) != 0:
+            to_add=[]
+            for item in all_items:
+                if self.items[item].item_on_top in items_in_order:
+                    to_add.append(item)
+
+            items_in_order+=to_add
+            for it in to_add:
+                all_items.remove(it)
+
+        return items_in_order
+
 
 
     def create_sbp_problem(self, inbox, topfree, mediumlist, heavylist):
@@ -2026,6 +2066,35 @@ class environment:
         return success
 
 
+    def perform_bag_sort_grocery_packing(self):
+        items_in_order = self.get_objects_in_order()
+        heavy=[]
+        light = []
+        self.should_declutter = True
+        self.box.cascade = True 
+        for item in items_in_order:
+            if self.items[item].mass == "heavy":
+                heavy.append(item)
+                # self.put_to_the_left(item)
+            else:
+                # self.put_to_the_right(item)
+                light.append(item)
+
+        self.should_declutter = False
+        # for item in heavy:
+        #     x,y = self.box.add_item(self.items[item])
+        #     print(str(x)+" "+str(y))
+        #     self.pick_up(item)
+        #     self.put_in_box(item,x,y)
+
+        for item in light:
+            x,y = self.box.add_item(self.items[item])
+            print(str(x)+" "+str(y))
+            t=self.pick_up(item)
+            s=self.put_in_box(item,x,y)
+
+
+
 
 
 
@@ -2081,11 +2150,12 @@ if __name__ == '__main__':
                         declutter=clutter_strategy, 
                         order=4)
         # g.test_box()
+        g.perform_bag_sort_grocery_packing()
         # g.perform_declutter_belief_grocery_packing()
         # g.perform_optimistic()
         # g.perform_dynamic_grocery_packing()
-        g.perform_sbp_grocery_packing()
-        time.sleep(3)
+        # g.perform_sbp_grocery_packing()
+        time.sleep(2)
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
         # print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
