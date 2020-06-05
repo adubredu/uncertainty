@@ -7,6 +7,7 @@ import math
 import numpy as np
 import random
 import copy
+import operator
 from fd import Fast_Downward
 
 # np.random.seed(437)
@@ -96,6 +97,7 @@ class environment:
     def __init__(self, uncertain="low", declutter=False, order=0):
         self.window_width = 1000
         self.window_height = 480
+        self.num_mc_samples = 10
 
         self.table = Grocery_item(150,300,'assets/table.jpg',419,144,"table",0,'heavy')
         self.pepsi = Grocery_item(10, 400,'assets/pepsi.jpg',26,49,"pepsi",200,'medium')
@@ -1663,21 +1665,81 @@ class environment:
         return 2*num_surface, surface_items
 
 
-    def estimate_clutter_content(self, surface_items, inbox_items):
-        sigma = 3
+    def monte_carlo_sample(self, object_name):
+        mc_counts={}
+        items = [x.name for x in self.objects_list]
+        for t in items: mc_counts[t] = 0
+        for i in range(self.num_mc_samples):
+            sample = self.high_uncertainty_sample(object_name)
+            mc_counts[sample]+=1
+        choice = max(mc_counts.iteritems(), key=operator.itemgetter(1))[0]
+
+        return choice
+
+
+    def divergent_set_sample(self, possibly_occluded_items):
+        num_samples = 10
+        N_o = len(possibly_occluded_items)
+        sigma = 2
+        divergent_samples = []
+        sample_scores = [0 for i in range(num_samples)]
+        #generate set of samples
+        for i in range(num_samples):
+            N_o_s = 0
+            while N_o_s == 0:
+                N_o_s = np.abs(np.random.randint(low=N_o-sigma, high=N_o+1))
+            prob_occluded_items = np.random.choice(possibly_occluded_items, 
+                                                size=N_o_s, replace=False)
+            perceived_occluded_objects = [self.high_uncertainty_sample(object_name) \
+                                     for object_name in prob_occluded_items]
+            divergent_samples.append(perceived_occluded_objects)
+
+        #generate mc sample
+        mc_sample = [self.monte_carlo_sample(object_name) \
+                                     for object_name in possibly_occluded_items]
+
+        #score each sample in set
+        for i in range(num_samples):
+            for obj in divergent_samples[i]:
+                if obj in mc_sample:
+                    sample_scores[i] += 1
+
+        #get max sample and min sample and choose one with 0.5 probability
+        arg_max_samp = np.argmax(sample_scores)
+        arg_min_samp = np.argmin(sample_scores)
+
+        max_sample = divergent_samples[arg_max_samp]
+        min_sample = divergent_samples[arg_min_samp]
+
+        toss = np.random.randint(2)
+
+        if toss == 1:
+            return max_sample
+        else:
+            return min_sample
+
+
+    def estimate_clutter_content(self, surface_items, inbox_items,sample_procedure):
+        sigma = 2
         N_o = self.items_in_clutter - (len(surface_items)+len(inbox_items))
         N_o_s = np.random.randint(low=N_o-sigma, high=N_o+1)
         N_o_s = np.abs(N_o_s)
         all_items = [x.name for x in self.objects_list]
-        occluded_items = [x for x in all_items if (x not in surface_items) and (x not in inbox_items)]
-        if len(occluded_items) == 0 or N_o_s == 0:
+        possibly_occluded_items = [x for x in all_items if (x not in surface_items) and (x not in inbox_items)]
+        if len(possibly_occluded_items) == 0 or N_o_s == 0:
             return 0.0,1.0
-        prob_occluded_items = np.random.choice(occluded_items, size=N_o_s, replace=False)
+        prob_occluded_items = np.random.choice(possibly_occluded_items, size=N_o_s, replace=False)
 
         #one-time weighted sample. To change sampling strategy, alter 
         #the function: self.high_uncertainty_sample(name)
-        sampled_occluded_items = [self.high_uncertainty_sample(object_name) \
-                                 for object_name in prob_occluded_items]
+        if sample_procedure == 'weighted_sample':
+            sampled_occluded_items = [self.high_uncertainty_sample(object_name) \
+                                     for object_name in prob_occluded_items]
+        elif sample_procedure == 'mc_sample':
+            sampled_occluded_items = [self.monte_carlo_sample(object_name) \
+                                     for object_name in prob_occluded_items]
+        elif sample_procedure == 'divergent_set':
+            sampled_occluded_items = self.divergent_set_sample(possibly_occluded_items)
 
         num_heavy = 0; num_light = 0;
         for it in sampled_occluded_items:
@@ -1727,7 +1789,7 @@ class environment:
                                                 mediumlist, heavylist)
             
             unoccluded_items = topfreelist
-            oh, sh = self.estimate_clutter_content(unoccluded_items,inboxlist)
+            oh, sh = self.estimate_clutter_content(unoccluded_items,inboxlist,'divergent_set')
             print("probs are "+str(oh)+" "+str(sh))
 
             if sh > oh:
@@ -1802,9 +1864,9 @@ if __name__ == '__main__':
                         declutter=clutter_strategy, 
                         order=4)
         # g.test_box()
-        g.perform_declutter_belief_grocery_packing()
+        # g.perform_declutter_belief_grocery_packing()
         # g.perform_optimistic()
-        # g.perform_dynamic_grocery_packing()
+        g.perform_dynamic_grocery_packing()
         time.sleep(3)
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
