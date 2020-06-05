@@ -1030,6 +1030,7 @@ class environment:
         self.gripper.holding = None
         bot.item_on_top = topitem
         top.inbox = True
+        bot.inbox = True
 
         orig_x = self.gripper.x
         orig_y = self.gripper.y
@@ -1434,7 +1435,7 @@ class environment:
         topfree = []
         
         for item in self.objects_list:
-            if item.on_table:
+            if item.on_table or item.inbox:
                 inbox.append(item.name)
 
             else:
@@ -1493,48 +1494,55 @@ class environment:
         all_items = [x.name for x in self.objects_list]
         possibly_occluded_items = [x for x in all_items if (x not in topfree) and (x not in inbox)]
         N_o = len(possibly_occluded_items)
-        sigma = 2
-        scene_hypotheses = []
-        scene_actual_sampled = []
-        num_hypotheses = 5
-        hyp_scores = [0 for i in range(num_hypotheses)]
+        if N_o > 0:
+            sigma = 2
+            scene_hypotheses = []
+            scene_actual_sampled = []
+            num_hypotheses = 5
+            hyp_scores = [0 for i in range(num_hypotheses)]
 
-        for i in range(num_hypotheses):
-            N_o_s = 0
-            while N_o_s == 0:
-                N_o_s = np.abs(np.random.randint(low=N_o-sigma, high=N_o+1))
-            prob_occluded_items = np.random.choice(possibly_occluded_items, 
-                                                size=N_o_s, replace=False)
-            perceived_occluded_objects = [self.high_uncertainty_sample(object_name) \
-                                     for object_name in prob_occluded_items]
-            scene_hypotheses.append(perceived_occluded_objects)
-            scene_actual_sampled.append(prob_occluded_items)
+            for i in range(num_hypotheses):
+                N_o_s = 0
+                while N_o_s == 0:
+                    N_o_s = np.abs(np.random.randint(low=N_o-sigma, high=N_o+1))
+                prob_occluded_items = np.random.choice(possibly_occluded_items, 
+                                                    size=N_o_s, replace=False)
+                perceived_occluded_objects = [self.high_uncertainty_sample(object_name) \
+                                         for object_name in prob_occluded_items]
+                scene_hypotheses.append(perceived_occluded_objects)
+                scene_actual_sampled.append(prob_occluded_items)
 
-        #score hypotheses and chose the one with the highest score
-        for i in range(num_hypotheses):
-            for j in range(len(scene_hypotheses[i])):
-                if scene_hypotheses[i][j] == scene_actual_sampled[i][j]:
-                    hyp_scores[i]+=0.12
-                else:
-                    hyp_scores[i]+=0.08
+            #score hypotheses and chose the one with the highest score
+            for i in range(num_hypotheses):
+                for j in range(len(scene_hypotheses[i])):
+                    if scene_hypotheses[i][j] == scene_actual_sampled[i][j]:
+                        hyp_scores[i]+=0.12
+                    else:
+                        hyp_scores[i]+=0.08
 
-        arg_scene = np.argmax(hyp_scores)
-        occluded_scene = scene_hypotheses[arg_scene]
+            arg_scene = np.argmax(hyp_scores)
+            occluded_scene = scene_hypotheses[arg_scene]
+            print('\nHYPOTHESIS: '),
+            print(occluded_scene)
+            print(" ")
 
-        #generate ids for occluded objects and assign them predicates
-        for obj in occluded_scene:
-            if self.items[obj].mass == 'heavy':
-                alias[obj] = 'h'+str(hc)
-                top = np.random.choice(topfree, size=1)
-                init+= "(on "+alias[top[0]]+" "+alias[obj]+") "
-                init += "(inclutter "+alias[obj]+") "
-                hc+=1
-            else:
-                alias[obj] = 'm'+str(mc)
-                top = np.random.choice(topfree, size=1)
-                init+= "(on "+alias[top[0]]+" "+alias[obj]+") "
-                init += "(inclutter "+alias[obj]+") "
-                mc+=1
+            #generate ids for occluded objects and assign them predicates
+            for obj in occluded_scene:
+                if not obj in alias:
+                    if self.items[obj].mass == 'heavy':
+                        alias[obj] = 'h'+str(hc)
+                        heavylist.append(obj)
+                        top = np.random.choice(topfree, size=1)
+                        init+= "(on "+alias[top[0]]+" "+alias[obj]+") "
+                        init += "(inclutter "+alias[obj]+") "
+                        hc+=1
+                    else:
+                        alias[obj] = 'm'+str(mc)
+                        mediumlist.append(obj)
+                        top = np.random.choice(topfree, size=1)
+                        init+= "(on "+alias[top[0]]+" "+alias[obj]+") "
+                        init += "(inclutter "+alias[obj]+") "
+                        mc+=1
 
         init +=  ")\n"
 
@@ -1957,7 +1965,7 @@ class environment:
                     self.select_perceived_objects_and_classify_weights()
             problem_path, alias = self.create_sbp_problem(inboxlist, topfreelist,
                                                 mediumlist, heavylist)
-            self.run_sbp(self.domain_path, problem_path)
+            self.run_sbp(self.domain_path, problem_path, alias)
 
             empty_clutter = self.update_items_left()
         end = time.time()
@@ -1966,7 +1974,7 @@ class environment:
         print('EXECUTION TIME FOR SBP: '+str(total-self.planning_time))
 
 
-    def run_sbp(self, domain_path, problem_path)
+    def run_sbp(self, domain_path, problem_path, alias):
         f = Fast_Downward()
         start = time.time()
         plan = f.plan(domain_path, problem_path)
@@ -1976,19 +1984,22 @@ class environment:
 
         self.planning_time += time.time() - start
         for action in plan:
+            print(action)
             result = self.execute_sbp_action(action, alias)
             if not result:
                 self.current_action = "Action: REPLANNING..."  
+                print('REPLANNING')
                 inboxlist, topfreelist, mediumlist, heavylist = \
                     self.select_perceived_objects_and_classify_weights()
-                new_problem_path, alias = self.create_sbp_problem(inboxlist, topfreelist,
+                new_problem_path, nalias = self.create_sbp_problem(inboxlist, topfreelist,
                                                 mediumlist, heavylist)
-                self.run_sbp(self.domain_path, new_problem_path)
+                self.run_sbp(self.domain_path, new_problem_path, nalias)
                 break
         return
 
 
-    def execute_sbp_action(action, alias):
+    def execute_sbp_action(self,action, alias):
+        self.current_action = "Action: "+str(action)
         success = True
         if action[0] == 'pick-from-clutter':
             success = self.pick_up(alias[action[1]])
@@ -2072,7 +2083,8 @@ if __name__ == '__main__':
         # g.test_box()
         # g.perform_declutter_belief_grocery_packing()
         # g.perform_optimistic()
-        g.perform_dynamic_grocery_packing()
+        # g.perform_dynamic_grocery_packing()
+        g.perform_sbp_grocery_packing()
         time.sleep(3)
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
