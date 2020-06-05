@@ -1,7 +1,3 @@
 (pick-from-clutter m7)
 (put-on m7 m1)
-(pick-from m6 h0)
-(put-on m6 m3)
-(pick-from-box m2)
-(put-on m2 h0)
-; cost = 6 (unit cost)
+; cost = 2 (unit cost)

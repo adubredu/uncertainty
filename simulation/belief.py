@@ -39,9 +39,6 @@ class Box:
                 xind = i 
                 break
         if xind != 99:
-            print(xind)
-            print(self.occupancy)
-            print(self.items_added)
             x = self.widths[xind]
             y = self.ly - item.height 
             self.heights[xind] = y
@@ -56,7 +53,6 @@ class Box:
 
             self.heights[self.index%self.cpty] = y
             self.index +=1
-        print(str(x)+' '+str(y))
         return x,y
 
     def remove_item(self, item):
@@ -340,30 +336,7 @@ class environment:
         # choice = 0#np.random.randint(4)
         choice = self.init_order
 
-        if choice == 0:
-            self.bleach.item_at_left = "lipton"
-            self.lipton.item_at_right = "bleach"
-            self.bleach.item_on_top = "pepsi"
-            self.pepsi.onsomething = True
-            self.bleach.item_at_right = "coke"
-            self.coke.item_at_left = "bleach"
-            self.coke.item_on_top = "nutella"
-            self.nutella.onsomething = True
-            self.pepsi.item_at_right = "nutella"
-            self.nutella.item_at_left = "coke"
-            self.coke.item_at_right = "tangerine"
-            self.tangerine.item_on_top = "oreo"
-            self.oreo.item_on_top = "ambrosia"
-            self.nutella.item_on_top = "lysol"
-            self.pepsi.item_on_top = "cereal"
-            self.lipton.item_on_top = "milk"
-            self.milk.item_on_top = "banana"
-            self.lipton.on_clutter_or_table = True
-            self.bleach.on_clutter_or_table = True
-            self.coke.on_clutter_or_table = True
-            self.tangerine.on_clutter_or_table = True 
-
-        elif choice == 1:
+        if choice == 1:
             self.lipton.item_at_left = "coke"
             self.coke.item_at_right = "lipton"
             self.lipton.item_on_top = "nutella"
@@ -2101,7 +2074,7 @@ class environment:
         print("EXECUTION TIME FOR BAGSORT: "+str(duration))
 
 
-    def pick_n_roll(self):
+    def perform_pick_n_roll(self):
         st = time.time()
         items_in_order = self.get_objects_in_order()
         light = []
@@ -2114,11 +2087,52 @@ class environment:
                 self.pick_up(item)
                 self.put_in_box(item,x,y)
 
-                
             else:
+                self.should_declutter = True
                 light.append(item)
                 self.pick_up(item)
-                self.drop_in_clutter(item)
+                self.put_to_the_right(item)
+                self.should_declutter = False
+
+        for item in light:
+            x,y = box.add_item(self.items[item])
+            self.pick_up(item)
+            self.put_in_box(item,x,y)
+
+        duration = time.time() - st
+        print("PLANNING TIME FOR PICKNROLL: 0")
+        print("EXECUTION TIME FOR PICKNROLL: "+str(duration))
+
+
+    def perform_conveyor_belt_pack(self):
+        items_in_order = self.get_objects_in_order()
+        start = time.time()
+        for item in items_in_order:
+            inboxlist, topfreelist, mediumlist, heavylist = \
+                    self.select_perceived_objects_and_classify_weights()
+            for t in topfreelist:
+                if t != item:
+                    try:
+                        mediumlist.remove(t)
+                    except:
+                        pass
+            for t in topfreelist:
+                if t != item:
+                    try:
+                        heavylist.remove(t)
+                    except:
+                        pass
+            topfreelist = [item]
+
+            problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
+                                                mediumlist, heavylist)
+            self.plan_and_run_belief_space_planning(self.domain_path, 
+                                                        problem_path, alias)
+        end = time.time()
+        total = end-start
+        print('PLANNING TIME FOR CONVEYORBELT: '+str(self.planning_time))
+        print('EXECUTION TIME FOR CONVEYORBELT: '+str(total - self.planning_time))
+
 
 
 
@@ -2179,7 +2193,9 @@ if __name__ == '__main__':
                         declutter=clutter_strategy, 
                         order=4)
         # g.test_box()
-        g.perform_bag_sort_grocery_packing()
+        # g.perform_bag_sort_grocery_packing()
+        # g.perform_pick_n_roll()
+        g.perform_conveyor_belt_pack()
         # g.perform_declutter_belief_grocery_packing()
         # g.perform_optimistic()
         # g.perform_dynamic_grocery_packing()
