@@ -39,6 +39,9 @@ class Box:
                 xind = i 
                 break
         if xind != 99:
+            print(xind)
+            print(self.occupancy)
+            print(self.items_added)
             x = self.widths[xind]
             y = self.ly - item.height 
             self.heights[xind] = y
@@ -53,6 +56,7 @@ class Box:
 
             self.heights[self.index%self.cpty] = y
             self.index +=1
+        print(str(x)+' '+str(y))
         return x,y
 
     def remove_item(self, item):
@@ -2067,31 +2071,56 @@ class environment:
 
 
     def perform_bag_sort_grocery_packing(self):
+        st = time.time()
         items_in_order = self.get_objects_in_order()
         heavy=[]
         light = []
         self.should_declutter = True
-        self.box.cascade = True 
+        box = Box(5)
+        box.cascade = True 
         for item in items_in_order:
             if self.items[item].mass == "heavy":
                 heavy.append(item)
-                # self.put_to_the_left(item)
+                self.put_to_the_left(item)
             else:
-                # self.put_to_the_right(item)
+                self.put_to_the_right(item)
                 light.append(item)
 
         self.should_declutter = False
-        # for item in heavy:
-        #     x,y = self.box.add_item(self.items[item])
-        #     print(str(x)+" "+str(y))
-        #     self.pick_up(item)
-        #     self.put_in_box(item,x,y)
+        for item in heavy:
+            x,y = box.add_item(self.items[item])
+            self.pick_up(item)
+            self.put_in_box(item,x,y)
 
         for item in light:
-            x,y = self.box.add_item(self.items[item])
-            print(str(x)+" "+str(y))
-            t=self.pick_up(item)
-            s=self.put_in_box(item,x,y)
+            x,y = box.add_item(self.items[item])
+            self.pick_up(item)
+            self.put_in_box(item,x,y)
+        duration = time.time() - st
+        print("PLANNING TIME FOR BAGSORT: 0")
+        print("EXECUTION TIME FOR BAGSORT: "+str(duration))
+
+
+    def pick_n_roll(self):
+        st = time.time()
+        items_in_order = self.get_objects_in_order()
+        light = []
+        box = Box(5)
+        box.cascade = True 
+
+        for item in items_in_order:
+            if self.items[item].mass == 'heavy':
+                x,y = box.add_item(self.items[item])
+                self.pick_up(item)
+                self.put_in_box(item,x,y)
+
+                
+            else:
+                light.append(item)
+                self.pick_up(item)
+                self.drop_in_clutter(item)
+
+
 
 
 
