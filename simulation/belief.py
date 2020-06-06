@@ -337,231 +337,173 @@ class environment:
         choice = self.init_order
 
         if choice == 1:
-            self.lipton.item_at_left = "coke"
-            self.coke.item_at_right = "lipton"
-            self.lipton.item_on_top = "nutella"
-            self.nutella.onsomething = True
-            self.lipton.item_at_right = "bleach"
-            self.bleach.item_at_left = "lipton"
-            self.bleach.item_at_right = "pepsi"
-            self.pepsi.item_at_left = "bleach"
-            self.coke.item_on_top = "tangerine"
-            self.tangerine.item_on_top = "banana"
-            self.nutella.item_on_top = "ambrosia"
-            self.bleach.item_on_top = "milk"
-            self.milk.item_on_top = "lysol"
-            self.pepsi.item_on_top = "oreo"
-            self.oreo.item_on_top = "cereal"
+            self.oreo.on_clutter_or_table = True
+            self.tangerine.on_clutter_or_table = True
+            self.banana.on_clutter_or_table = True
             self.coke.on_clutter_or_table = True
-            self.lipton.on_clutter_or_table = True
-            self.bleach.on_clutter_or_table = True
+            self.cereal.on_clutter_or_table = True
             self.pepsi.on_clutter_or_table = True
+            self.lipton.on_clutter_or_table = True
+            self.nutella.on_clutter_or_table = True
+            self.oreo.item_on_top = "milk"
+            self.lysol.item_on_top = "lysol"
+            self.banana.item_on_top = "bleach"
+            self.coke.item_on_top = "ambrosia"
+
 
         elif choice == 2:
-            self.lipton.item_at_left = "nutella"
-            self.nutella.item_at_right = "lipton"
-
-            self.lipton.item_at_right = "pepsi"
-            self.pepsi.item_at_left = "lipton"
-
-            self.lipton.item_on_top = "coke"
-            self.coke.onsomething = True
-            self.coke.item_on_top = "bleach"
-            self.bleach.onsomething  =True
-
-            self.nutella.item_on_top = "tangerine"
-            self.tangerine.item_on_top = "milk"
-            self.bleach.item_on_top = "banana"
-            self.pepsi.item_on_top = "lysol"
-            self.cereal.item_on_top = "ambrosia"
-            self.oreo.on_clutter_or_table = True 
-            self.cereal.on_clutter_or_table = True 
-
-            self.nutella.on_clutter_or_table = True
-            self.lipton.on_clutter_or_table = True 
+            self.coke.on_clutter_or_table = True 
             self.pepsi.on_clutter_or_table = True
+            self.lipton.on_clutter_or_table = True
+            self.cereal.on_clutter_or_table = True
+            self.ambrosia.on_clutter_or_table = True
+            self.nutella.on_clutter_or_table = True
+            self.coke.item_on_top = "milk"
+            self.milk.item_on_top = "oreo"
+            self.pepsi.item_on_top = "lysol"
+            self.lysol.item_on_top = "tangerine"
+            self.lipton.item_on_top = "bleach"
+            self.bleach.item_on_top = "banana"
 
         elif choice == 3:
-            self.lipton.item_on_top = "pepsi"
-            self.pepsi.onsomething = True
-
-            self.lipton.item_at_right = "coke"
-            self.coke.item_at_left = "lipton"
-
-            self.coke.item_on_top = "bleach"
-            self.bleach.onsomething = True
-
-            self.coke.item_at_right = "nutella"
-            self.nutella.item_at_left = "coke"
-
-            self.pepsi.item_on_top = "oreo"
-            self.oreo.item_on_top = "milk"
-            self.bleach.item_on_top = "tangerine"
-            self.nutella.item_on_top = "lysol"
-            self.oreo.on_clutter_or_table = True 
-            self.cereal.on_clutter_or_table = True 
-            self.cereal.item_on_top = "banana"
-
-            self.lipton.on_clutter_or_table = True
-            self.coke.on_clutter_or_table = True
-            self.nutella.on_clutter_or_table = True
+            self.milk.on_clutter_or_table = True
+            self.lysol.on_clutter_or_table = True
+            self.bleach.on_clutter_or_table = True
+            self.ambrosia.on_clutter_or_table = True
+            self.milk.item_on_top = "cereal"
+            self.cereal.item_on_top = "oreo"
+            self.lysol.item_on_top = "nutella"
+            self.nutella.item_on_top = "tangerine"
+            self.bleach.item_on_top = "pepsi"
+            self.pepsi.item_on_top = "banana"
+            self.ambrosia.item_on_top = "lipton"
+            self.lipton.item_on_top = "coke"
 
         elif choice == 4:
-            self.milk.item_on_top = "bleach"
-            self.bleach.item_on_top = "oreo"
             self.milk.on_clutter_or_table = True
-            self.milk.item_at_right = "tangerine"
-            self.tangerine.item_on_top = "lysol"
-            self.lysol.item_on_top = "pepsi"
-            self.tangerine.on_clutter_or_table = True 
-            self.tangerine.item_at_right = "ambrosia"
-            self.ambrosia.on_clutter_or_table = True 
-            self.ambrosia.item_on_top = "cereal"
-            self.cereal.item_on_top = "coke"
-            self.ambrosia.item_at_right = "banana"
-            self.banana.on_clutter_or_table = True 
-            self.banana.item_on_top = "nutella"
-            self.nutella.item_on_top = "lipton"
+            self.lysol.on_clutter_or_table = True
+            self.milk.item_on_top = "bleach"
+            self.lysol.item_on_top = "ambrosia"
+            self.bleach.item_on_top = "pepsi"
+            self.ambrosia.item_on_top = "lipton"
+            self.pepsi.item_on_top = "cereal"
+            self.lipton.item_on_top = "nutella"
+            self.cereal.item_on_top = "banana"
+            self.nutella.item_on_top = "coke"
+            self.banana.item_on_top = "oreo"
+            self.coke.item_on_top = "tangerine"
 
         self.draw_init_clutter(choice)
 
 
     def draw_init_clutter(self, choice):
-        if choice == 0:
-            self.lipton.x = 10
-            self.lipton.y = self.window_height-self.lipton.height
-            self.milk.x = 10 
-            self.milk.y = self.window_height-self.lipton.height-self.milk.height
-            self.banana.x = 10
-            self.banana.y = self.window_height-self.lipton.height-self.milk.height - self.banana.height
-            self.bleach.x = 10+self.lipton.width
-            self.bleach.y = self.window_height-self.bleach.height
-            self.coke.x = 10+self.lipton.width+self.bleach.width
-            self.coke.y = self.window_height-self.coke.height
-            self.pepsi.x = 10+self.milk.width
-            self.pepsi.y = self.window_height-self.bleach.height-self.pepsi.height
-            self.cereal.x = 10+self.banana.width
-            self.cereal.y = self.window_height-self.bleach.height-self.pepsi.height-self.cereal.height
-            self.nutella.x = 10+self.milk.width+self.pepsi.width
-            self.nutella.y = self.window_height - self.coke.height-self.nutella.height
-            self.lysol.x = 10+self.banana.width+self.cereal.width
-            self.lysol.y = self.window_height - self.coke.height-self.nutella.height-self.lysol.height 
-            self.tangerine.x = 10+self.lipton.width+self.bleach.width+self.coke.width
-            self.tangerine.y = self.window_height-self.tangerine.height
-            self.oreo.x = 10+self.milk.width+self.pepsi.width+self.nutella.width 
-            self.oreo.y = self.window_height-self.tangerine.height-self.oreo.height 
-            self.ambrosia.x = 10+self.banana.width+self.cereal.width+self.lysol.width 
-            self.ambrosia.y = self.window_height-self.tangerine.height-self.oreo.height-self.ambrosia.height
+        if choice ==1:
+            self.oreo.x = 10
+            self.tangerine.x = 10 + self.oreo.width 
+            self.banana.x = self.tangerine.x + self.tangerine.width 
+            self.coke.x = self.banana.x + self.banana.width 
+            self.cereal.x = self.coke.x + self.coke.width 
+            self.pepsi.x = self.cereal.x + self.cereal.width 
+            self.lipton.x = self.pepsi.x + self.pepsi.width 
+            self.nutella.x = self.lipton.x + self.lipton.width 
+            self.milk.x = self.oreo.x
+            self.lysol.x = self.tangerine.x 
+            self.bleach.x = self.banana.x 
+            self.ambrosia.x = self.coke.x
 
-        elif choice ==1:
-            self.coke.x = 10
-            self.tangerine.x = 10
-            self.banana.x = 10
-            self.lipton.x = 10+self.coke.width 
-            self.ambrosia.x = 10+self.banana.width
-            self.bleach.x = 10+self.coke.width+self.lipton.width
-            self.pepsi.x = 10+self.coke.width+self.lipton.width+self.bleach.width
-            self.nutella.x = 10+self.tangerine.width 
-            self.milk.x = 10+self.tangerine.width+self.nutella.width 
-            self.lysol.x = 10+self.banana.width+self.ambrosia.width
-            self.oreo.x = 10+self.tangerine.width+self.nutella.width+self.milk.width
-            self.cereal.x = 10+self.banana.width+self.ambrosia.width+self.lysol.width
-
-            self.coke.y = self.window_height-self.coke.height 
-            self.tangerine.y = self.window_height-self.coke.height-self.tangerine.height
-            self.banana.y = self.window_height-self.coke.height-self.tangerine.height-self.banana.height 
-            self.lipton.y = self.window_height-self.lipton.height 
-            self.bleach.y = self.window_height-self.bleach.height 
-            self.milk.y = self.window_height-self.bleach.height-self.milk.height
-            self.lysol.y = self.window_height-self.bleach.height-self.milk.height-self.lysol.height
-            self.pepsi.y = self.window_height-self.pepsi.height 
-            self.oreo.y = self.window_height-self.pepsi.height - self.oreo.height
-            self.cereal.y = self.window_height-self.pepsi.height - self.oreo.height-self.cereal.height
-            self.nutella.y = self.window_height-self.lipton.height-self.nutella.height
-            self.ambrosia.y = self.window_height-self.lipton.height-self.nutella.height-self.ambrosia.height
-
+            self.oreo.y = self.window_height - self.oreo.height  
+            self.tangerine.y = self.window_height - self.tangerine.height
+            self.banana.y = self.window_height - self.banana.height
+            self.coke.y = self.window_height - self.coke.height
+            self.cereal.y = self.window_height - self.cereal.height 
+            self.pepsi.y = self.window_height - self.pepsi.height
+            self.lipton.y = self.window_height - self.lipton.height 
+            self.nutella.y = self.window_height - self.nutella.height 
+            self.milk.y = self.oreo.y - self.milk.height 
+            self.lysol.y = self.tangerine.y - self.lysol.height 
+            self.bleach.y = self.banana.y - self.bleach.height 
+            self.ambrosia.y = self.coke.y - self.ambrosia.height
 
         elif choice == 2:
-            self.nutella.x = 10
-            self.tangerine.x = 10 
-            self.milk.x = 10
-            self.lipton.x = 10+self.nutella.width 
-            self.pepsi.x = 10+self.nutella.width +self.lipton.width
-            self.cereal.x = 10+self.nutella.width +self.lipton.width+self.pepsi.width 
-            self.oreo.x = 10+self.nutella.width +self.lipton.width+self.pepsi.width+self.cereal.width
-            self.coke.x = 10+self.tangerine.width
-            self.lysol.x = 10+self.tangerine.width+self.coke.width 
-            self.ambrosia.x = 10+self.tangerine.width+self.coke.width+self.lysol.width
-            self.bleach.x = 10+self.milk.width
-            self.banana.x = 10+self.milk.width
+            self.coke.x = 10
+            self.pepsi.x = 10 + self.coke.width 
+            self.lipton.x = self.pepsi.x + self.pepsi.width 
+            self.cereal.x = self.lipton.x + self.lipton.width
+            self.ambrosia.x = self.cereal.x + self.cereal.width 
+            self.nutella.x = self.ambrosia.x + self.ambrosia.width 
+            self.milk.x = self.coke.x 
+            self.oreo.x = self.coke.x 
+            self.lysol.x = self.pepsi.x 
+            self.tangerine.x = self.pepsi.x 
+            self.bleach.x = self.lipton.x
+            self.banana.x = self.lipton.x 
 
-            self.nutella.y = self.window_height-self.nutella.height 
-            self.tangerine.y = self.window_height-self.nutella.height-self.tangerine.height
-            self.milk.y = self.window_height-self.nutella.height-self.tangerine.height-self.milk.height
-            self.lipton.y = self.window_height-self.lipton.height
-            self.pepsi.y = self.window_height-self.pepsi.height 
-            self.coke.y = self.window_height-self.lipton.height-self.coke.height 
-            self.bleach.y = self.window_height-self.lipton.height-self.coke.height-self.bleach.height
+            self.coke.y = self.window_height - self.coke.height 
+            self.pepsi.y = self.window_height - self.pepsi.height 
+            self.lipton.y = self.window_height - self.lipton.height 
+            self.cereal.y = self.window_height - self.cereal.height 
+            self.ambrosia.y = self.window_height - self.ambrosia.height 
+            self.nutella.y = self.window_height - self.nutella.height 
+            self.milk.y = self.coke.y - self.milk.height 
+            self.oreo.y = self.milk.y - self.oreo.height 
+            self.lysol.y = self.pepsi.y - self.lysol.height
+            self.tangerine.y = self.lysol.y - self.tangerine.height 
+            self.bleach.y = self.lipton.y - self.bleach.height 
             self.banana.y = self.bleach.y - self.banana.height
-            self.lysol.y = self.pepsi.y-self.lysol.height
-            self.cereal.y = self.window_height-self.cereal.height
-            self.ambrosia.y = self.cereal.y-self.ambrosia.height
-            self.oreo.y = self.window_height-self.oreo.height
 
         elif choice == 3:
-            self.lipton.x = 10
-            self.milk.x=10
-            self.oreo.x=10
-            self.tangerine.x = 10+self.oreo.width
-            self.coke.x = 10+self.lipton.width
-            self.nutella.x = 10+self.lipton.width+self.coke.width 
-            self.pepsi.x = 10
-            self.bleach.x = 10+self.pepsi.width
-            self.lysol.x = 10+self.pepsi.width+self.bleach.width 
-            self.ambrosia.x = 10+self.lipton.width+self.coke.width+self.nutella.width
-            self.cereal.x = self.ambrosia.x+self.cereal.width
-            self.banana.x = self.cereal.x
+            self.milk.x = 10
+            self.lysol.x = 10 + self.milk.width
+            self.bleach.x = self.lysol.x + self.lysol.width 
+            self.ambrosia.x = self.bleach.x + self.bleach.width
+            self.cereal.x = self.milk.x 
+            self.oreo.x = self.milk.x 
+            self.nutella.x = self.lysol.x 
+            self.tangerine.x = self.lysol.x 
+            self.pepsi.x = self.bleach.x 
+            self.banana.x = self.bleach.x 
+            self.lipton.x = self.ambrosia.x 
+            self.coke.x =  self.ambrosia.x 
 
-            self.lipton.y = self.window_height - self.lipton.height
-            self.coke.y = self.window_height-self.coke.height
-            self.nutella.y = self.window_height-self.nutella.height
-            self.lysol.y = self.window_height-self.nutella.height-self.lysol.height
-            self.ambrosia.y = self.window_height-self.ambrosia.height
-            self.cereal.y = self.window_height-self.cereal.height
-            self.banana.y = self.window_height-self.cereal.height-self.banana.height
-            self.pepsi.y = self.window_height - self.lipton.height-self.pepsi.height 
-            self.bleach.y = self.window_height-self.coke.height - self.bleach.height
-            self.tangerine.y = self.window_height-self.coke.height - self.bleach.height-self.tangerine.height
-            self.oreo.y = self.pepsi.y - self.oreo.height 
-            self.milk.y = self.oreo.y - self.milk.height 
+            self.milk.y = self.window_height - self.milk.height 
+            self.lysol.y = self.window_height - self.lysol.height
+            self.bleach.y = self.window_height -self.bleach.height
+            self.ambrosia.y = self.window_height -self.ambrosia.height 
+            self.cereal.y = self.milk.y - self.cereal.height 
+            self.oreo.y = self.cereal.y - self.oreo.height 
+            self.nutella.y = self.lysol.y - self.nutella.height 
+            self.tangerine.y = self.nutella.y - self.tangerine.height
+            self.pepsi.y = self.bleach.y - self.pepsi.height 
+            self.banana.y = self.pepsi.y - self.banana.height 
+            self.lipton.y = self.ambrosia.y - self.lipton.height
+            self.coke.y = self.lipton.y - self.coke.height 
 
         elif choice == 4:
             self.milk.x = 10
-            self.tangerine.x = self.milk.x + self.milk.width 
-            self.ambrosia.x = self.tangerine.x + self.tangerine.width
-            self.banana.x =self.ambrosia.x + self.ambrosia.width
-            self.bleach.x = 10
-            self.lysol.x = self.tangerine.x #self.bleach.x + self.bleach.width
-            self.cereal.x = self.ambrosia.x #self.lysol.x + self.lysol.width
-            self.nutella.x = self.banana.x #self.cereal.x + self.cereal.width
-            self.oreo.x = 10
-            self.pepsi.x = self.tangerine.x #self.oreo.x + self.oreo.width 
-            self.coke.x = self.ambrosia.x #self.pepsi.x + self.pepsi.width 
-            self.lipton.x = self.banana.x #self.coke.x + self.coke.width 
+            self.lysol.x = 10 + self.milk.width
+            self.bleach.x = self.milk.x 
+            self.pepsi.x = self.milk.x 
+            self.cereal.x = self.milk.x 
+            self.banana.x = self.milk.x 
+            self.oreo.x = self.milk.x 
+            self.ambrosia.x = self.lysol.x 
+            self.lipton.x = self.lysol.x 
+            self.nutella.x = self.lysol.x 
+            self.coke.x = self.lysol.x 
+            self.tangerine.x = self.lysol.x 
 
             self.milk.y = self.window_height - self.milk.height 
+            self.lysol.y = self.window_height - self.lysol.height 
             self.bleach.y = self.milk.y - self.bleach.height 
-            self.oreo.y = self.bleach.y - self.oreo.height 
-            self.tangerine.y = self.window_height - self.tangerine.height 
-            self.lysol.y = self.tangerine.y - self.lysol.height 
-            self.pepsi.y = self.lysol.y - self.pepsi.height 
-            self.ambrosia.y = self.window_height - self.ambrosia.height 
-            self.cereal.y = self.ambrosia.y - self.cereal.height 
-            self.coke.y = self.cereal.y - self.coke.height 
-            self.banana.y = self.window_height - self.banana.height 
-            self.nutella.y = self.banana.y - self.nutella.height 
-            self.lipton.y = self.nutella.y - self.lipton.height
-
+            self.pepsi.y = self.bleach.y - self.pepsi.height 
+            self.cereal.y = self.pepsi.y - self.cereal.height
+            self.banana.y = self.cereal.y - self.banana.height 
+            self.oreo.y = self.banana.y - self.oreo.height 
+            self.ambrosia.y = self.lysol.y - self.ambrosia.height
+            self.lipton.y = self.ambrosia.y - self.lipton.height 
+            self.nutella.y = self.lipton.y - self.nutella.height 
+            self.coke.y = self.nutella.y - self.coke.height 
+            self.tangerine.y = self.coke.y - self.tangerine.height 
 
 
     def display_text(self,textcontent,w,h,font):
@@ -2195,12 +2137,12 @@ if __name__ == '__main__':
         # g.test_box()
         # g.perform_bag_sort_grocery_packing()
         # g.perform_pick_n_roll()
-        g.perform_conveyor_belt_pack()
+        # g.perform_conveyor_belt_pack()
         # g.perform_declutter_belief_grocery_packing()
         # g.perform_optimistic()
         # g.perform_dynamic_grocery_packing()
         # g.perform_sbp_grocery_packing()
-        time.sleep(2)
+        # time.sleep(2)
         # g.run()
         # self, inbox, topfree, mediumlist, heavylist
         # print(g.create_pddl_problem(['pepsi','coke'], ['lipton','bleach','nutella'],
@@ -2208,8 +2150,8 @@ if __name__ == '__main__':
         # g.run_simulation(g.domain_path, g.problem_path)
         # g.clutter_optimistic_planning()
         # g.declutter_before_clutter_planning()
-        # while True:
-        #     g.redrawGameWindow()
+        while True:
+            g.redrawGameWindow()
 
 
 
