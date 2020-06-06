@@ -97,7 +97,7 @@ class Grocery_item:
 
 
 class environment:
-    def __init__(self, uncertain="low", declutter=False, order=0):
+    def __init__(self, strategy='optimistic', order=1):
         self.window_width = 1000
         self.window_height = 480
         self.num_mc_samples = 10
@@ -125,8 +125,8 @@ class environment:
         self.planning_time = 0
         self.should_declutter = False
 
-        self.uncertainty = uncertain 
-        self.declutter = declutter
+        self.uncertainty = "low" 
+        # self.declutter = declutter
         self.init_order = order
         self.declutter_domain = '/home/developer/uncertainty/pddl/dom.pddl'
         self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
@@ -207,11 +207,19 @@ class environment:
         self.objects_list = [self.pepsi, self.nutella,self.coke,self.lipton,
                     self.bleach, self.ambrosia, self.banana, self.cereal, self.lysol,
                     self.milk, self.oreo, self.tangerine]
-
+        level = "Easy"
+        if order == 1:
+            level = "Easy"
+        elif order == 2:
+            level = "Medium"
+        elif order == 3:
+            level = "Hard"
+        else:
+            level = "Brutal"
         self.clock = pygame.time.Clock()
-        self.current_action = "Action: (pick-up-from-on nutella bleach)"
-        self.certainty_level = "Uncertainty Level: "+uncertain
-        self.clutter_strategy = "Clutter Strategy: Declutter first" if declutter else "Clutter Strategy: Optimistic"
+        self.current_action = "Action: "
+        self.difficulty_level = "Difficulty Level: "+level
+        self.strategy = "Strategy: "+strategy
         
         self.win = pygame.display.set_mode((self.window_width,self.window_height))
         # self.populate_belief_space()
@@ -346,7 +354,7 @@ class environment:
             self.lipton.on_clutter_or_table = True
             self.nutella.on_clutter_or_table = True
             self.oreo.item_on_top = "milk"
-            self.lysol.item_on_top = "lysol"
+            self.tangerine.item_on_top = "lysol"
             self.banana.item_on_top = "bleach"
             self.coke.item_on_top = "ambrosia"
 
@@ -541,8 +549,8 @@ class environment:
         self.duration = int(time.time()-self.start_time)
         self.duration_in_sec = "Duration: "+str(self.duration)+ " seconds"
         self.display_text(self.duration_in_sec, 20,200,14)
-        self.display_text("Uncertainty Level: "+self.uncertainty, 40,200,14)
-        self.display_text(self.clutter_strategy, 60,200,14)
+        self.display_text(self.difficulty_level, 40,200,14)
+        self.display_text(self.strategy, 60,200,14)
         # self.display_belief_space()
 
         if self.perceived is not None:
@@ -1872,7 +1880,7 @@ class environment:
         self.should_declutter = False
 
 
-    def perform_dynamic_grocery_packing(self):
+    def perform_dynamic_grocery_packing(self,sample_procedure):
         st = time.time()
         # inboxlist, topfreelist, mediumlist, heavylist = \
         #             self.select_perceived_objects_and_classify_weights()
@@ -1890,7 +1898,7 @@ class environment:
                                                 mediumlist, heavylist)
             
             unoccluded_items = topfreelist
-            oh, sh = self.estimate_clutter_content(unoccluded_items,inboxlist,'divergent_set')
+            oh, sh = self.estimate_clutter_content(unoccluded_items,inboxlist,sample_procedure)
             print("probs are "+str(oh)+" "+str(sh))
 
             if sh > oh:
@@ -2076,6 +2084,29 @@ class environment:
         print('EXECUTION TIME FOR CONVEYORBELT: '+str(total - self.planning_time))
 
 
+    def run_strategy(self, strategy):
+        if strategy == 'conveyor-belt':
+            self.perform_conveyor_belt_pack()
+        elif strategy == 'pick-n-roll':
+            self.perform_pick_n_roll()
+        elif strategy == 'bag-sort':
+            self.perform_bag_sort_grocery_packing()
+        elif strategy == 'sbp':
+            self.perform_sbp_grocery_packing()
+        elif strategy == 'optimistic':
+            self.perform_optimistic()
+        elif strategy == 'declutter':
+            self.perform_declutter_belief_grocery_packing()
+        elif strategy == 'mc-dynamic':
+            self.perform_dynamic_grocery_packing('mc_sample')
+        elif strategy == 'weighted-dynamic':
+            self.perform_dynamic_grocery_packing('weighted_sample')
+        elif strategy == 'divergent-dynamic':
+            self.perform_dynamic_grocery_packing('divergent_set')
+
+
+
+
 
 
 
@@ -2126,14 +2157,13 @@ if __name__ == '__main__':
     #     print(key+" "+g.belief_space[key].name)
     args = sys.argv
     if len(args) != 3:
-        print("Arguments should be level_of_certainty, clutter_strategy and init_order_num")
+        print("Arguments should be strategy and difficulty")
     else:        
-        uncertainty = args[1]
-        clutter_strategy = False if args[2]=="optimistic" else True
-        order = np.random.randint(4)#int(args[3])
-        g = environment(uncertain=uncertainty, 
-                        declutter=clutter_strategy, 
-                        order=4)
+        strategy = args[1]
+        difficulty = args[2]
+        g = environment(strategy=strategy, 
+                        order=int(difficulty))
+        g.run_strategy(strategy)
         # g.test_box()
         # g.perform_bag_sort_grocery_packing()
         # g.perform_pick_n_roll()
@@ -2150,8 +2180,8 @@ if __name__ == '__main__':
         # g.run_simulation(g.domain_path, g.problem_path)
         # g.clutter_optimistic_planning()
         # g.declutter_before_clutter_planning()
-        while True:
-            g.redrawGameWindow()
+        # while True:
+        #     g.redrawGameWindow()
 
 
 
