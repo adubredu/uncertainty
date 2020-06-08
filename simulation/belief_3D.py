@@ -44,11 +44,11 @@ class Grocery_item:
 
 class Grocery_packing:
 	def __init__(self):
-		self.cube = Grocery_item(5.,1.,0.5, 0,0,0, "cube_small.urdf",0.07,0.07,0.07,'cube','light')
+		self.cube = Grocery_item(3.,3.,0.5, 0,0,0, "cube_small.urdf",0.07,0.07,0.07,'cube','light')
 		self.table = Grocery_item(0,0,0, 0,0,0, "table/table.urdf",1,1,1,'table','heavy')
-		self.lgripper = Grocery_item(-0.05,0.0,1.0, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light')
-		self.rgripper = Grocery_item(0.05,0.0,1.0, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light')
-		self.tray = Grocery_item(.0,.0,0.625, 0,0,0, "tray/traybox.urdf",1,1,1,'tray','light')
+		self.lgripper = Grocery_item(-0.05,0.0,2.0, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light')
+		self.rgripper = Grocery_item(0.05,0.0,2.0, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light')
+		self.tray = Grocery_item(-.5,.0,0.6, 0,0,0, "container/container.urdf",1,1,1,'tray','heavy')
 
 		self.items = {
 						'cube':self.cube,
@@ -57,7 +57,8 @@ class Grocery_packing:
 						'rgripper':self.rgripper,
 						'tray': self.tray
 		}
-		self.delta = 0.0001
+		self.delta = 0.01
+		self.fps = 60
 
 
 	def refresh_world(self):
@@ -84,7 +85,7 @@ class Grocery_packing:
 				self.rgripper.x+=self.delta
 			else:
 				self.rgripper.x-=self.delta
-			time.sleep(1./10000.)
+			time.sleep(1./self.fps)
 			self.refresh_world()
 
 		while math.fabs(self.lgripper.y - item.y)>self.delta or math.fabs(self.rgripper.y - item.y)>self.delta:
@@ -93,7 +94,7 @@ class Grocery_packing:
 			else:
 				self.lgripper.y-=self.delta
 			self.rgripper.y = self.lgripper.y
-			time.sleep(1./10000.)
+			time.sleep(1./self.fps)
 			self.refresh_world()
 
 		while math.fabs(self.lgripper.z - (item.z+0.05))>self.delta:
@@ -102,7 +103,7 @@ class Grocery_packing:
 			else:
 				self.lgripper.z-=self.delta
 			self.rgripper.z = self.lgripper.z
-			time.sleep(1./10000.)
+			time.sleep(1./self.fps)
 			self.refresh_world()
 
 		##########################################
@@ -114,7 +115,7 @@ class Grocery_packing:
 				self.lgripper.z-=self.delta
 				item.z-=self.delta
 			self.rgripper.z = self.lgripper.z
-			time.sleep(1./10000.)
+			time.sleep(1./self.fps)
 			self.refresh_world()
 
 		while math.fabs(self.lgripper.x - (olx-(width/2)))>self.delta \
@@ -129,7 +130,7 @@ class Grocery_packing:
 				self.rgripper.x+=self.delta
 			else:
 				self.rgripper.x-=self.delta
-			time.sleep(1./10000.)
+			time.sleep(1./self.fps)
 			self.refresh_world()
 
 		while math.fabs(self.lgripper.y - oly)>self.delta or math.fabs(self.rgripper.y - oly)>self.delta:
@@ -140,7 +141,7 @@ class Grocery_packing:
 				self.lgripper.y-=self.delta
 				item.y-=self.delta
 			self.rgripper.y = self.lgripper.y
-			time.sleep(1./10000.)
+			time.sleep(1./self.fps)
 			self.refresh_world()
 	
 
