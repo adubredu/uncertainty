@@ -44,11 +44,11 @@ class Grocery_item:
 
 class Grocery_packing:
 	def __init__(self):
-		self.cube = Grocery_item(3.,3.,0.5, 0,0,0, "cube_small.urdf",0.07,0.07,0.07,'cube','light')
+		self.cube = Grocery_item(.5,0.,0.65, 0,0,0, "cube_small.urdf",0.07,0.07,0.07,'cube','light')
 		self.table = Grocery_item(0,0,0, 0,0,0, "table/table.urdf",1,1,1,'table','heavy')
-		self.lgripper = Grocery_item(-0.05,0.0,2.0, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light')
-		self.rgripper = Grocery_item(0.05,0.0,2.0, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light')
-		self.tray = Grocery_item(-.5,.0,0.6, 0,0,0, "container/container.urdf",1,1,1,'tray','heavy')
+		self.lgripper = Grocery_item(-0.05,0.0,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light')
+		self.rgripper = Grocery_item(0.05,0.0,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light')
+		self.tray = Grocery_item(-.5,.0,0.62, 0,0,0, "container/container.urdf",1,1,1,'tray','heavy')
 
 		self.items = {
 						'cube':self.cube,
@@ -143,6 +143,90 @@ class Grocery_packing:
 			self.rgripper.y = self.lgripper.y
 			time.sleep(1./self.fps)
 			self.refresh_world()
+
+
+	def put_in_box(self,targetID,bx,by,bz):
+		item = self.items[targetID]
+		(olx,oly,olz) = self.lgripper.get_position()
+		(orx,ory,orz) = self.rgripper.get_position()
+
+		width = self.items[targetID].width
+		breadth = self.items[targetID].breadth
+
+		while math.fabs(self.lgripper.x - (bx-(width/2)))>self.delta \
+		 or math.fabs(self.rgripper.x - (bx+(width/2)))>self.delta:
+			if self.lgripper.x < (bx-(width/2)):
+				self.lgripper.x+=self.delta
+				item.x+=self.delta
+			else:
+				self.lgripper.x-=self.delta
+				item.x-=self.delta
+			if self.rgripper.x < (bx+(breadth/2)):
+				self.rgripper.x+=self.delta
+			else:
+				self.rgripper.x-=self.delta
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.y - by)>self.delta or math.fabs(self.rgripper.y - by)>self.delta:
+			if self.lgripper.y < by:
+				self.lgripper.y+=self.delta
+				item.y+=self.delta
+			else:
+				self.lgripper.y-=self.delta
+				item.y-=self.delta
+			self.rgripper.y = self.lgripper.y
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.z - (bz+0.05))>self.delta:
+			if self.lgripper.z < (bz+0.05):
+				self.lgripper.z+=self.delta
+				item.z+=self.delta
+			else:
+				self.lgripper.z-=self.delta
+				item.z-=self.delta
+			self.rgripper.z = self.lgripper.z
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		##########################################
+		while math.fabs(self.lgripper.z - (olz+0.05))>self.delta:
+			if self.lgripper.z < (olz+0.05):
+				self.lgripper.z+=self.delta
+				
+			else:
+				self.lgripper.z-=self.delta
+				
+			self.rgripper.z = self.lgripper.z
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.x - (olx-(width/2)))>self.delta \
+		 or math.fabs(self.rgripper.x - (olx+(width/2)))>self.delta:
+			if self.lgripper.x < (olx-(width/2)):
+				self.lgripper.x+=self.delta
+				
+			else:
+				self.lgripper.x-=self.delta
+				
+			if self.rgripper.x < (olx+(breadth/2)):
+				self.rgripper.x+=self.delta
+			else:
+				self.rgripper.x-=self.delta
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.y - oly)>self.delta or math.fabs(self.rgripper.y - oly)>self.delta:
+			if self.lgripper.y < oly:
+				self.lgripper.y+=self.delta
+				
+			else:
+				self.lgripper.y-=self.delta
+				
+			self.rgripper.y = self.lgripper.y
+			time.sleep(1./self.fps)
+			self.refresh_world()
 	
 
 
@@ -155,6 +239,8 @@ for i in range(1):
 	time.sleep(1./420)
 	g = Grocery_packing()
 	g.pick_up('cube')
+	g.put_in_box('cube',-0.6,0,0.7)
+	time.sleep(60)
 
 	# p.resetBasePositionAndOrientation(boxId, [h,0,1], cubeStartOrientation)
 	# h+=.01
