@@ -14,6 +14,7 @@ p.setGravity(0,0,0)
 planeId = p.loadURDF("plane.urdf") 
 
 
+
 class Grocery_item:
     def __init__(self, x, y, z, orr, op, oy, urdf_path, width, 
                 breadth, height, object_name, mass):
@@ -48,6 +49,8 @@ class Grocery_packing:
 		self.table = Grocery_item(0,0,0, 0,0,0, "table/table.urdf",1,1,1,'table','heavy')
 		self.lgripper = Grocery_item(-0.05,0.0,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light')
 		self.rgripper = Grocery_item(0.05,0.0,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light')
+		p.setAdditionalSearchPath('/home/developer/uncertainty/simulation/models')
+
 		self.tray = Grocery_item(-.5,.0,0.62, 0,0,0, "container/container.urdf",1,1,1,'tray','heavy')
 
 		self.items = {
