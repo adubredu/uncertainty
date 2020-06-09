@@ -15,7 +15,14 @@ p.setAdditionalSearchPath('/home/developer/uncertainty/simulation/models')
 # objectid = p.loadURDF('apple/apple.urdf',[0,0,0.5],p.getQuaternionFromEuler([3.14,0,0]))
 # objectid = p.loadURDF('coke/coke.urdf',[0,0,0.5],p.getQuaternionFromEuler([1.57,0,0]))
 # objectid = p.loadURDF('orange/orange.urdf',[0,0,0.5],p.getQuaternionFromEuler([0,0,0]))
-objectid = p.loadURDF('pepsi/pepsi.urdf',[0,0,0.5],p.getQuaternionFromEuler([1.57,0,0]))
+# objectid = p.loadURDF('pepsi/pepsi.urdf',[0,0,0.5],p.getQuaternionFromEuler([1.57,0,0]))
+# objectid = p.loadURDF('cereal/cereal.urdf',[0,0,0.5],p.getQuaternionFromEuler([1.57,0,0]))
+# objectid = p.loadURDF('lysol/lysol.urdf',[0,0,0.5],p.getQuaternionFromEuler([0,0,0]))
+# objectid = p.loadURDF('lipton/lipton.urdf',[0,0,0.5],p.getQuaternionFromEuler([0,0,0]))
+# objectid = p.loadURDF('nutella/nutella.urdf',[0,0,0.5],p.getQuaternionFromEuler([0,0,0]))
+# objectid = p.loadURDF('ambrosia/ambrosia.urdf',[0,0,0.5],p.getQuaternionFromEuler([0,0,0]))
+# objectid = p.loadURDF('oreo/oreo.urdf',[0,0,0.5],p.getQuaternionFromEuler([3.14,0,0]))
+objectid = p.loadURDF('milk/milk.urdf',[0,0,0.5],p.getQuaternionFromEuler([0,0,0]))
 
 
 
