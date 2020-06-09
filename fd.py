@@ -58,7 +58,8 @@ class Fast_Downward:
         self.default_planner = 'ff-astar'
         self.max_fd_cost = 1e8
         self.plan_file = '/home/developer/uncertainty/simulation/sas_plan'
-        self.fd_path = '/home/developer/garage/FastDownward/fast-downward.py'
+        self.fd_path = '/home/developer/pybullet/pddlstream/FastDownward/fast-downward.py'
+        # self.fd_path = '/home/developer/garage/FastDownward/fast-downward.py'
 
 
     def plan(self,domain_path, problem_path,debug=True):
@@ -93,4 +94,4 @@ class Fast_Downward:
 
 if __name__ == '__main__':
     f = Fast_Downward()
-    print(f.plan('pddl/dom.pddl', 'pddl/prob.pddl'))
+    print(f.plan('pddl/d.pddl', 'pddl/p.pddl'))
