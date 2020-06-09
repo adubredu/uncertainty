@@ -13,7 +13,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="milk.stl" scale="1 1 1"/>
+        <mesh filename="milk.stl" scale=".5 .5 .5"/>
       </geometry>
       <material name="white">
         <color rgba="1 1 1 1"/>
