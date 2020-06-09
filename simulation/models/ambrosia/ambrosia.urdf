@@ -1,0 +1,29 @@
+<?xml version="0.0" ?>
+<robot name="ambrosia.urdf">
+  <link name="baseLink">
+    <contact>
+      <lateral_friction value="1.0"/>
+      <inertia_scaling value="3.0"/>
+    </contact>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+       <mass value=".2"/>
+       <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="ambrosia.stl" scale="1 1 1"/>
+      </geometry>
+      <material name="pink">
+        <color rgba="0.81 0.04 0.96 0.7"/>
+      </material>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+	 	<cylinder radius="0.1" length="0.2"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>
