@@ -22,9 +22,9 @@ tableid = p.loadURDF('table/table.urdf',[0,0,0],p.getQuaternionFromEuler([0,0,0]
 p.setAdditionalSearchPath('/home/developer/uncertainty/simulation/models')
 bottle = p.loadURDF('bottle/bottle.urdf',[0,0,0.65],p.getQuaternionFromEuler([1.57,0,0]))
 apple = p.loadURDF('apple/apple.urdf',[0.25,0,0.65],p.getQuaternionFromEuler([3.14,0,0]))
-# coke = p.loadURDF('coke/coke.urdf',[0.25,0.3,0.65],p.getQuaternionFromEuler([1.57,0,0]))
-orange = p.loadURDF('orange/orange.urdf',[1.5,0,0.65],p.getQuaternionFromEuler([0,0,0]))
-pepsi = p.loadURDF('pepsi/pepsi.urdf',[2,0,0.66],p.getQuaternionFromEuler([1.57,0,0]))
+coke = p.loadURDF('coke/coke.urdf',[0.25,0.3,0.65],p.getQuaternionFromEuler([1.57,0,0]))
+orange = p.loadURDF('orange/orange.urdf',[0,0.25,0.65],p.getQuaternionFromEuler([0,0,0]))
+pepsi = p.loadURDF('pepsi/pepsi.urdf',[0.5,0,0.66],p.getQuaternionFromEuler([1.57,0,0]))
 cereal = p.loadURDF('cereal/cereal.urdf',[2.5,0,0.65],p.getQuaternionFromEuler([1.57,0,0]))
 lysol = p.loadURDF('lysol/lysol.urdf',[3,0,0.75],p.getQuaternionFromEuler([0,0,0]))
 lipton = p.loadURDF('lipton/lipton.urdf',[3.5,0,0.65],p.getQuaternionFromEuler([0,0,0]))
@@ -109,15 +109,20 @@ while 1:
 	clusters = {}
 	for box in preds:
 		fit = False
-		mean = np.sqrt((box['coordinates'][0]-box['coordinates'][2])**2 +\
-						(box['coordinates'][1]-box['coordinates'][3])**2)
+		mid = ((box['coordinates'][0] + box['coordinates'][2])/2, \
+			(box['coordinates'][1] + box['coordinates'][3])/2)
+
 		for key in clusters:
-			if np.abs(key - mean) < 10:
+			kcd = key.split('_')
+			ikcd = [float(i) for i in kcd]
+			dist = np.sqrt((ikcd[0] - mid[0])**2 + (ikcd[1]-mid[1])**2)
+			if dist < 10:
 				clusters[key].append(box)
 				fit = True
 				break
 		if not fit:
-			clusters[mean] = [box]
+			clusters[str(mid[0])+'_'+str(mid[1])] = [box]
+	# print(len(clusters))
 
 	scene = {}
 	for key in clusters:
