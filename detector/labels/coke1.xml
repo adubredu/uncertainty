@@ -1,0 +1,26 @@
+<annotation>
+	<folder>labels</folder>
+	<filename>coke.png</filename>
+	<path>/home/alphonsus/robots/detector/labelslabels/coke.png</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>128</width>
+		<height>128</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>coke</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>64</xmin>
+			<ymin>63</ymin>
+			<xmax>73</xmax>
+			<ymax>71</ymax>
+		</bndbox>
+	</object>
+</annotation>
