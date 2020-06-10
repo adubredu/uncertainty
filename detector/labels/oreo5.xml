@@ -1,0 +1,26 @@
+<annotation>
+	<folder>labels</folder>
+	<filename>oreo.png</filename>
+	<path>/home/alphonsus/robots/detector/labels/oreo.png</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>128</width>
+		<height>128</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>oreo</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>60</xmin>
+			<ymin>62</ymin>
+			<xmax>68</xmax>
+			<ymax>67</ymax>
+		</bndbox>
+	</object>
+</annotation>

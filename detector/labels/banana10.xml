@@ -1,0 +1,26 @@
+<annotation>
+	<folder>labels</folder>
+	<filename>banana10.png</filename>
+	<path>/home/alphonsus/robots/detector/labels/banana10.png</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>128</width>
+		<height>128</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>banana</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>55</xmin>
+			<ymin>60</ymin>
+			<xmax>70</xmax>
+			<ymax>69</ymax>
+		</bndbox>
+	</object>
+</annotation>
