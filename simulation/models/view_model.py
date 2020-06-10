@@ -2,24 +2,29 @@ import pybullet as p
 import time
 import pybullet_data
 import math
+import cv2
+import numpy as np 
+from detecto import core, utils, visualize
+from PIL import Image
 
 
 physicsClient = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
-# p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
+p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
 print(pybullet_data.getDataPath())
 
 
 p.setGravity(0,0,0)
+p.setAdditionalSearchPath(pybullet_data.getDataPath())
 planeId = p.loadURDF("plane.urdf")
 tableid = p.loadURDF('table/table.urdf',[0,0,0],p.getQuaternionFromEuler([0,0,0]))
 
 p.setAdditionalSearchPath('/home/developer/uncertainty/simulation/models')
-bottle = p.loadURDF('bottle/bottle.urdf',[0,0,0.65],p.getQuaternionFromEuler([1.57,0,0]))
-apple = p.loadURDF('apple/apple.urdf',[0.5,0,0.65],p.getQuaternionFromEuler([3.14,0,0]))
+# bottle = p.loadURDF('bottle/bottle.urdf',[0,0,0.65],p.getQuaternionFromEuler([1.57,0,0]))
+# apple = p.loadURDF('apple/apple.urdf',[0.5,0,0.65],p.getQuaternionFromEuler([3.14,0,0]))
 coke = p.loadURDF('coke/coke.urdf',[1.0,0,0.65],p.getQuaternionFromEuler([1.57,0,0]))
-orange = p.loadURDF('orange/orange.urdf',[1.5,0,0.65],p.getQuaternionFromEuler([0,0,0]))
-pepsi = p.loadURDF('pepsi/pepsi.urdf',[2,0,0.65],p.getQuaternionFromEuler([1.57,0,0]))
+orange = p.loadURDF('orange/orange.urdf',[0,0,0.65],p.getQuaternionFromEuler([0,0,0]))
+pepsi = p.loadURDF('pepsi/pepsi.urdf',[2,0,0.66],p.getQuaternionFromEuler([1.57,0,0]))
 cereal = p.loadURDF('cereal/cereal.urdf',[2.5,0,0.65],p.getQuaternionFromEuler([1.57,0,0]))
 lysol = p.loadURDF('lysol/lysol.urdf',[3,0,0.65],p.getQuaternionFromEuler([0,0,0]))
 lipton = p.loadURDF('lipton/lipton.urdf',[3.5,0,0.65],p.getQuaternionFromEuler([0,0,0]))
@@ -34,7 +39,7 @@ p.setRealTimeSimulation(1)
 
 while 1:
 	viewMatrix = p.computeViewMatrix(
-    cameraEyePosition=[0, 0, 3],
+    cameraEyePosition=[0, 0, 2],
     cameraTargetPosition=[0, 0, 0],
     cameraUpVector=[0, 1, 0])
 
@@ -45,11 +50,81 @@ while 1:
 	    farVal=3.1)
 
 	width, height, rgbImg, depthImg, segImg = p.getCameraImage(
-	    width=224, 
-	    height=224,
+	    width=480, 
+	    height=480,
 	    viewMatrix=viewMatrix,
 	    projectionMatrix=projectionMatrix,
 	    shadow=True,
 	    renderer=p.ER_BULLET_HARDWARE_OPENGL)
+	model = core.Model.load('/home/developer/garage/grocery_detector.pth', \
+		['ambrosia','apple','banana','bottle','cereal','coke',\
+				'lipton','lysol','milk','nutella','orange','oreo','pepsi'])
+	
+	rgbImg = Image.fromarray(rgbImg).convert('RGB')
+	predictions = model.predict(rgbImg)
+	# camera_view = cv2.cvtColor(np.array(rgbImg), cv2.COLOR_RGB2BGR)
+	camera_view = np.array(rgbImg)
+
+	labels, boxes, scores = predictions
+	boxes = boxes.numpy()
+	scores = scores.numpy()
+	# print(labels)
+	# visualize.show_labeled_image(camera_view, boxes, labels)
+	num_observed = len(labels)
+	observed = {}
+	preds = []
+	idd = 0
+	for i in range(num_observed):
+		dicts = {'name':labels[i],
+				 'id':idd,
+				'coordinates': boxes[i],
+				 'confidence':scores[i],
+				 'color': (np.random.randint(255),\
+				 		np.random.randint(255),\
+				 		np.random.randint(255))
+				 }
+		preds.append(dicts)
+		observed[labels[i]] = dicts
+		idd+=1
+
+	clusters = {}
+	for box in preds:
+		fit = False
+		mean = np.sqrt((box['coordinates'][0]-box['coordinates'][2])**2 +\
+						(box['coordinates'][1]-box['coordinates'][3])**2)
+		for key in clusters:
+			if np.abs(key - mean) < 30:
+				clusters[key].append(box)
+				fit = True
+				break
+		if not fit:
+			clusters[mean] = [box]
+
+	scene = {}
+	for key in clusters:
+		weights = [box['confidence'] for box in clusters[key]]
+		maxind = np.argmax(weights)
+		maxweightedbox = clusters[key][maxind]
+		scene[maxweightedbox['name']] = [(box['name'], box['confidence']) for box in clusters[key]]
+
+	print(scene)
+
+	print('**********************************')
+
+
+
+	for item in observed:
+		camera_view = cv2.rectangle(camera_view, (observed[item]['coordinates'][0],
+				 observed[item]['coordinates'][1]), (observed[item]['coordinates'][2], 
+				 observed[item]['coordinates'][3]), observed[item]['color'], 1)
+
+
+
+	# print(observed)
+	print('\n\n')
+	# cv2.rectangle(camera_view, (1,1), (100,100),(0,255,0),1)
+	cv2.imshow('ss', camera_view)
+	if cv2.waitKey(1) & 0xFF == ord('q'):
+	    break
 	p.stepSimulation()
 	# time.sleep(300)

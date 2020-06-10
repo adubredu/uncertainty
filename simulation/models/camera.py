@@ -5,9 +5,13 @@ import pybullet as p
 import time
 import pybullet_data
 from PIL import Image
+import cv2
 
 direct = p.connect(p.GUI)  #, options="--window_backend=2 --render_device=0")
 #egl = p.loadPlugin("eglRendererPlugin")
+p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
+
+p.setGravity(0,0,0)
 
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.loadURDF('plane.urdf')
@@ -55,8 +59,16 @@ while 1:
                             shadow=True,
                             renderer=p.ER_BULLET_HARDWARE_OPENGL)
   # img_array = misc.imread(images[2])
-  im = Image.fromarray(images[2])
-  im.save('pepsi.png')
+  camera_view = cv2.cvtColor(images[2], cv2.COLOR_RGB2BGR)
+  cv2.imshow('ss', camera_view)
+  if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
   p.stepSimulation()
-  time.sleep(2)
+  # time.sleep(2)
+
+
+
+#saving image
+# im = Image.fromarray(images[2])
+  # im.save('pepsi.png')
