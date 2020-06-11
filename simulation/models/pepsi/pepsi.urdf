@@ -13,7 +13,7 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <geometry>
-        <mesh filename="pepsi.stl" scale="0.001 .001 .001"/>
+        <mesh filename="pepsi.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="blue">
         <color rgba="0.04 0.04 0.96 1"/>
