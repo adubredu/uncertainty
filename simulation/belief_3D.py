@@ -5,7 +5,7 @@ import time
 import pybullet_data
 import math
 import threading
-
+import numpy as np
 
 physicsClient = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -84,6 +84,7 @@ class Grocery_item:
         self.quat = p.getQuaternionFromEuler([self.orr,self.op,self.oy])
         self.name = object_name
         self.id = p.loadURDF(urdf_path, [self.x,self.y,self.z], self.quat)
+        
 
     def update_object_position(self):
     	p.resetBasePositionAndOrientation(self.id, \
@@ -114,6 +115,8 @@ class Grocery_packing:
 		self.delta = 0.01
 		self.fps = 60
 		self.scene_belief = None
+		self.clutter_xs = [-0.65, -0.55, -.45, -.35, -.25, -.15, -.05]
+		self.clutter_ys = [-.4, -.3, -.2, .2, .3, .4]
 		# perception = threading.Thread(target=self.start_perception,args=(1,))
 		# perception.start()
 
@@ -125,21 +128,20 @@ class Grocery_packing:
 
 
 	def init_clutter(self):
-		self.bottle = Grocery_item(.5,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.07,'bottle','light')
-		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.07,'coke','light')
+		self.bottle = Grocery_item(.5,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.35,'bottle','light')
+		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.1,'coke','light')
 		self.nutella = Grocery_item(.6, 0., .65, 0,0,0, 'nutella/nutella.urdf', 0.07,0.07,0.07,'nutella','light')
-		self.orange = Grocery_item(.6,.1,.65,0,0,0, 'orange/orange.urdf', 0.07,0.07,0.07, 'orange','light')
-		self.pepsi = Grocery_item(.5, -.1, .65, 1.57, 0,0,'pepsi/pepsi.urdf',0.07,0.07,0.07, 'pepsi','light')
-		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.07, 'cereal','light')
-		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.07, 'lysol','light')
-		self.lipton = Grocery_item(.6, .2, .65, 0,0,0, 'lipton/lipton.urdf',0.07,0.07,0.07, 'lipton','light' )
-		self.apple = Grocery_item(.7, 0., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.07, 'apple','light')
+		self.orange = Grocery_item(.6,.1,.65,0,0,0, 'orange/orange.urdf', 0.07,0.07,0.05, 'orange','light')
+		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.1, 'cereal','light')
+		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.2, 'lysol','light')
+		self.lipton = Grocery_item(.6, .2, .65, 0,0,0, 'lipton/lipton.urdf',0.07,0.07,0.05, 'lipton','light' )
+		self.apple = Grocery_item(.7, 0., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light')
 
 		self.items['bottle'] = self.bottle
 		self.items['coke'] = self.coke
 		self.items['nutella'] = self.nutella
 		self.items['orange'] = self.orange
-		self.items['pepsi'] = self.pepsi 
+		# self.items['pepsi'] = self.pepsi 
 		self.items['cereal'] = self.cereal
 		self.items['lysol'] = self.lysol
 		self.items['lipton'] = self.lipton
@@ -426,6 +428,188 @@ class Grocery_packing:
 			self.rgripper.y = self.lgripper.y
 			time.sleep(1./self.fps)
 			self.refresh_world()
+
+
+	def put_on(self, topitem, botitem):
+		if topitem == botitem:
+			return False
+
+		item = self.items[topitem]
+		bot = self.items[botitem]
+
+		(bx, by, bz) = bot.get_position()
+		bz = bz + bot.height
+
+		(olx,oly,olz) = self.lgripper.get_position()
+		(orx,ory,orz) = self.rgripper.get_position()
+
+		width = item.width
+		breadth = item.breadth
+
+		while math.fabs(self.lgripper.x - (bx-(width/2)))>self.delta \
+		 or math.fabs(self.rgripper.x - (bx+(width/2)))>self.delta:
+			if self.lgripper.x < (bx-(width/2)):
+				self.lgripper.x+=self.delta
+				item.x+=self.delta
+			else:
+				self.lgripper.x-=self.delta
+				item.x-=self.delta
+			if self.rgripper.x < (bx+(breadth/2)):
+				self.rgripper.x+=self.delta
+			else:
+				self.rgripper.x-=self.delta
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.y - by)>self.delta or math.fabs(self.rgripper.y - by)>self.delta:
+			if self.lgripper.y < by:
+				self.lgripper.y+=self.delta
+				item.y+=self.delta
+			else:
+				self.lgripper.y-=self.delta
+				item.y-=self.delta
+			self.rgripper.y = self.lgripper.y
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.z - bz)>self.delta:
+			if self.lgripper.z < bz:
+				self.lgripper.z+=self.delta
+				item.z+=self.delta
+			else:
+				self.lgripper.z-=self.delta
+				item.z-=self.delta
+			self.rgripper.z = self.lgripper.z
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		##########################################
+		while math.fabs(self.lgripper.z - olz)>self.delta:
+			if self.lgripper.z < olz:
+				self.lgripper.z+=self.delta
+				
+			else:
+				self.lgripper.z-=self.delta
+				
+			self.rgripper.z = self.lgripper.z
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.x - (olx-(width/2)))>self.delta \
+		 or math.fabs(self.rgripper.x - (olx+(width/2)))>self.delta:
+			if self.lgripper.x < (olx-(width/2)):
+				self.lgripper.x+=self.delta
+				
+			else:
+				self.lgripper.x-=self.delta
+				
+			if self.rgripper.x < (olx+(breadth/2)):
+				self.rgripper.x+=self.delta
+			else:
+				self.rgripper.x-=self.delta
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.y - oly)>self.delta or math.fabs(self.rgripper.y - oly)>self.delta:
+			if self.lgripper.y < oly:
+				self.lgripper.y+=self.delta
+				
+			else:
+				self.lgripper.y-=self.delta
+				
+			self.rgripper.y = self.lgripper.y
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+
+	def put_in_clutter(self, itemname):
+		item = self.items[itemname]
+		bx = self.clutter_xs[np.random.randint(7)]
+		by = self.clutter_ys[np.random.randint(6)]
+		bz = 0.65
+		self.clutter_xs.remove(bx)
+
+		(olx,oly,olz) = self.lgripper.get_position()
+		(orx,ory,orz) = self.rgripper.get_position()
+
+		width = item.width
+		breadth = item.breadth
+
+		while math.fabs(self.lgripper.x - (bx-(width/2)))>self.delta \
+		 or math.fabs(self.rgripper.x - (bx+(width/2)))>self.delta:
+			if self.lgripper.x < (bx-(width/2)):
+				self.lgripper.x+=self.delta
+				item.x+=self.delta
+			else:
+				self.lgripper.x-=self.delta
+				item.x-=self.delta
+			if self.rgripper.x < (bx+(breadth/2)):
+				self.rgripper.x+=self.delta
+			else:
+				self.rgripper.x-=self.delta
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.y - by)>self.delta or math.fabs(self.rgripper.y - by)>self.delta:
+			if self.lgripper.y < by:
+				self.lgripper.y+=self.delta
+				item.y+=self.delta
+			else:
+				self.lgripper.y-=self.delta
+				item.y-=self.delta
+			self.rgripper.y = self.lgripper.y
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.z - bz)>self.delta:
+			if self.lgripper.z < bz:
+				self.lgripper.z+=self.delta
+				item.z+=self.delta
+			else:
+				self.lgripper.z-=self.delta
+				item.z-=self.delta
+			self.rgripper.z = self.lgripper.z
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		##########################################
+		while math.fabs(self.lgripper.z - olz)>self.delta:
+			if self.lgripper.z < olz:
+				self.lgripper.z+=self.delta
+				
+			else:
+				self.lgripper.z-=self.delta
+				
+			self.rgripper.z = self.lgripper.z
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.x - (olx-(width/2)))>self.delta \
+		 or math.fabs(self.rgripper.x - (olx+(width/2)))>self.delta:
+			if self.lgripper.x < (olx-(width/2)):
+				self.lgripper.x+=self.delta
+				
+			else:
+				self.lgripper.x-=self.delta
+				
+			if self.rgripper.x < (olx+(breadth/2)):
+				self.rgripper.x+=self.delta
+			else:
+				self.rgripper.x-=self.delta
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
+		while math.fabs(self.lgripper.y - oly)>self.delta or math.fabs(self.rgripper.y - oly)>self.delta:
+			if self.lgripper.y < oly:
+				self.lgripper.y+=self.delta
+				
+			else:
+				self.lgripper.y-=self.delta
+				
+			self.rgripper.y = self.lgripper.y
+			time.sleep(1./self.fps)
+			self.refresh_world()
+
 	
 
 
@@ -438,43 +622,47 @@ for i in range(1):
 	time.sleep(1./420)
 	g = Grocery_packing()
 	box = Box(3)
-	time.sleep(10)
+	# time.sleep(10)
 
-	g.pick_up('bottle')
-	i,j,k = box.add_item('bottle')
-	g.put_in_box('bottle',i,j,k)
-
-	g.pick_up('nutella')
-	i,j,k = box.add_item('nutella')
-	g.put_in_box('nutella',i,j,k)
-
-	g.pick_up('coke')
-	i,j,k = box.add_item('coke')
-	g.put_in_box('coke',i,j,k)
-
-	g.pick_up('cereal')
-	i,j,k = box.add_item('cereal')
-	g.put_in_box('cereal',i,j,k)
-
-	g.pick_up('lipton')
-	i,j,k = box.add_item('lipton')
-	g.put_in_box('lipton',i,j,k)
-
-	g.pick_up('orange')
-	i,j,k = box.add_item('orange')
-	g.put_in_box('orange',i,j,k)
-
-	g.pick_up('pepsi')
-	i,j,k = box.add_item('pepsi')
-	g.put_in_box('pepsi',i,j,k)
-
-	g.pick_up('apple')
-	i,j,k = box.add_item('apple')
-	g.put_in_box('apple',i,j,k)
-
+	# g.pick_up('lysol')
+	# g.put_on('lysol', 'cereal')
 	g.pick_up('lysol')
-	i,j,k = box.add_item('lysol')
-	g.put_in_box('lysol',i,j,k)	
+	g.put_in_clutter('lysol')
+	# g.pick_up('bottle')
+	# i,j,k = box.add_item('bottle')
+	# g.put_in_box('bottle',i,j,k)
+
+	# g.pick_up('nutella')
+	# i,j,k = box.add_item('nutella')
+	# g.put_in_box('nutella',i,j,k)
+
+	# g.pick_up('coke')
+	# i,j,k = box.add_item('coke')
+	# g.put_in_box('coke',i,j,k)
+
+	# g.pick_up('cereal')
+	# i,j,k = box.add_item('cereal')
+	# g.put_in_box('cereal',i,j,k)
+
+	# g.pick_up('lipton')
+	# i,j,k = box.add_item('lipton')
+	# g.put_in_box('lipton',i,j,k)
+
+	# g.pick_up('orange')
+	# i,j,k = box.add_item('orange')
+	# g.put_in_box('orange',i,j,k)
+
+	# g.pick_up('pepsi')
+	# i,j,k = box.add_item('pepsi')
+	# g.put_in_box('pepsi',i,j,k)
+
+	# g.pick_up('apple')
+	# i,j,k = box.add_item('apple')
+	# g.put_in_box('apple',i,j,k)
+
+	# g.pick_up('lysol')
+	# i,j,k = box.add_item('lysol')
+	# g.put_in_box('lysol',i,j,k)	
 	time.sleep(60)
 
 	# p.resetBasePositionAndOrientation(boxId, [h,0,1], cubeStartOrientation)
