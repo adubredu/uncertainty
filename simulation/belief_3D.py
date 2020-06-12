@@ -129,7 +129,7 @@ class Grocery_packing:
 		self.confidence_threshold = 0.5
 		self.fps = 60
 		self.scene_belief = {}
-		self.clutter_xs = [-0.65, -0.55, -.45, -.35, -.25, -.15, -.05]
+		self.clutter_xs = [0.65, 0.55, .45, .35, .25, .15, .05]
 		self.clutter_ys = [-.4, -.3, -.2, .2, .3, .4]
 		perception = threading.Thread(target=self.start_perception,args=(1,))
 		perception.start()
@@ -546,9 +546,10 @@ class Grocery_packing:
 
 	def put_in_clutter(self, itemname):
 		item = self.items[itemname]
-		bx = self.clutter_xs[np.random.randint(7)]
-		by = self.clutter_ys[np.random.randint(6)]
-		bz = 0.65
+		ly = len(self.clutter_ys)
+		bx = self.clutter_xs[0]
+		by = self.clutter_ys[np.random.randint(ly)]
+		bz = 0.7
 		self.clutter_xs.remove(bx)
 
 		item.inclutter = True
@@ -783,7 +784,7 @@ class Grocery_packing:
 			self.put_in_box(alias[action[1]],x,y,z)
 
 		elif action[0] == 'put-in-clutter':
-			self.drop_in_clutter(alias[action[1]])
+			self.put_in_clutter(alias[action[1]])
 
 		elif action[0] == 'put-on':
 			self.put_on(alias[action[1]], alias[action[2]])
@@ -809,6 +810,40 @@ class Grocery_packing:
 		total = end-start
 		print('PLANNING TIME FOR OPTIMISTIC: '+str(self.planning_time))
 		print('EXECUTION TIME FOR OPTIMISTIC: '+str(total - self.planning_time))
+
+	def perform_declutter_belief_grocery_packing(self):
+		start = time.time()
+		self.should_declutter = True
+		self.perform_declutter()
+		self.should_declutter = False
+		self.perform_optimistic_belief_grocery_packing()
+		end = time.time()
+		total = end - start
+		print('PLANNING TIME FOR DECLUTTER: '+str(self.planning_time))
+		print('EXECUTION TIME FOR DECLUTTER: '+str(total - self.planning_time))
+
+
+	def perform_declutter(self):
+		obs = []; too_close=[]
+		for item in self.items:
+			if item!='table' and item!='lgripper' and\
+				item!='rgripper' and item!='tray':
+				obs.append(item)
+		for item1 in obs:
+			for item2 in obs:
+				if item1 != item2:
+					it1 = self.items[item1]
+					it2 = self.items[item2]
+					dist = np.sqrt((it1.x-it2.x)**2+(it1.y-it2.y)**2)
+					if dist < 0.05:
+						too_close.append(item2)
+		too_close = list(set(too_close))
+
+		for item in too_close:
+			self.pick_up(item)
+			self.put_in_clutter(item)
+
+
 
 
 def test_pick_place():
@@ -873,7 +908,8 @@ def test_pick_place():
 if __name__ == '__main__':
 	g = Grocery_packing()
 	time.sleep(10)
-	g.perform_optimistic()
+	# g.perform_declutter()
+	# g.perform_optimistic()
 
 # for i in range(1):
 # 	# p.stepSimulation()
