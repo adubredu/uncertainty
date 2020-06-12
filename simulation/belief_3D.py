@@ -681,12 +681,12 @@ class Grocery_packing:
 				if self.scene_belief[item][0][1] >= self.confidence_threshold:
 					confident_seen_list.append(item)
 
-		for item in self.items:
-			if self.items[item].inbox:
-				inbox_list.append(item)
+		for item in self.objects_list:
+			if item.inbox and not item.dummy:
+				inbox_list.append(item.name)
 
 		for item in inbox_list+confident_seen_list:
-			if item in self.items:
+			if item in self.items and not self.items[item].dummy:
 				if self.items[item].mass == 'heavy':
 					heavylist.append(item)
 				else:
@@ -1271,6 +1271,56 @@ class Grocery_packing:
 		print('PLANNING TIME FOR DYNAMIC: '+str(self.planning_time))
 		print('EXECUTION TIME FOR DYNAMIC: '+str(total-self.planning_time))
 
+	def get_objects_in_order(self):
+		obs=[]
+		for item in self.objects_list:
+			if not item.dummy:
+				obs.append(item.name)
+		return obs
+
+	def perform_conveyor_belt_pack(self):
+		items_in_order = self.get_objects_in_order()
+		start = time.time()
+		for item in items_in_order:
+			inboxlist, topfreelist, mediumlist, heavylist = \
+					self.select_perceived_objects_and_classify_weights()
+			for t in topfreelist:
+				if t != item:
+					try:
+						mediumlist.remove(t)
+					except:
+						pass
+			for t in topfreelist:
+				if t != item:
+					try:
+						heavylist.remove(t)
+					except:
+						pass
+			topfreelist = [item]
+
+			if self.items[item].mass == 'heavy':
+				if item not in heavylist:
+					heavylist.append(item)
+			else:
+				if item not in mediumlist:
+					mediumlist.append(item)
+				self
+			print(inboxlist)
+			print(topfreelist)
+			print(mediumlist)
+			print(heavylist)
+
+			problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
+												mediumlist, heavylist)
+			self.plan_and_run_belief_space_planning(self.domain_path, 
+														problem_path, alias)
+		end = time.time()
+		total = end-start
+		print('PLANNING TIME FOR CONVEYORBELT: '+str(self.planning_time))
+		print('EXECUTION TIME FOR CONVEYORBELT: '+str(total - self.planning_time))
+
+
+
 
 
 
@@ -1338,7 +1388,8 @@ def test_pick_place():
 if __name__ == '__main__':
 	g = Grocery_packing()
 	time.sleep(10)
-	g.perform_dynamic_grocery_packing('mc_sample')
+	g.perform_conveyor_belt_pack()
+	# g.perform_dynamic_grocery_packing('divergent_set_1')
 	# g.perform_sbp_grocery_packing()
 	# g.perform_declutter_belief_grocery_packing()
 	# g.perform_optimistic()
