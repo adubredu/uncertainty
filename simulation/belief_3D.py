@@ -147,7 +147,8 @@ class Grocery_packing:
 
 	def refresh_world(self):
 		for key in self.items:
-			self.items[key].update_object_position()
+			if not self.items[key].dummy:
+				self.items[key].update_object_position()
 		p.stepSimulation()
 
 
@@ -180,12 +181,12 @@ class Grocery_packing:
 		self.items['ambrosia'] = self.ambrosia
 		self.items['oreo'] = self.oreo
 		self.items['milk'] = self.milk
-		self.items['orange'] = self.orange
+		self.items['banana'] = self.banana
 
 		self.objects_list = [self.bottle, self.coke, self.nutella, 
 					self.orange, self.cereal, self.lysol, self.lipton,
 					self.apple, self.ambrosia, self.oreo, self.milk,
-					self.orange]
+					self.banana]
 
 
 	def start_perception(self,x):
@@ -828,7 +829,7 @@ class Grocery_packing:
 
 	def is_clutter_empty(self):
 		for item in self.objects_list:
-			if item.inclutter:
+			if not item.dummy and item.inclutter:
 				return False
 		return True
 
@@ -1110,11 +1111,13 @@ class Grocery_packing:
 	def single_sample(self, occluded_items):
 		sampled_items=[]
 		for bunch in occluded_items:
+			# print(bunch)
 			items = [b[0] for b in bunch]
 			weights = [b[1] for b in bunch]
 			weights = weights/np.sum(weights)
 			sample = np.random.choice(items, size=1, p=weights)
-			sampled_items.append(sample)
+			sampled_items.append(sample[0])
+
 		return sampled_items
 
 
@@ -1132,7 +1135,6 @@ class Grocery_packing:
 
 		final_sample = max(set(mc_samples), key=mc_samples.count)
 		sample = final_sample.split('_')
-
 		return sample
 
 
@@ -1173,15 +1175,17 @@ class Grocery_packing:
 		pass
 
 
-	def estimate_clutter_content(unoccluded_items,inboxlist,sample_procedure):
+	def estimate_clutter_content(self,surface_items,inboxlist,sample_procedure):
 		
 		# occluded are items in self.scene_belief whose confidence < threshold
 		occluded_items = []
 		for item in self.scene_belief:
-			if self.scene_belief[item][0][1] < self.confidence_threshold:
-				occluded_items.append(self.scene_belief[item])
+			if len(self.scene_belief[item]) > 0:
+				if self.scene_belief[item][0][1] < self.confidence_threshold:
+					occluded_items.append(self.scene_belief[item])
 
-
+		if len(occluded_items) == 0:
+			return 0,1
 		#one-time weighted sample. To change sampling strategy, alter 
 		#the function: self.high_uncertainty_sample(name)
 		if sample_procedure == 'weighted_sample':
@@ -1202,7 +1206,7 @@ class Grocery_packing:
 			# 2. DRAW MULTIPLE SAMPLES, COMPUTE PLANS FOR EACH, FIND THE
 			# TWO WITH THE HIGHEST DIFF AND CHOOSE ONE WITH PROBABILITY 0.5
 			sampled_occluded_items = self.divergent_set_sample_2(occluded_items)
-		'''
+		
 		num_heavy = 0; num_light = 0;
 		for it in sampled_occluded_items:
 			if self.items[it].mass == 'heavy':
@@ -1211,7 +1215,7 @@ class Grocery_packing:
 				num_light += 1
 		#finding percentage of heavy and light
 		# print("NUM HEAVY: "+str(num_heavy)+" over "+str(N_o_s))
-		oh = (float(num_heavy)/float(N_o_s))
+		oh = (float(num_heavy)/float(len(sampled_occluded_items)))
 
 		suh = 0
 		print('surface items:')
@@ -1223,7 +1227,17 @@ class Grocery_packing:
 		print("sNUM HEAVY: "+str(suh)+" over "+str(len(surface_items)))
 		sh = float(suh)/float(len(surface_items))
 		return oh, sh
-		'''
+
+
+	def declutter_surface_items(self):
+		occluded_items = []
+		for item in self.scene_belief:
+			if self.scene_belief[item][0][1] < self.confidence_threshold:
+				occluded_items.append(self.scene_belief[item][0][0])
+		for item in occluded_items:
+			self.pick_up(item)
+			self.put_in_clutter(item)
+		
 
 	def perform_dynamic_grocery_packing(self,sample_procedure):
 		st = time.time()
@@ -1239,7 +1253,7 @@ class Grocery_packing:
 			oh, sh = self.estimate_clutter_content(unoccluded_items,inboxlist,sample_procedure)
 			print("probs are "+str(oh)+" "+str(sh))
 
-			if sh > oh:
+			if sh >= oh:
 				print('\nPERFORMING OPT\n')
 				
 				f = Fast_Downward()
@@ -1249,9 +1263,7 @@ class Grocery_packing:
 				self.execute_plan(plan, alias)
 			else:
 				print(('\nPERFORMING DECLUTTER\n'))
-				N_d, surface_items = self.get_num_declutter_actions()
-				self.declutter_surface_items(surface_items)
-
+				self.declutter_surface_items()
 			
 			empty_clutter = self.is_clutter_empty()
 		end = time.time()
@@ -1326,7 +1338,8 @@ def test_pick_place():
 if __name__ == '__main__':
 	g = Grocery_packing()
 	time.sleep(10)
-	g.perform_sbp_grocery_packing()
+	g.perform_dynamic_grocery_packing('weighted_sample')
+	# g.perform_sbp_grocery_packing()
 	# g.perform_declutter_belief_grocery_packing()
 	# g.perform_optimistic()
 

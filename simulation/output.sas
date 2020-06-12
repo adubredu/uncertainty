@@ -326,7 +326,7 @@ begin_state
 1
 1
 1
-2
+1
 end_state
 begin_goal
 8

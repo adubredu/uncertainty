@@ -1,3 +1,1 @@
-(pick-from-clutter m7)
-(put-in-box m7)
-; cost = 2 (unit cost)
+; cost = 0 (unit cost)
