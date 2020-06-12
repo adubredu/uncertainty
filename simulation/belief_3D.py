@@ -1338,7 +1338,7 @@ def test_pick_place():
 if __name__ == '__main__':
 	g = Grocery_packing()
 	time.sleep(10)
-	g.perform_dynamic_grocery_packing('weighted_sample')
+	g.perform_dynamic_grocery_packing('mc_sample')
 	# g.perform_sbp_grocery_packing()
 	# g.perform_declutter_belief_grocery_packing()
 	# g.perform_optimistic()
