@@ -123,6 +123,7 @@ class Grocery_packing:
 		self.init_clutter()
 
 		self.planning_time = 0
+		self.num_mc_samples = 100
 		self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
 
 
@@ -183,7 +184,8 @@ class Grocery_packing:
 
 		self.objects_list = [self.bottle, self.coke, self.nutella, 
 					self.orange, self.cereal, self.lysol, self.lipton,
-					self.apple]
+					self.apple, self.ambrosia, self.oreo, self.milk,
+					self.orange]
 
 
 	def start_perception(self,x):
@@ -1105,92 +1107,157 @@ class Grocery_packing:
 		print('EXECUTION TIME FOR SBP: '+str(total-self.planning_time))
 
 
+	def single_sample(self, occluded_items):
+		sampled_items=[]
+		for bunch in occluded_items:
+			items = [b[0] for b in bunch]
+			weights = [b[1] for b in bunch]
+			weights = weights/np.sum(weights)
+			sample = np.random.choice(items, size=1, p=weights)
+			sampled_items.append(sample)
+		return sampled_items
+
+
+	def monte_carlo_sample(self, occluded_items):
+		mc_counts={}
+		items = [x.name for x in self.objects_list]
+		for t in items: mc_counts[t] = 0
+		mc_samples=[]
+		for i in range(self.num_mc_samples):
+			sampled_items = self.single_sample(occluded_items)
+			joined=''
+			for it in set(sampled_items):
+				joined+= it+'_'
+			mc_samples.append(joined[:-1])
+
+		final_sample = max(set(mc_samples), key=mc_samples.count)
+		sample = final_sample.split('_')
+
+		return sample
+
+
+	def divergent_set_sample_1(self, occluded_items):
+		num_samples = 10
+		divergent_samples = []
+		sample_scores = [0 for i in range(num_samples)]
+
+		for i in range(num_samples):
+			sample = self.single_sample(occluded_items)
+			divergent_samples.append(sample)
+
+		#generate mc sample
+		mc_sample = self.monte_carlo_sample(occluded_items)
+
+		#score each sample in set
+		for i in range(num_samples):
+			for obj in divergent_samples[i]:
+				if obj in mc_sample:
+					sample_scores[i] += 1
+
+		#get max sample and min sample and choose one with 0.5 probability
+		arg_max_samp = np.argmax(sample_scores)
+		arg_min_samp = np.argmin(sample_scores)
+
+		max_sample = divergent_samples[arg_max_samp]
+		min_sample = divergent_samples[arg_min_samp]
+
+		toss = np.random.randint(2)
+
+		if toss == 1:
+			return max_sample
+		else:
+			return min_sample
+
+
+	def divergent_set_sample_2(self, occluded_items):
+		pass
+
+
 	def estimate_clutter_content(unoccluded_items,inboxlist,sample_procedure):
+		
+		# occluded are items in self.scene_belief whose confidence < threshold
+		occluded_items = []
+		for item in self.scene_belief:
+			if self.scene_belief[item][0][1] < self.confidence_threshold:
+				occluded_items.append(self.scene_belief[item])
+
+
+		#one-time weighted sample. To change sampling strategy, alter 
+		#the function: self.high_uncertainty_sample(name)
+		if sample_procedure == 'weighted_sample':
+			# SAMPLE WITH JUST THE ORIGINAL WEIGHTS
+			sampled_occluded_items = self.single_sample(occluded_items)
+
+		elif sample_procedure == 'mc_sample':
+			# SAMPLE MULTIPLE TIMES FROM ORIGINAL WEIGHT AND CHOOSE ONE WITH
+			# HIGHEST FREQ
+			sampled_occluded_items = self.monte_carlo_sample(occluded_items)
+
+		elif sample_procedure == 'divergent_set_1':
+			# 1. DRAW MULTIPLE SAMPLES, SCORE THEM BY SIMILARITY TO MC SAMPLE
+			# CHOOSE FROM THE BEST AND WORST
+			sampled_occluded_items = self.divergent_set_sample_1(occluded_items)
+
+		elif sample_procedure == 'divergent_set_2':
+			# 2. DRAW MULTIPLE SAMPLES, COMPUTE PLANS FOR EACH, FIND THE
+			# TWO WITH THE HIGHEST DIFF AND CHOOSE ONE WITH PROBABILITY 0.5
+			sampled_occluded_items = self.divergent_set_sample_2(occluded_items)
 		'''
-		occluded are items in self.scene_belief whose confidence < threshold
-		sigma = 2
-        N_o = self.items_in_clutter - (len(surface_items)+len(inbox_items))
-        N_o_s = np.random.randint(low=N_o-sigma, high=N_o+1)
-        N_o_s = np.abs(N_o_s)
-        all_items = [x.name for x in self.objects_list]
-        possibly_occluded_items = [x for x in all_items if (x not in surface_items) and (x not in inbox_items)]
-        if len(possibly_occluded_items) == 0 or N_o_s == 0:
-            return 0.0,1.0
-        prob_occluded_items = np.random.choice(possibly_occluded_items, size=N_o_s, replace=False)
+		num_heavy = 0; num_light = 0;
+		for it in sampled_occluded_items:
+			if self.items[it].mass == 'heavy':
+				num_heavy +=1
+			else:
+				num_light += 1
+		#finding percentage of heavy and light
+		# print("NUM HEAVY: "+str(num_heavy)+" over "+str(N_o_s))
+		oh = (float(num_heavy)/float(N_o_s))
 
-        #one-time weighted sample. To change sampling strategy, alter 
-        #the function: self.high_uncertainty_sample(name)
-        if sample_procedure == 'weighted_sample':
-        	SAMPLE WITH JUST THE ORIGINAL WEIGHTS
-            sampled_occluded_items = [self.high_uncertainty_sample(object_name) \
-                                     for object_name in prob_occluded_items]
-        elif sample_procedure == 'mc_sample':
-        	SAMPLE MULTIPLE TIMES FROM ORIGINAL WEIGHT AND CHOOSE ONE WITH
-        	HIGHEST FREQ
-            sampled_occluded_items = [self.monte_carlo_sample(object_name) \
-                                     for object_name in prob_occluded_items]
-        elif sample_procedure == 'divergent_set':
-        	1. DRAW MULTIPLE SAMPLES, SCORE THEM BY SIMILARITY TO MC SAMPLE
-        	CHOOSE FROM THE BEST AND WORST
-        	2. DRAW MULTIPLE SAMPLES, COMPUTE PLANS FOR EACH, FIND THE
-        	TWO WITH THE HIGHEST DIFF AND CHOOSE ONE WITH PROBABILITY 0.5
-            sampled_occluded_items = self.divergent_set_sample(possibly_occluded_items)
+		suh = 0
+		print('surface items:')
+		print(surface_items)
+		for it in surface_items:
+			if self.items[it].mass == 'heavy':
+				suh +=1
 
-        num_heavy = 0; num_light = 0;
-        for it in sampled_occluded_items:
-            if self.items[it].mass == 'heavy':
-                num_heavy +=1
-            else:
-                num_light += 1
-        #finding percentage of heavy and light
-        # print("NUM HEAVY: "+str(num_heavy)+" over "+str(N_o_s))
-        oh = (float(num_heavy)/float(N_o_s))
-
-        suh = 0
-        print('surface items:')
-        print(surface_items)
-        for it in surface_items:
-            if self.items[it].mass == 'heavy':
-                suh +=1
-
-        print("sNUM HEAVY: "+str(suh)+" over "+str(len(surface_items)))
-        sh = float(suh)/float(len(surface_items))
-        return oh, sh
+		print("sNUM HEAVY: "+str(suh)+" over "+str(len(surface_items)))
+		sh = float(suh)/float(len(surface_items))
+		return oh, sh
 		'''
 
 	def perform_dynamic_grocery_packing(self,sample_procedure):
-        st = time.time()
-        empty_clutter = self.is_clutter_empty()
+		st = time.time()
+		empty_clutter = self.is_clutter_empty()
 
-        while not empty_clutter:
-            inboxlist, topfreelist, mediumlist, heavylist = \
-                    self.select_perceived_objects_and_classify_weights()
-            problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
-                                                mediumlist, heavylist)
-            
-            unoccluded_items = topfreelist
-            oh, sh = self.estimate_clutter_content(unoccluded_items,inboxlist,sample_procedure)
-            print("probs are "+str(oh)+" "+str(sh))
+		while not empty_clutter:
+			inboxlist, topfreelist, mediumlist, heavylist = \
+					self.select_perceived_objects_and_classify_weights()
+			problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
+												mediumlist, heavylist)
+			
+			unoccluded_items = topfreelist
+			oh, sh = self.estimate_clutter_content(unoccluded_items,inboxlist,sample_procedure)
+			print("probs are "+str(oh)+" "+str(sh))
 
-            if sh > oh:
-                print('\nPERFORMING OPT\n')
-                
-                f = Fast_Downward()
-                start = time.time()
-                plan = f.plan(self.domain_path, problem_path)
-                self.planning_time += time.time() - start
-                self.execute_plan(plan, alias)
-            else:
-                print(('\nPERFORMING DECLUTTER\n'))
-                N_d, surface_items = self.get_num_declutter_actions()
-                self.declutter_surface_items(surface_items)
+			if sh > oh:
+				print('\nPERFORMING OPT\n')
+				
+				f = Fast_Downward()
+				start = time.time()
+				plan = f.plan(self.domain_path, problem_path)
+				self.planning_time += time.time() - start
+				self.execute_plan(plan, alias)
+			else:
+				print(('\nPERFORMING DECLUTTER\n'))
+				N_d, surface_items = self.get_num_declutter_actions()
+				self.declutter_surface_items(surface_items)
 
-            
-            empty_clutter = self.is_clutter_empty()
-        end = time.time()
-        total = end-st
-        print('PLANNING TIME FOR DYNAMIC: '+str(self.planning_time))
-        print('EXECUTION TIME FOR DYNAMIC: '+str(total-self.planning_time))
+			
+			empty_clutter = self.is_clutter_empty()
+		end = time.time()
+		total = end-st
+		print('PLANNING TIME FOR DYNAMIC: '+str(self.planning_time))
+		print('EXECUTION TIME FOR DYNAMIC: '+str(total-self.planning_time))
 
 
 
