@@ -73,7 +73,7 @@ class Box:
 
 class Grocery_item:
 	def __init__(self, x, y, z, orr, op, oy, urdf_path, width, 
-				breadth, height, object_name, mass):
+				breadth, height, object_name, mass,dummy):
 		self.x = x
 		self.y = y
 		self.z = z
@@ -83,6 +83,7 @@ class Grocery_item:
 		self.mass = mass 
 		self.inbox = False
 		self.inclutter = True
+		self.dummy = dummy
 
 		self.item_on_top = None 
 
@@ -92,7 +93,8 @@ class Grocery_item:
 		self.oy = oy 
 		self.quat = p.getQuaternionFromEuler([self.orr,self.op,self.oy])
 		self.name = object_name
-		self.id = p.loadURDF(urdf_path, [self.x,self.y,self.z], self.quat)
+		if not dummy:
+			self.id = p.loadURDF(urdf_path, [self.x,self.y,self.z], self.quat)
 		
 
 	def update_object_position(self):
@@ -107,11 +109,11 @@ class Grocery_item:
 
 class Grocery_packing:
 	def __init__(self):
-		self.table = Grocery_item(0,0,0, 0,0,0, "table/table.urdf",1,1,1,'table','heavy')
-		self.lgripper = Grocery_item(0.2,-0.3,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light')
-		self.rgripper = Grocery_item(0.23,-0.3,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light')
+		self.table = Grocery_item(0,0,0, 0,0,0, "table/table.urdf",1,1,1,'table','heavy',False)
+		self.lgripper = Grocery_item(0.2,-0.3,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light',False)
+		self.rgripper = Grocery_item(0.23,-0.3,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light',False)
 		p.setAdditionalSearchPath('/home/developer/uncertainty/simulation/models')
-		self.tray = Grocery_item(-.5,.0,0.62, 0,0,0, "container/container.urdf",0.3,0.3,0.3,'tray','heavy')
+		self.tray = Grocery_item(-.5,.0,0.62, 0,0,0, "container/container.urdf",0.3,0.3,0.3,'tray','heavy',False)
 		self.items = {
 						'table':self.table,
 						'lgripper':self.lgripper,
@@ -149,16 +151,20 @@ class Grocery_packing:
 
 
 	def init_clutter(self):
-		self.bottle = Grocery_item(.5,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.35,'bottle','light')
-		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.1,'coke','light')
-		self.nutella = Grocery_item(.6, 0., .65, 0,0,0, 'nutella/nutella.urdf', 0.07,0.07,0.07,'nutella','light')
-		self.orange = Grocery_item(.6,.1,.65,0,0,0, 'orange/orange.urdf', 0.07,0.07,0.05, 'orange','light')
-		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.1, 'cereal','light')
-		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.2, 'lysol','light')
-		self.lipton = Grocery_item(.6, .2, .65, 0,0,0, 'lipton/lipton.urdf',0.07,0.07,0.05, 'lipton','light' )
-		self.apple = Grocery_item(.7, 0., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light')
+		self.bottle = Grocery_item(.5,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.35,'bottle','light',False)
+		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.1,'coke','light',False)
+		self.nutella = Grocery_item(.6, 0., .65, 0,0,0, 'nutella/nutella.urdf', 0.07,0.07,0.07,'nutella','light',False)
+		self.orange = Grocery_item(.6,.1,.65,0,0,0, 'orange/orange.urdf', 0.07,0.07,0.05, 'orange','light',False)
+		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.1, 'cereal','light',False)
+		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.2, 'lysol','light',False)
+		self.lipton = Grocery_item(.6, .2, .65, 0,0,0, 'lipton/lipton.urdf',0.07,0.07,0.05, 'lipton','light' ,False)
+		self.apple = Grocery_item(.7, 0., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light',False)
 
-
+		self.ambrosia = Grocery_item(7.7, 7., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light', True)
+		self.oreo = Grocery_item(7.7, 7., .65, 3.14,0,0, 'oreo/oreo.urdf', 0.07,0.07,0.03, 'oreo','light', True)
+		self.milk = Grocery_item(7.7, 7., .65, 3.14,0,0, 'milk/milk.urdf', 0.07,0.07,0.03, 'milk','light', True)
+		self.banana = Grocery_item(7.7, 7., .65, 3.14,0,0, 'banana/banana.urdf', 0.07,0.07,0.03, 'banana','light', True)
+		
 
 		self.items['bottle'] = self.bottle
 		self.items['coke'] = self.coke
@@ -169,6 +175,11 @@ class Grocery_packing:
 		self.items['lysol'] = self.lysol
 		self.items['lipton'] = self.lipton
 		self.items['apple'] = self.apple
+
+		self.items['ambrosia'] = self.ambrosia
+		self.items['oreo'] = self.oreo
+		self.items['milk'] = self.milk
+		self.items['orange'] = self.orange
 
 		self.objects_list = [self.bottle, self.coke, self.nutella, 
 					self.orange, self.cereal, self.lysol, self.lipton,
@@ -294,6 +305,8 @@ class Grocery_packing:
 
 	def pick_up(self,targetID):
 		item = self.items[targetID]
+		if item.dummy:
+			return False
 		item.inbox = False
 		item.inclutter = False 
 
@@ -378,6 +391,8 @@ class Grocery_packing:
 
 	def put_in_box(self,targetID,bx,by,bz):
 		item = self.items[targetID]
+		if item.dummy:
+			return False
 		item.inbox = True
 		item.inclutter = False
 
@@ -467,9 +482,10 @@ class Grocery_packing:
 	def put_on(self, topitem, botitem):
 		if topitem == botitem:
 			return False
-
 		item = self.items[topitem]
 		bot = self.items[botitem]
+		if item.dummy or bot.dummy:
+			return False
 		item.inbox = True
 		bot.item_on_top = topitem
 
@@ -561,6 +577,8 @@ class Grocery_packing:
 
 	def put_in_clutter(self, itemname):
 		item = self.items[itemname]
+		if item.dummy:
+			return False
 
 		bx,by = self.clutter_ps.pop()
 		bz = 0.7
@@ -761,6 +779,7 @@ class Grocery_packing:
 		swapped_alias  = dict([(value, key) for key, value in alias.items()]) 
 		return prob_path, swapped_alias
 
+
 	def execute_plan(self, plan, alias):
 		if plan is None or len(plan) == 0:
 			print('NO  VALID PLAN FOUND')
@@ -779,6 +798,7 @@ class Grocery_packing:
 		plan = f.plan(domain_path, problem_path)
 		self.planning_time += time.time()-start
 		self.execute_plan(plan, alias)
+
 
 	def belief_execute_action(self, action, alias):
 		if action[0] == 'pick-from-clutter':
@@ -811,7 +831,6 @@ class Grocery_packing:
 		return True
 
 
-
 	def perform_optimistic_belief_grocery_packing(self):
 		empty_clutter = self.is_clutter_empty()
 
@@ -832,6 +851,7 @@ class Grocery_packing:
 		total = end-start
 		print('PLANNING TIME FOR OPTIMISTIC: '+str(self.planning_time))
 		print('EXECUTION TIME FOR OPTIMISTIC: '+str(total - self.planning_time))
+
 
 	def perform_declutter_belief_grocery_packing(self):
 		start = time.time()
@@ -942,7 +962,7 @@ class Grocery_packing:
 
 		#add them to problem. TO CHANGE IF CONDITION LATER
 		for item,_ in selected_hypothesis:
-			if not item in alias and item in self.items:
+			if not item in alias:
 				if self.items[item].mass == 'heavy':
 					heavylist.append(item)
 					alias[item] = 'h'+str(hc)
