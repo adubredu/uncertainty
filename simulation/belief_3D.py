@@ -1320,7 +1320,65 @@ class Grocery_packing:
 		print('EXECUTION TIME FOR CONVEYORBELT: '+str(total - self.planning_time))
 
 
+	def perform_pick_n_roll(self):
+		st = time.time()
+		items_in_order = self.get_objects_in_order()
+		light = []
+		box = Box(3)
+		box.cascade = True 
 
+		for item in items_in_order:
+			if self.items[item].mass == 'heavy':
+				x,y,z= box.add_item(item)
+				self.pick_up(item)
+				self.put_in_box(item,x,y,z)
+
+			else:
+				light.append(item)
+				self.pick_up(item)
+				self.put_in_clutter(item)
+
+		for item in light:
+			x,y,z = box.add_item(item)
+			self.pick_up(item)
+			self.put_in_box(item,x,y,z)
+
+		duration = time.time() - st
+		print("PLANNING TIME FOR PICKNROLL: 0")
+		print("EXECUTION TIME FOR PICKNROLL: "+str(duration))
+
+
+
+	def perform_bag_sort(self):
+		st = time.time()
+		items_in_order = self.get_objects_in_order()
+		light = []; heavy=[]
+		box = Box(3)
+		box.cascade = True 
+
+		for item in items_in_order:
+			if self.items[item].mass == 'heavy':
+				heavy.append(item)
+				self.pick_up(item)
+				self.put_in_clutter(item)				
+			else:
+				light.append(item)
+				self.pick_up(item)
+				self.put_in_clutter(item)
+
+		for item in heavy:
+			x,y,z= box.add_item(item)
+			self.pick_up(item)
+			self.put_in_box(item,x,y,z)
+
+		for item in light:
+			x,y,z = box.add_item(item)
+			self.pick_up(item)
+			self.put_in_box(item,x,y,z)
+
+		duration = time.time() - st
+		print("PLANNING TIME FOR PICKNROLL: 0")
+		print("EXECUTION TIME FOR PICKNROLL: "+str(duration))
 
 
 
@@ -1388,7 +1446,9 @@ def test_pick_place():
 if __name__ == '__main__':
 	g = Grocery_packing()
 	time.sleep(10)
-	g.perform_conveyor_belt_pack()
+	g.perform_bag_sort()
+	# g.perform_pick_n_roll()
+	# g.perform_conveyor_belt_pack()
 	# g.perform_dynamic_grocery_packing('divergent_set_1')
 	# g.perform_sbp_grocery_packing()
 	# g.perform_declutter_belief_grocery_packing()
