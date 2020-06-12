@@ -158,6 +158,8 @@ class Grocery_packing:
 		self.lipton = Grocery_item(.6, .2, .65, 0,0,0, 'lipton/lipton.urdf',0.07,0.07,0.05, 'lipton','light' )
 		self.apple = Grocery_item(.7, 0., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light')
 
+
+
 		self.items['bottle'] = self.bottle
 		self.items['coke'] = self.coke
 		self.items['nutella'] = self.nutella
@@ -371,6 +373,7 @@ class Grocery_packing:
 			time.sleep(1./self.fps)
 
 			self.refresh_world()
+		return True
 
 
 	def put_in_box(self,targetID,bx,by,bz):
@@ -458,6 +461,7 @@ class Grocery_packing:
 			self.rgripper.y = self.lgripper.y
 			time.sleep(1./self.fps)
 			self.refresh_world()
+		return True
 
 
 	def put_on(self, topitem, botitem):
@@ -552,6 +556,7 @@ class Grocery_packing:
 			self.rgripper.y = self.lgripper.y
 			time.sleep(1./self.fps)
 			self.refresh_world()
+		return True
 
 
 	def put_in_clutter(self, itemname):
@@ -643,6 +648,7 @@ class Grocery_packing:
 			self.rgripper.y = self.lgripper.y
 			time.sleep(1./self.fps)
 			self.refresh_world()
+		return True
 
 
 	def select_perceived_objects_and_classify_weights(self):
@@ -873,6 +879,212 @@ class Grocery_packing:
 		print('EXECUTION TIME FOR DECLUTTER: '+str(total - self.planning_time))
 
 
+	def create_sbp_problem(self, inbox, topfree, mediumlist, heavylist):
+		num_hypotheses = 5
+		topfree =[]
+		mediumlist =[]
+		heavylist=[]
+
+		for item in inbox:
+			if self.items[item].mass == 'heavy':
+				heavylist.append(item)
+			else:
+				mediumlist.append(item)
+
+		alias = {}
+		hc = 0
+		for item in heavylist:
+			alias[item] = 'h'+str(hc)
+			hc+=1
+
+		mc = 0
+		for item in mediumlist:
+			alias[item] = 'm'+str(mc)
+			mc+=1
+
+		init = "(:init (handempty) "
+		for item in inbox:
+			init += "(inbox "+alias[item]+") "
+			it = self.items[item].item_on_top
+			if it != None:
+				init+= "(on "+alias[it]+" "+alias[item]+") "
+			else:
+				init += "(topfree "+alias[item]+") "
+
+
+		# for item in topfree:
+		# 	init += "(topfree "+alias[item]+") "
+		# 	init += "(inclutter "+alias[item]+") "
+
+		#generating scene hypotheses and choosing the hypothesis with
+		#highest weight
+		scene_hypotheses = []
+		for i in range(num_hypotheses):
+			subhyp=[]
+			for item in self.scene_belief:
+				if len(self.scene_belief[item]) > 0:
+					obs = [obconf[0] for obconf in self.scene_belief[item]]
+					wts = [obconf[1] for obconf in self.scene_belief[item]]
+					wts = wts/np.sum(wts)
+					choice = np.random.choice(obs, size=1, p=wts)
+					name = choice[0]
+					ind = obs.index(name)
+					subhyp.append((name, wts[ind]))
+			scene_hypotheses.append(subhyp)
+
+		#scoring hypothesis
+		scores = [0 for i in range(num_hypotheses)]
+		for i in range(num_hypotheses):
+			for obwt in scene_hypotheses[i]:
+				scores[i]+=obwt[1]
+		maxind = np.argmax(scores)
+		selected_hypothesis = scene_hypotheses[maxind]
+
+		#add them to problem. TO CHANGE IF CONDITION LATER
+		for item,_ in selected_hypothesis:
+			if not item in alias and item in self.items:
+				if self.items[item].mass == 'heavy':
+					heavylist.append(item)
+					alias[item] = 'h'+str(hc)
+					hc+=1
+					init += "(topfree "+alias[item]+") "
+					init += "(inclutter "+alias[item]+") "
+
+				else:
+					mediumlist.append(item)
+					alias[item] = 'm'+str(mc)
+					mc +=1
+					init += "(topfree "+alias[item]+") "
+					init += "(inclutter "+alias[item]+") "
+
+		init +=  ")\n"
+
+		goal = "(:goal (and "
+		for h in heavylist:
+			goal += "(inbox "+alias[h]+") "
+			
+		mlen=len(mediumlist)
+		hlen=len(heavylist)
+		stop = self.box.full_cpty - hlen
+
+		if hlen == self.box.full_cpty and mlen > hlen:
+
+			for m in mediumlist[:hlen]:
+				goal += "(or "
+				for h in heavylist:
+					goal += "(on "+alias[m]+" "+alias[h]+") "
+				goal+=") "
+
+			for m in mediumlist[hlen:]:
+				goal += "(or "
+				for mm in mediumlist[:hlen]:
+					goal += "(on "+alias[m]+" "+alias[mm]+") "
+				goal+=") "
+			goal +=")))"
+
+		else:
+			for m in mediumlist[:stop]:
+				goal += "(inbox "+alias[m]+") "
+			for m in mediumlist[stop:stop+self.box.full_cpty]:
+				goal+="(or "
+				for mm in heavylist+mediumlist[:stop]:
+					goal += "(on "+alias[m]+" "+alias[mm]+") "
+				goal+=") "
+			for m in mediumlist[stop+self.box.full_cpty:]:
+				goal += "(or "
+				for mm in mediumlist[stop:self.box.full_cpty]:
+					goal += "(on "+alias[m]+" "+alias[mm]+") "
+				goal+=") "
+			goal +=")))"
+
+		definition = "(define (problem PACKED-GROCERY) \n(:domain GROCERY) \n (:objects "
+		for al in alias.values():
+			definition += al+" "
+		definition += "- item)\n"
+
+		problem = definition + init + goal
+
+		f = open("newprob.pddl","w")
+		f.write(problem)
+		f.close()
+		dir_path = os.path.dirname(os.path.realpath(__file__))
+		prob_path = dir_path+"/"+"newprob.pddl"
+		
+		swapped_alias  = dict([(value, key) for key, value in alias.items()]) 
+		return prob_path, swapped_alias
+
+
+	def run_sbp(self, domain_path, problem_path, alias):
+		f = Fast_Downward()
+		start = time.time()
+		plan = f.plan(domain_path, problem_path)
+		if len(plan) == 0 or plan == None:
+			print('NO PLAN FOUND')
+			return
+
+		self.planning_time += time.time() - start
+		for action in plan:
+			print(action)
+			result = self.execute_sbp_action(action, alias)
+			if not result:
+				self.current_action = "Action: REPLANNING..."  
+				print('REPLANNING')
+				inboxlist, topfreelist, mediumlist, heavylist = \
+					self.select_perceived_objects_and_classify_weights()
+				new_problem_path, nalias = self.create_sbp_problem(inboxlist, topfreelist,
+												mediumlist, heavylist)
+				self.run_sbp(self.domain_path, new_problem_path, nalias)
+				break
+		return
+
+
+	def execute_sbp_action(self,action, alias):
+		self.current_action = "Action: "+str(action)
+		success = True
+		if action[0] == 'pick-from-clutter':
+			success = self.pick_up(alias[action[1]])
+			self.box.remove_item(alias[action[1]])
+
+		elif action[0] == 'pick-from-box':
+			success = self.pick_up(alias[action[1]])
+			self.box.remove_item(alias[action[1]])
+
+		elif action[0] == 'pick-from':
+			success = self.pick_up(alias[action[1]])
+			self.box.remove_item(alias[action[1]])
+
+		elif action[0] == 'put-in-box':
+			x,y,z = self.box.add_item(alias[action[1]])
+			success = self.put_in_box(alias[action[1]],x,y,z)
+
+		elif action[0] == 'put-in-clutter':
+			success = self.drop_in_clutter(alias[action[1]])
+
+		elif action[0] == 'put-on':
+			success = self.put_on(alias[action[1]], alias[action[2]])
+
+		return success
+
+		
+	def perform_sbp_grocery_packing(self):
+		st = time.time()
+
+		empty_clutter = self.is_clutter_empty()
+
+		while not empty_clutter:
+			inboxlist, topfreelist, mediumlist, heavylist = \
+					self.select_perceived_objects_and_classify_weights()
+			problem_path, alias = self.create_sbp_problem(inboxlist, topfreelist,
+												mediumlist, heavylist)
+			self.run_sbp(self.domain_path, problem_path, alias)
+
+			empty_clutter = self.is_clutter_empty()
+		end = time.time()
+		total = end-st
+		print('PLANNING TIME FOR SBP: '+str(self.planning_time))
+		print('EXECUTION TIME FOR SBP: '+str(total-self.planning_time))
+
+
 
 
 
@@ -938,7 +1150,8 @@ def test_pick_place():
 if __name__ == '__main__':
 	g = Grocery_packing()
 	time.sleep(10)
-	g.perform_declutter_belief_grocery_packing()
+	g.perform_sbp_grocery_packing()
+	# g.perform_declutter_belief_grocery_packing()
 	# g.perform_optimistic()
 
 # for i in range(1):
