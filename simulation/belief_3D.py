@@ -129,8 +129,15 @@ class Grocery_packing:
 		self.confidence_threshold = 0.5
 		self.fps = 60
 		self.scene_belief = {}
-		self.clutter_xs = [0.65, 0.55, .45, .35, .25, .15, .05]
-		self.clutter_ys = [-.4, -.3, -.2, .2, .3, .4]
+		self.clutter_ps = []
+		xs = [0.65,  .45,  .25, .10]
+		ys = [-.4, -.2, .2, .4]
+		for x in xs:
+			for y in ys:
+				self.clutter_ps.append((x,y))
+
+		
+
 		perception = threading.Thread(target=self.start_perception,args=(1,))
 		perception.start()
 
@@ -161,6 +168,9 @@ class Grocery_packing:
 		self.items['lipton'] = self.lipton
 		self.items['apple'] = self.apple
 
+		self.objects_list = [self.bottle, self.coke, self.nutella, 
+					self.orange, self.cereal, self.lysol, self.lipton,
+					self.apple]
 
 
 	def start_perception(self,x):
@@ -179,7 +189,7 @@ class Grocery_packing:
 				names=[]; weights=[];coord=[]
 				norm_scene[item]=[]
 				for name,wt,cd in scene[item]:
-					if cd[0] > 240:
+					if cd[0] > 200:
 						names.append(name)
 						weights.append(wt)
 						coord.append([int(c) for c in cd])
@@ -546,11 +556,9 @@ class Grocery_packing:
 
 	def put_in_clutter(self, itemname):
 		item = self.items[itemname]
-		ly = len(self.clutter_ys)
-		bx = self.clutter_xs[0]
-		by = self.clutter_ys[np.random.randint(ly)]
+
+		bx,by = self.clutter_ps.pop()
 		bz = 0.7
-		self.clutter_xs.remove(bx)
 
 		item.inclutter = True
 		item.inbox = False
@@ -790,8 +798,16 @@ class Grocery_packing:
 			self.put_on(alias[action[1]], alias[action[2]])
 
 
+	def is_clutter_empty(self):
+		for item in self.objects_list:
+			if item.inclutter:
+				return False
+		return True
+
+
+
 	def perform_optimistic_belief_grocery_packing(self):
-		empty_clutter = True if len(self.scene_belief) == 0 else False
+		empty_clutter = self.is_clutter_empty()
 
 		while not empty_clutter:
 			inboxlist, topfreelist, lightlist, heavylist = \
@@ -800,7 +816,7 @@ class Grocery_packing:
 												lightlist, heavylist)
 			self.plan_and_run_belief_space_planning(self.domain_path, 
 														problem_path, alias)
-			empty_clutter = True if len(self.scene_belief) == 0 else False
+			empty_clutter = self.is_clutter_empty()
 
 	
 	def perform_optimistic(self):
@@ -835,13 +851,27 @@ class Grocery_packing:
 					it1 = self.items[item1]
 					it2 = self.items[item2]
 					dist = np.sqrt((it1.x-it2.x)**2+(it1.y-it2.y)**2)
-					if dist < 0.05:
+					if dist < 0.1:
 						too_close.append(item2)
 		too_close = list(set(too_close))
 
 		for item in too_close:
 			self.pick_up(item)
 			self.put_in_clutter(item)
+		print('done decluttering')
+
+
+	def perform_declutter_belief_grocery_packing(self):
+		start = time.time()
+		self.should_declutter = True
+		self.perform_declutter()
+		self.should_declutter = False
+		self.perform_optimistic_belief_grocery_packing()
+		end = time.time()
+		total = end - start
+		print('PLANNING TIME FOR DECLUTTER: '+str(self.planning_time))
+		print('EXECUTION TIME FOR DECLUTTER: '+str(total - self.planning_time))
+
 
 
 
@@ -908,7 +938,7 @@ def test_pick_place():
 if __name__ == '__main__':
 	g = Grocery_packing()
 	time.sleep(10)
-	# g.perform_declutter()
+	g.perform_declutter_belief_grocery_packing()
 	# g.perform_optimistic()
 
 # for i in range(1):
@@ -922,7 +952,7 @@ if __name__ == '__main__':
 
 # (x,y,z), cubeOrn = p.getBasePositionAndOrientation(boxId)
 # print((x,y,z))
-p.disconnect()
+# p.disconnect()
 
 
 
