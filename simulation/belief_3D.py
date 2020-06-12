@@ -108,8 +108,8 @@ class Grocery_item:
 class Grocery_packing:
 	def __init__(self):
 		self.table = Grocery_item(0,0,0, 0,0,0, "table/table.urdf",1,1,1,'table','heavy')
-		self.lgripper = Grocery_item(0.2,0.0,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light')
-		self.rgripper = Grocery_item(0.23,0.0,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light')
+		self.lgripper = Grocery_item(0.2,-0.3,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light')
+		self.rgripper = Grocery_item(0.23,-0.3,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light')
 		p.setAdditionalSearchPath('/home/developer/uncertainty/simulation/models')
 		self.tray = Grocery_item(-.5,.0,0.62, 0,0,0, "container/container.urdf",0.3,0.3,0.3,'tray','heavy')
 		self.items = {
@@ -126,7 +126,7 @@ class Grocery_packing:
 
 		self.box = Box(3)
 		self.delta = 0.01
-		self.confidence_threshold = 0.7
+		self.confidence_threshold = 0.5
 		self.fps = 60
 		self.scene_belief = {}
 		self.clutter_xs = [-0.65, -0.55, -.45, -.35, -.25, -.15, -.05]
@@ -198,7 +198,7 @@ class Grocery_packing:
 			cameraUpVector=[0, 1, 0])
 
 			projectionMatrix = p.computeProjectionMatrixFOV(
-				fov=90.0,
+				fov=60.0,
 				aspect=1.0,
 				nearVal=0.02,
 				farVal=3.1)
@@ -641,7 +641,7 @@ class Grocery_packing:
 		lightlist = []; heavylist=[]
 
 		for item in self.scene_belief:
-			if len(self.scene_belief[item]) > 0:
+			if len(self.scene_belief[item]) > 0 and item in self.items:
 				if self.scene_belief[item][0][1] >= self.confidence_threshold:
 					confident_seen_list.append(item)
 
@@ -650,10 +650,11 @@ class Grocery_packing:
 				inbox_list.append(item)
 
 		for item in inbox_list+confident_seen_list:
-			if self.items[item].mass == 'heavy':
-				heavylist.append(item)
-			else:
-				lightlist.append(item)
+			if item in self.items:
+				if self.items[item].mass == 'heavy':
+					heavylist.append(item)
+				else:
+					lightlist.append(item)
 
 		return inbox_list, confident_seen_list, lightlist, heavylist
 
@@ -748,6 +749,8 @@ class Grocery_packing:
 	def execute_plan(self, plan, alias):
 		if plan is None or len(plan) == 0:
 			print('NO  VALID PLAN FOUND')
+			print(self.scene_belief)
+
 			return
 
 		for action in plan:
