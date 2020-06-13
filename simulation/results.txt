@@ -1,0 +1,182 @@
+Conveyor_Belt
+planning_time: 26.113856315612793
+execution_time: 120.2496087551117
+
+Conveyor_Belt
+planning_time: 26.011939764022827
+execution_time: 121.17663764953613
+
+Conveyor_Belt
+planning_time: 26.070029258728027
+execution_time: 120.63864612579346
+
+Conveyor_Belt
+planning_time: 26.261169910430908
+execution_time: 120.24658846855164
+
+Conveyor_Belt
+planning_time: 25.940839052200317
+execution_time: 121.07009530067444
+
+Pick_n_roll
+planning_time: 0
+execution_time: 246.99443221092224
+
+Pick_n_roll
+planning_time: 0
+execution_time: 247.08767223358154
+
+Pick_n_roll
+planning_time: 0
+execution_time: 246.6455500125885
+
+Pick_n_roll
+planning_time: 0
+execution_time: 247.11576056480408
+
+Pick_n_roll
+planning_time: 0
+execution_time: 247.43579006195068
+
+Bag_sort
+planning_time: 0
+execution_time: 246.13252592086792
+
+Bag_sort
+planning_time: 0
+execution_time: 246.63762402534485
+
+Bag_sort
+planning_time: 0
+execution_time: 246.47907209396362
+
+Bag_sort
+planning_time: 0
+execution_time: 246.08921241760254
+
+Bag_sort
+planning_time: 0
+execution_time: 246.33836483955383
+
+sbp
+planning_time: 13.05863904953003
+execution_time: 166.14764642715454
+
+sbp
+planning_time: 9.923638820648193
+execution_time: 149.16839694976807
+
+sbp
+planning_time: 6.6552276611328125
+execution_time: 119.34432435035706
+
+sbp
+planning_time: 13.180471658706665
+execution_time: 136.1646385192871
+
+sbp
+planning_time: 12.949656009674072
+execution_time: 162.67172360420227
+
+Optimistic
+planning_time: 29.40696096420288
+execution_time: 120.13250851631165
+
+Optimistic
+planning_time: 26.41609764099121
+execution_time: 119.95574688911438
+
+Optimistic
+planning_time: 26.42413902282715
+execution_time: 120.06611704826355
+
+Optimistic
+planning_time: 29.851595640182495
+execution_time: 120.14011096954346
+
+Optimistic
+planning_time: 29.65368914604187
+execution_time: 119.87040090560913
+
+
+
+Dynamic_mc_sample
+planning_time: 29.57691740989685
+execution_time: 119.64069604873657
+
+Dynamic_mc_sample
+planning_time: 26.14124369621277
+execution_time: 119.5043511390686
+
+Dynamic_mc_sample
+planning_time: 26.530765056610107
+execution_time: 120.18778824806213
+
+Dynamic_mc_sample
+planning_time: 26.405346870422363
+execution_time: 119.97410845756531
+
+Dynamic_mc_sample
+planning_time: 26.206968784332275
+execution_time: 119.88485288619995
+
+Dynamic_weighted_sample
+planning_time: 25.932598114013672
+execution_time: 119.32550644874573
+
+Dynamic_weighted_sample
+planning_time: 26.237653017044067
+execution_time: 119.57333755493164
+
+Dynamic_weighted_sample
+planning_time: 26.210986375808716
+execution_time: 119.83505582809448
+
+Dynamic_weighted_sample
+planning_time: 30.150546312332153
+execution_time: 119.82251071929932
+
+Dynamic_weighted_sample
+planning_time: 30.12616991996765
+execution_time: 119.81736898422241
+
+Dynamic_divergent_set_1
+planning_time: 29.395249843597412
+execution_time: 120.14283108711243
+
+Dynamic_divergent_set_1
+planning_time: 29.94556474685669
+execution_time: 120.20034980773926
+
+Dynamic_divergent_set_1
+planning_time: 26.079458236694336
+execution_time: 119.78304553031921
+
+Dynamic_divergent_set_1
+planning_time: 26.286441564559937
+execution_time: 119.35692000389099
+
+Dynamic_divergent_set_1
+planning_time: 29.51263117790222
+execution_time: 120.12366127967834
+
+Declutter
+planning_time: 6.600110054016113
+execution_time: 119.19502305984497
+
+Declutter
+planning_time: 6.506380319595337
+execution_time: 119.11846947669983
+
+Declutter
+planning_time: 6.529888868331909
+execution_time: 119.26228928565979
+
+Declutter
+planning_time: 6.609875440597534
+execution_time: 120.19595098495483
+
+Declutter
+planning_time: 6.48391580581665
+execution_time: 120.14080739021301
+
