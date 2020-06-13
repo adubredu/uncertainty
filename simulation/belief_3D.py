@@ -134,15 +134,15 @@ class Grocery_packing:
 		self.scene_belief = {}
 		self.clutter_ps = []
 		xs = [0.65,  .45,  .25, .10]
-		ys = [-.4, -.2, .2, .4]
+		ys = [-.3, -.2, .3, .2]
 		for x in xs:
 			for y in ys:
 				self.clutter_ps.append((x,y))
 
 		
-
-		perception = threading.Thread(target=self.start_perception,args=(1,))
-		perception.start()
+		self.alive = True
+		self.perception = threading.Thread(target=self.start_perception,args=(1,))
+		self.perception.start()
 
 
 	def refresh_world(self):
@@ -153,7 +153,7 @@ class Grocery_packing:
 
 
 	def init_clutter(self):
-		self.bottle = Grocery_item(.5,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.35,'bottle','light',False)
+		self.bottle = Grocery_item(.25,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.35,'bottle','light',False)
 		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.1,'coke','light',False)
 		self.nutella = Grocery_item(.6, 0., .65, 0,0,0, 'nutella/nutella.urdf', 0.07,0.07,0.07,'nutella','light',False)
 		self.orange = Grocery_item(.6,.1,.65,0,0,0, 'orange/orange.urdf', 0.07,0.07,0.05, 'orange','light',False)
@@ -217,7 +217,7 @@ class Grocery_packing:
 
 			return norm_scene
 
-		while 1:
+		while self.alive:
 			viewMatrix = p.computeViewMatrix(
 			cameraEyePosition=[0, 0, 2],
 			cameraTargetPosition=[0, 0, 0],
@@ -719,8 +719,9 @@ class Grocery_packing:
 
 
 		for item in topfree:
-			init += "(topfree "+alias[item]+") "
-			init += "(inclutter "+alias[item]+") "
+			if not self.items[item].dummy:
+				init += "(topfree "+alias[item]+") "
+				init += "(inclutter "+alias[item]+") "
 
 		# if self.box.num_items >= 5:
 		#     init += "(boxfull)"
@@ -852,20 +853,10 @@ class Grocery_packing:
 		self.perform_optimistic_belief_grocery_packing()
 		end = time.time()
 		total = end-start
+		exe = total - self.planning_time
 		print('PLANNING TIME FOR OPTIMISTIC: '+str(self.planning_time))
 		print('EXECUTION TIME FOR OPTIMISTIC: '+str(total - self.planning_time))
-
-
-	def perform_declutter_belief_grocery_packing(self):
-		start = time.time()
-		self.should_declutter = True
-		self.perform_declutter()
-		self.should_declutter = False
-		self.perform_optimistic_belief_grocery_packing()
-		end = time.time()
-		total = end - start
-		print('PLANNING TIME FOR DECLUTTER: '+str(self.planning_time))
-		print('EXECUTION TIME FOR DECLUTTER: '+str(total - self.planning_time))
+		self.save_results('Optimistic',self.planning_time,exe)
 
 
 	def perform_declutter(self):
@@ -891,16 +882,18 @@ class Grocery_packing:
 
 
 	def perform_declutter_belief_grocery_packing(self):
+		time.sleep(5)
 		start = time.time()
 		self.should_declutter = True
-		self.perform_declutter()
+		self.declutter_surface_items()
 		self.should_declutter = False
 		self.perform_optimistic_belief_grocery_packing()
 		end = time.time()
 		total = end - start
+		exe = total - self.planning_time
 		print('PLANNING TIME FOR DECLUTTER: '+str(self.planning_time))
 		print('EXECUTION TIME FOR DECLUTTER: '+str(total - self.planning_time))
-
+		self.save_results('Declutter',self.planning_time,exe)
 
 	def create_sbp_problem(self, inbox, topfree, mediumlist, heavylist):
 		num_hypotheses = 5
@@ -1104,8 +1097,10 @@ class Grocery_packing:
 			empty_clutter = self.is_clutter_empty()
 		end = time.time()
 		total = end-st
+		exe = total-self.planning_time
 		print('PLANNING TIME FOR SBP: '+str(self.planning_time))
 		print('EXECUTION TIME FOR SBP: '+str(total-self.planning_time))
+		self.save_results('sbp',self.planning_time,exe)
 
 
 	def single_sample(self, occluded_items):
@@ -1231,9 +1226,11 @@ class Grocery_packing:
 
 	def declutter_surface_items(self):
 		occluded_items = []
+		print(self.scene_belief)
 		for item in self.scene_belief:
-			if self.scene_belief[item][0][1] < self.confidence_threshold:
-				occluded_items.append(self.scene_belief[item][0][0])
+			if not self.items[item].dummy:
+				if self.scene_belief[item][0][1] < self.confidence_threshold:
+					occluded_items.append(self.scene_belief[item][0][0])
 		for item in occluded_items:
 			self.pick_up(item)
 			self.put_in_clutter(item)
@@ -1268,8 +1265,11 @@ class Grocery_packing:
 			empty_clutter = self.is_clutter_empty()
 		end = time.time()
 		total = end-st
+		exe = total-self.planning_time
 		print('PLANNING TIME FOR DYNAMIC: '+str(self.planning_time))
 		print('EXECUTION TIME FOR DYNAMIC: '+str(total-self.planning_time))
+		self.save_results('Dynamic_'+sample_procedure,self.planning_time,exe)
+
 
 	def get_objects_in_order(self):
 		obs=[]
@@ -1316,8 +1316,10 @@ class Grocery_packing:
 														problem_path, alias)
 		end = time.time()
 		total = end-start
+		exe = total - self.planning_time
 		print('PLANNING TIME FOR CONVEYORBELT: '+str(self.planning_time))
 		print('EXECUTION TIME FOR CONVEYORBELT: '+str(total - self.planning_time))
+		self.save_results('Conveyor_Belt',self.planning_time,exe)
 
 
 	def perform_pick_n_roll(self):
@@ -1346,6 +1348,7 @@ class Grocery_packing:
 		duration = time.time() - st
 		print("PLANNING TIME FOR PICKNROLL: 0")
 		print("EXECUTION TIME FOR PICKNROLL: "+str(duration))
+		self.save_results('Pick_n_roll',0,duration)
 
 
 
@@ -1379,8 +1382,37 @@ class Grocery_packing:
 		duration = time.time() - st
 		print("PLANNING TIME FOR PICKNROLL: 0")
 		print("EXECUTION TIME FOR PICKNROLL: "+str(duration))
+		self.save_results('Bag_sort',0,duration)
 
 
+	def save_results(self, algo, planning_time, execution_time):
+		f = open("results.txt","a")		
+		f.write(algo)
+		f.write('\n')
+		f.write('planning_time: '+str(planning_time)+'\n')
+		f.write('execution_time: '+str(execution_time) +'\n\n')
+		f.close()
+
+	def run_strategy(self, strategy):
+		if strategy == 'conveyor-belt':
+			self.perform_conveyor_belt_pack()
+		elif strategy == 'pick-n-roll':
+			self.perform_pick_n_roll()
+		elif strategy == 'bag-sort':
+			self.perform_bag_sort()
+		elif strategy == 'sbp':
+			self.perform_sbp_grocery_packing()
+		elif strategy == 'optimistic':
+			self.perform_optimistic()
+		elif strategy == 'declutter':
+			self.perform_declutter_belief_grocery_packing()
+		elif strategy == 'mc-dynamic':
+			self.perform_dynamic_grocery_packing('mc_sample')
+		elif strategy == 'weighted-dynamic':
+			self.perform_dynamic_grocery_packing('weighted_sample')
+		elif strategy == 'divergent-dynamic':
+			self.perform_dynamic_grocery_packing('divergent_set_1')
+		self.alive = False
 
 
 
@@ -1444,9 +1476,14 @@ def test_pick_place():
 
 
 if __name__ == '__main__':
-	g = Grocery_packing()
-	time.sleep(10)
-	g.perform_bag_sort()
+	args = sys.argv
+	if len(args) != 2:
+		print("Arguments should be strategy and difficulty")
+	else:        
+		strategy = args[1]
+		g = Grocery_packing()
+		time.sleep(10)
+		g.run_strategy(strategy)
 	# g.perform_pick_n_roll()
 	# g.perform_conveyor_belt_pack()
 	# g.perform_dynamic_grocery_packing('divergent_set_1')
