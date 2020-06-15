@@ -9,6 +9,8 @@ import math
 import threading
 import numpy as np
 from fd import Fast_Downward
+import rospy
+from std_msgs.msg import String, Bool
 
 physicsClient = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -87,7 +89,6 @@ class Grocery_item:
 
 		self.item_on_top = None 
 
-
 		self.orr = orr 
 		self.op = op 
 		self.oy = oy 
@@ -126,6 +127,10 @@ class Grocery_packing:
 		self.num_mc_samples = 100
 		self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
 
+		self.plan_pub = rospy.Publisher('/plan', String, queue_size=1)
+		self.scene_belief_publisher = rospy.Publisher('/scene_belief', String, queue_size=1)
+		self.action_pub = rospy.Publisher('/current_action', String, queue_size=1)
+		self.alive_pub = rospy.Publisher('/stay_alive', Bool, queue_size=1)
 
 		self.box = Box(3)
 		self.delta = 0.01
@@ -141,6 +146,9 @@ class Grocery_packing:
 
 		
 		self.alive = True
+		a = Bool()
+		a.data = True
+		self.alive_pub.publish(a)
 		self.perception = threading.Thread(target=self.start_perception,args=(1,))
 		self.perception.start()
 
@@ -153,12 +161,12 @@ class Grocery_packing:
 
 
 	def init_clutter(self):
-		self.bottle = Grocery_item(.25,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.35,'bottle','light',False)
+		self.bottle = Grocery_item(.25,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.35,'bottle','heavy',False)
 		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.1,'coke','light',False)
 		self.nutella = Grocery_item(.6, 0., .65, 0,0,0, 'nutella/nutella.urdf', 0.07,0.07,0.07,'nutella','light',False)
 		self.orange = Grocery_item(.6,.1,.65,0,0,0, 'orange/orange.urdf', 0.07,0.07,0.05, 'orange','light',False)
-		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.1, 'cereal','light',False)
-		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.2, 'lysol','light',False)
+		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.1, 'cereal','heavy',False)
+		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.2, 'lysol','heavy',False)
 		self.lipton = Grocery_item(.6, .2, .65, 0,0,0, 'lipton/lipton.urdf',0.07,0.07,0.05, 'lipton','light' ,False)
 		self.apple = Grocery_item(.7, 0., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light',False)
 
@@ -289,6 +297,8 @@ class Grocery_packing:
 								box['coordinates']) for box in clusters[key]]
 
 			self.scene_belief = normalize_scene_weights(scene)
+			scene_data = String()
+			scene_data.data = ''
 			for item in self.scene_belief:
 				for nm, cf, cd in self.scene_belief[item]:
 					if nm == item and cf >= self.confidence_threshold:
@@ -299,6 +309,8 @@ class Grocery_packing:
 						 cd[1]), (cd[2], cd[3]),color , 1)
 						cv2.putText(camera_view, nm+':'+str(round(cf,2)), (cd[0],cd[1]-10),\
 							cv2.FONT_HERSHEY_SIMPLEX, 0.5, color,2)
+						scene_data.data +=nm+'-'+str(round(cf,2))+'_'
+			self.scene_belief_publisher.publish(scene_data)
 			cv2.imshow('Grocery Item detection', camera_view)
 			if cv2.waitKey(1) & 0xFF == ord('q'):
 				break
@@ -790,9 +802,12 @@ class Grocery_packing:
 			print(self.scene_belief)
 
 			return
-
+		self.convert_to_string_and_publish(plan)
 		for action in plan:
 			print('Performing action: '+str(action))
+			a = String()
+			a.data = str(action)
+			self.action_pub.publish(a)
 			self.belief_execute_action(action, alias)
 
 
@@ -1030,6 +1045,15 @@ class Grocery_packing:
 		return prob_path, swapped_alias
 
 
+	def convert_to_string_and_publish(self,plan):
+		concat = ''
+		for action in plan:
+			concat+=str(action)
+			concat+='_'
+		p = String()
+		p.data = concat
+		self.plan_pub.publish(p)
+
 	def run_sbp(self, domain_path, problem_path, alias):
 		f = Fast_Downward()
 		start = time.time()
@@ -1037,10 +1061,13 @@ class Grocery_packing:
 		if len(plan) == 0 or plan == None:
 			print('NO PLAN FOUND')
 			return
-
+		self.convert_to_string_and_publish(plan)
 		self.planning_time += time.time() - start
 		for action in plan:
 			print(action)
+			a = String()
+			a.data = action 
+			self.action_pub.publish(a)
 			result = self.execute_sbp_action(action, alias)
 			if not result:
 				self.current_action = "Action: REPLANNING..."  
@@ -1229,7 +1256,7 @@ class Grocery_packing:
 		print(self.scene_belief)
 		for item in self.scene_belief:
 			if not self.items[item].dummy:
-				if self.scene_belief[item][0][1] < self.confidence_threshold:
+				if self.scene_belief[item][0][1] < self.confidence_threshold+0.1:
 					occluded_items.append(self.scene_belief[item][0][0])
 		for item in occluded_items:
 			self.pick_up(item)
@@ -1386,12 +1413,13 @@ class Grocery_packing:
 
 
 	def save_results(self, algo, planning_time, execution_time):
-		f = open("results.txt","a")		
-		f.write(algo)
-		f.write('\n')
-		f.write('planning_time: '+str(planning_time)+'\n')
-		f.write('execution_time: '+str(execution_time) +'\n\n')
-		f.close()
+		return
+		# f = open("results.txt","a")		
+		# f.write(algo)
+		# f.write('\n')
+		# f.write('planning_time: '+str(planning_time)+'\n')
+		# f.write('execution_time: '+str(execution_time) +'\n\n')
+		# f.close()
 
 	def run_strategy(self, strategy):
 		if strategy == 'conveyor-belt':
@@ -1413,6 +1441,9 @@ class Grocery_packing:
 		elif strategy == 'divergent-dynamic':
 			self.perform_dynamic_grocery_packing('divergent_set_1')
 		self.alive = False
+		a = Bool()
+		a.data = False
+		self.alive_pub.publish(a)
 
 
 
@@ -1480,6 +1511,7 @@ if __name__ == '__main__':
 	if len(args) != 2:
 		print("Arguments should be strategy and difficulty")
 	else:        
+		rospy.init_node('grocery_packing')
 		strategy = args[1]
 		g = Grocery_packing()
 		time.sleep(10)
