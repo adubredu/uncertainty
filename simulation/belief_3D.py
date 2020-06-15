@@ -310,6 +310,7 @@ class Grocery_packing:
 						cv2.putText(camera_view, nm+':'+str(round(cf,2)), (cd[0],cd[1]-10),\
 							cv2.FONT_HERSHEY_SIMPLEX, 0.5, color,2)
 						scene_data.data +=nm+'-'+str(round(cf,2))+'_'
+			
 			self.scene_belief_publisher.publish(scene_data)
 			cv2.imshow('Grocery Item detection', camera_view)
 			if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -806,11 +807,16 @@ class Grocery_packing:
 		for action in plan:
 			print('Performing action: '+str(action))
 			a = String()
-			a.data = str(action)
+			f = list(action)
+			f[1] = alias[action[1]]
+			f = str(f)
+			a.data = f 
+			
 			self.action_pub.publish(a)
 			self.belief_execute_action(action, alias)
 		a = String()
 		a.data = ''
+		
 		self.action_pub.publish(a)
 		self.plan_pub.publish(a)
 
@@ -1052,11 +1058,13 @@ class Grocery_packing:
 	def convert_to_string_and_publish(self,plan,alias):
 		concat = ''
 		for action in plan:
+			action = list(action)
 			action[1] = alias[action[1]]
 			concat+=str(action)
 			concat+='_'
 		p = String()
 		p.data = concat
+		
 		self.plan_pub.publish(p)
 
 	def run_sbp(self, domain_path, problem_path, alias):
@@ -1071,7 +1079,11 @@ class Grocery_packing:
 		for action in plan:
 			print(action)
 			a = String()
-			a.data = action 
+			f = list(action)
+			f[1] = alias[action[1]]
+			f = str(f)
+			a.data = f
+			
 			self.action_pub.publish(a)
 			result = self.execute_sbp_action(action, alias)
 			if not result:
@@ -1085,6 +1097,7 @@ class Grocery_packing:
 				break
 		a = String()
 		a.data = ''
+		
 		self.action_pub.publish(a)
 		self.plan_pub.publish(a)
 		return
@@ -1452,7 +1465,6 @@ class Grocery_packing:
 		self.alive = False
 		a = Bool()
 		a.data = False
-		self.alive_pub.publish(a)
 
 
 
