@@ -802,13 +802,17 @@ class Grocery_packing:
 			print(self.scene_belief)
 
 			return
-		self.convert_to_string_and_publish(plan)
+		self.convert_to_string_and_publish(plan, alias)
 		for action in plan:
 			print('Performing action: '+str(action))
 			a = String()
 			a.data = str(action)
 			self.action_pub.publish(a)
 			self.belief_execute_action(action, alias)
+		a = String()
+		a.data = ''
+		self.action_pub.publish(a)
+		self.plan_pub.publish(a)
 
 
 	def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias):
@@ -1045,9 +1049,10 @@ class Grocery_packing:
 		return prob_path, swapped_alias
 
 
-	def convert_to_string_and_publish(self,plan):
+	def convert_to_string_and_publish(self,plan,alias):
 		concat = ''
 		for action in plan:
+			action[1] = alias[action[1]]
 			concat+=str(action)
 			concat+='_'
 		p = String()
@@ -1061,7 +1066,7 @@ class Grocery_packing:
 		if len(plan) == 0 or plan == None:
 			print('NO PLAN FOUND')
 			return
-		self.convert_to_string_and_publish(plan)
+		self.convert_to_string_and_publish(plan,alias)
 		self.planning_time += time.time() - start
 		for action in plan:
 			print(action)
@@ -1078,6 +1083,10 @@ class Grocery_packing:
 												mediumlist, heavylist)
 				self.run_sbp(self.domain_path, new_problem_path, nalias)
 				break
+		a = String()
+		a.data = ''
+		self.action_pub.publish(a)
+		self.plan_pub.publish(a)
 		return
 
 
