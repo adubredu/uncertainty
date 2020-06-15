@@ -61,9 +61,10 @@ class  visualizer:
 		objects = ['pepsi', 'nutella','coke','lipton',
 					'bleach', 'ambrosia', 'banana', 'cereal', 'lysol',
 					'milk', 'oreo', 'tangerine']
-		while self.stay_alive:
+		for i in range(10000):
 			for name, (x,y) in zip(objects, self.object_coordinates):
 				self.win.blit(pygame.image.load('assets/'+name+'.jpg'), (x,y))
+			pygame.display.update()
 			self.clock.tick(self.fps)
 
 
