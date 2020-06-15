@@ -180,3 +180,7 @@ Declutter
 planning_time: 6.48391580581665
 execution_time: 120.14080739021301
 
+Declutter
+planning_time: 6.608159780502319
+execution_time: 121.23288941383362
+
