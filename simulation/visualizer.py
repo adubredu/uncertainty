@@ -77,7 +77,10 @@ class  visualizer:
 		y = 150
 		plan = self.plan.split('_')[:-1]
 		for p in plan:
-			self.display_text(p, 360, y, (0,0,0), 15)
+			if p == self.current_action:
+				self.display_text(p, 360, y, (255,0,0), 15)
+			else:
+				self.display_text(p, 360, y, (0,0,0), 15)
 			y+=20
 
 
