@@ -121,11 +121,14 @@ class Grocery_packing:
 						'rgripper':self.rgripper,
 						'tray': self.tray
 		}
+		self.item_list = ['ambrosia','apple','banana','bottle','cereal','coke',\
+						'lipton','lysol','milk','nutella','orange','oreo']
 		self.init_clutter()
 
 		self.planning_time = 0
 		self.num_mc_samples = 100
 		self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
+		
 
 		self.plan_pub = rospy.Publisher('/plan', String, queue_size=1)
 		self.scene_belief_publisher = rospy.Publisher('/scene_belief', String, queue_size=1)
@@ -149,8 +152,8 @@ class Grocery_packing:
 		a = Bool()
 		a.data = True
 		self.alive_pub.publish(a)
-		self.perception = threading.Thread(target=self.start_perception,args=(1,))
-		self.perception.start()
+		# self.perception = threading.Thread(target=self.start_perception,args=(1,))
+		# self.perception.start()
 
 
 	def refresh_world(self):
@@ -160,20 +163,54 @@ class Grocery_packing:
 		p.stepSimulation()
 
 
+	def generate_init_coordinates(self, space):
+		mx = 0.4; my = 0.0; z = 0.65
+		if space == "high":
+			delta = 0.3
+		elif space == "medium":
+			delta = 0.2
+		else:
+			delta = 0.1
+		x = np.random.uniform(low=mx-delta, high=mx+delta)
+		y = np.random.uniform(low=my-delta, high=my+delta)
+
+		return (x,y,z)
+
+
+
+	def generate_clutter_coordinates(self, space):
+		mindist = 0.05
+		for item in self.item_list:
+			(x,y,z) = self.generate_init_coordinates(space)
+			self.items[item].x = x; self.items[item].y = y; self.items[item].z = z
+
+		taken_care_of = []
+		for item1 in self.item_list:
+			for item2 in self.item_list:
+				if item2 not in taken_care_of and item1!=item2:
+					x1 = self.items[item1].x; x2 = self.items[item2].x;
+					y1 = self.items[item1].y; y2 = self.items[item2].y;
+					dist = np.sqrt((x1-x2)**2 + (y1-y2)**2)
+					if dist < mindist:
+						self.items[item2].z += self.items[item1].height
+					taken_care_of.append(item2)
+
+
+
 	def init_clutter(self):
-		self.bottle = Grocery_item(.25,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.35,'bottle','heavy',False)
-		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.1,'coke','light',False)
+		self.bottle = Grocery_item(.25,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.25,'bottle','heavy',False)
+		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.15,'coke','light',False)
 		self.nutella = Grocery_item(.6, 0., .65, 0,0,0, 'nutella/nutella.urdf', 0.07,0.07,0.07,'nutella','light',False)
 		self.orange = Grocery_item(.6,.1,.65,0,0,0, 'orange/orange.urdf', 0.07,0.07,0.05, 'orange','light',False)
 		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.1, 'cereal','heavy',False)
-		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.2, 'lysol','heavy',False)
+		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.25, 'lysol','heavy',False)
 		self.lipton = Grocery_item(.6, .2, .65, 0,0,0, 'lipton/lipton.urdf',0.07,0.07,0.05, 'lipton','light' ,False)
 		self.apple = Grocery_item(.7, 0., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light',False)
 
-		self.ambrosia = Grocery_item(7.7, 7., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light', True)
-		self.oreo = Grocery_item(7.7, 7., .65, 3.14,0,0, 'oreo/oreo.urdf', 0.07,0.07,0.03, 'oreo','light', True)
-		self.milk = Grocery_item(7.7, 7., .65, 3.14,0,0, 'milk/milk.urdf', 0.07,0.07,0.03, 'milk','light', True)
-		self.banana = Grocery_item(7.7, 7., .65, 3.14,0,0, 'banana/banana.urdf', 0.07,0.07,0.03, 'banana','light', True)
+		self.ambrosia = Grocery_item(7.7, 7., .65, 0,0,0, 'ambrosia/ambrosia.urdf', 0.07,0.07,0.03, 'apple','light', False)
+		self.oreo = Grocery_item(7.7, 7., .65, 3.14,0,0, 'oreo/oreo.urdf', 0.07,0.07,0.02, 'oreo','light', False)
+		self.milk = Grocery_item(7.7, 7., .65, 0,0,0, 'milk/milk.urdf', 0.07,0.07,0.30, 'milk','light', False)
+		self.banana = Grocery_item(7.7, 7., .65, 3.14,0,0, 'banana/banana.urdf', 0.07,0.07,0.03, 'banana','light', False)
 		
 
 		self.items['bottle'] = self.bottle
@@ -191,10 +228,13 @@ class Grocery_packing:
 		self.items['milk'] = self.milk
 		self.items['banana'] = self.banana
 
+		self.generate_clutter_coordinates('low')
+
 		self.objects_list = [self.bottle, self.coke, self.nutella, 
 					self.orange, self.cereal, self.lysol, self.lipton,
 					self.apple, self.ambrosia, self.oreo, self.milk,
 					self.banana]
+		self.refresh_world()
 
 
 	def start_perception(self,x):
@@ -1535,8 +1575,8 @@ if __name__ == '__main__':
 		rospy.init_node('grocery_packing')
 		strategy = args[1]
 		g = Grocery_packing()
-		time.sleep(10)
-		g.run_strategy(strategy)
+		time.sleep(30)
+		# g.run_strategy(strategy)
 	# g.perform_pick_n_roll()
 	# g.perform_conveyor_belt_pack()
 	# g.perform_dynamic_grocery_packing('divergent_set_1')
