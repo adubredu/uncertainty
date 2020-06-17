@@ -47,7 +47,7 @@ class Box:
 
 	def add_item(self, item):
 		# self.items_added[item.name] = self.index%self.cpty
-		self.num_items+=1
+		
 		xyind = (99,99)
 		for j in range(self.cpty):
 			for i in range(self.cpty):
@@ -59,9 +59,11 @@ class Box:
 			y = self.ys[xyind[1]]
 			self.occupancy[xyind[0]][xyind[1]] = 1
 			self.items_added[item] = xyind
+			self.num_items+=1
 		else:
 			print('Box full')
 			print(self.items_added)
+			print(self.num_items)
 			return (99,99,99)
 		return x,y,self.z
 
@@ -381,8 +383,8 @@ class Grocery_packing:
 		if item.dummy:
 			return False
 		for it in self.objects_list:
-            if it.item_on_top == targetID:
-                it.item_on_top = None
+			if it.item_on_top == targetID:
+				it.item_on_top = None
 		if item.inbox:
 			self.box.remove_item(targetID)
 		item.inbox = False
@@ -569,10 +571,10 @@ class Grocery_packing:
 		# item.inbox = True
 		self.gripper.holding = None
 		bot.item_on_top = topitem
-		if bot.inclutter:
-			item.inclutter = True
-		elif bot.inbox:
-			top.inbox = True
+		# if bot.inclutter:
+		# 	item.inclutter = True
+		# elif bot.inbox:
+		# 	item.inbox = True
 
 		(bx, by, bz) = bot.get_position()
 		bz = bz + bot.height
@@ -818,7 +820,7 @@ class Grocery_packing:
 				init += "(topfree "+alias[item]+") "
 				init += "(inclutter "+alias[item]+") "
 
-		if self.box.num_items ==self.box.full_cpty:
+		if self.box.num_items >= self.box.full_cpty:
 			init += "(boxfull)"
 
 		init +=  ")\n"    
@@ -913,6 +915,7 @@ class Grocery_packing:
 			if not result:
 				self.current_action = "Action: REPLANNING..."  
 				print('REPLANNING')
+				print('Box num is: '+str(self.box.num_items))
 				inboxlist, topfreelist, mediumlist, heavylist = \
 					self.select_perceived_objects_and_classify_weights()
 				new_problem_path, nalias = self.create_pddl_problem(inboxlist, topfreelist,

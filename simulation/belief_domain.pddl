@@ -59,7 +59,7 @@
     
     (:action put-in-box
             :parameters (?x - item)
-            :precondition  (holding ?x) (not (boxfull))
+            :precondition  (and (holding ?x) (not (boxfull)))
             :effect
             (and (not (holding ?x))
                 (handempty)
