@@ -19,6 +19,11 @@ print(pybullet_data.getDataPath())
 p.setGravity(0,0,0)
 planeId = p.loadURDF("plane.urdf") 
 
+
+class Gripper:
+	def __init__(self):
+		self.holding = None 
+
 class Box:
 	def __init__(self, bottom_capacity):
 		self.cpty = bottom_capacity
@@ -29,6 +34,9 @@ class Box:
 		self.ly = 290
 		self.ys = [-0.1, 0, 0.1]
 		self.xs = [-0.6, -0.5, -0.4]
+		if self.cpty == 2:
+			self.ys = [-0.05,  0.05]
+			self.xs = [-0.55,  -0.45]
 		self.z = 0.7
 		#i is per row, j is per column
 		self.occupancy = [[0 for j in range(self.cpty)] for i in range(self.cpty)]
@@ -53,15 +61,8 @@ class Box:
 			self.items_added[item] = xyind
 		else:
 			print('Box full')
+			print(self.items_added)
 			return (99,99,99)
-			# x = self.widths[self.index%self.cpty]
-			# if self.cascade: 
-			#     y = self.heights[self.index%self.cpty]- item.height                 
-			# else:
-			#     y = self.ly - item.height 
-
-			# self.heights[self.index%self.cpty] = y
-			# self.index +=1
 		return x,y,self.z
 
 	def remove_item(self, item):
@@ -100,7 +101,7 @@ class Grocery_item:
 
 	def update_object_position(self):
 		p.resetBasePositionAndOrientation(self.id, \
-			[self.x,self.y,self.z], self.quat)
+			[self.x,self.y,self.z], p.getQuaternionFromEuler([self.orr,self.op,self.oy]))
 
 	def get_position(self):
 		(x,y,z), _ = p.getBasePositionAndOrientation(self.id)
@@ -121,6 +122,8 @@ class Grocery_packing:
 						'rgripper':self.rgripper,
 						'tray': self.tray
 		}
+		self.box = Box(3)
+		self.gripper = Gripper()
 		self.item_list = ['ambrosia','apple','banana','bottle','cereal','coke',\
 						'lipton','lysol','milk','nutella','orange','oreo']
 		self.init_clutter()
@@ -135,9 +138,9 @@ class Grocery_packing:
 		self.action_pub = rospy.Publisher('/current_action', String, queue_size=1)
 		self.alive_pub = rospy.Publisher('/stay_alive', Bool, queue_size=1)
 
-		self.box = Box(3)
+		
 		self.delta = 0.01
-		self.confidence_threshold = 0.5
+		self.confidence_threshold = 0.4
 		self.fps = 60
 		self.scene_belief = {}
 		self.clutter_ps = []
@@ -152,8 +155,8 @@ class Grocery_packing:
 		a = Bool()
 		a.data = True
 		self.alive_pub.publish(a)
-		# self.perception = threading.Thread(target=self.start_perception,args=(1,))
-		# self.perception.start()
+		self.perception = threading.Thread(target=self.start_perception,args=(1,))
+		self.perception.start()
 
 
 	def refresh_world(self):
@@ -167,10 +170,15 @@ class Grocery_packing:
 		mx = 0.4; my = 0.0; z = 0.65
 		if space == "high":
 			delta = 0.3
+			self.box.full_cpty = 9
 		elif space == "medium":
 			delta = 0.2
+			self.box.full_cpty = 6
 		else:
 			delta = 0.1
+			self.box = Box(2)
+			self.box.full_cpty = 4
+
 		x = np.random.uniform(low=mx-delta, high=mx+delta)
 		y = np.random.uniform(low=my-delta, high=my+delta)
 
@@ -182,42 +190,51 @@ class Grocery_packing:
 		mindist = 0.05
 		for item in self.item_list:
 			(x,y,z) = self.generate_init_coordinates(space)
+			# x,y,z = 0.4205859705048461, 0.05045225889073787, 0.65
 			self.items[item].x = x; self.items[item].y = y; self.items[item].z = z
-
+		# print((x,y,z))
+		
 		taken_care_of = []
 		for item1 in self.item_list:
+
 			for item2 in self.item_list:
 				if item2 not in taken_care_of and item1!=item2:
 					x1 = self.items[item1].x; x2 = self.items[item2].x;
 					y1 = self.items[item1].y; y2 = self.items[item2].y;
 					dist = np.sqrt((x1-x2)**2 + (y1-y2)**2)
 					if dist < mindist:
+						# print('too close')
 						self.items[item2].z += self.items[item1].height
-					taken_care_of.append(item2)
-
+						r = np.random.randint(2)
+						# if r == 0:
+						# 	self.items[item2].orr += 1.57
+						print(item2+' on '+item1)
+						taken_care_of.append(item2)
+# 
 
 
 	def init_clutter(self):
-		self.bottle = Grocery_item(.25,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.25,'bottle','heavy',False)
+		self.bottle = Grocery_item(.25,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.25,'bottle','light',False)
 		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.15,'coke','light',False)
-		self.nutella = Grocery_item(.6, 0., .65, 0,0,0, 'nutella/nutella.urdf', 0.07,0.07,0.07,'nutella','light',False)
+		self.nutella = Grocery_item(.6, 0., .65, 0,0,0, 'nutella/nutella.urdf', 0.07,0.07,0.15,'nutella','light',False)
 		self.orange = Grocery_item(.6,.1,.65,0,0,0, 'orange/orange.urdf', 0.07,0.07,0.05, 'orange','light',False)
-		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.1, 'cereal','heavy',False)
-		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.25, 'lysol','heavy',False)
+		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.25, 'cereal','heavy',False)
+		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.27, 'lysol','heavy',False)
 		self.lipton = Grocery_item(.6, .2, .65, 0,0,0, 'lipton/lipton.urdf',0.07,0.07,0.05, 'lipton','light' ,False)
 		self.apple = Grocery_item(.7, 0., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light',False)
 
-		self.ambrosia = Grocery_item(7.7, 7., .65, 0,0,0, 'ambrosia/ambrosia.urdf', 0.07,0.07,0.03, 'apple','light', False)
+		self.ambrosia = Grocery_item(7.7, 7., .65, 0,0,0, 'ambrosia/ambrosia.urdf', 0.07,0.07,0.27, 'ambrosia','heavy', False)
 		self.oreo = Grocery_item(7.7, 7., .65, 3.14,0,0, 'oreo/oreo.urdf', 0.07,0.07,0.02, 'oreo','light', False)
-		self.milk = Grocery_item(7.7, 7., .65, 0,0,0, 'milk/milk.urdf', 0.07,0.07,0.30, 'milk','light', False)
+		self.milk = Grocery_item(7.7, 7., .65, 0,0,0, 'milk/milk.urdf', 0.07,0.07,0.2, 'milk','heavy', False)
 		self.banana = Grocery_item(7.7, 7., .65, 3.14,0,0, 'banana/banana.urdf', 0.07,0.07,0.03, 'banana','light', False)
-		
+		self.pepsi = Grocery_item(7.7, 7., .65, 3.14,0,0, 'pepsi/pepsi.urdf', 0.07,0.07,0.03, 'banana','light', True)
+
 
 		self.items['bottle'] = self.bottle
 		self.items['coke'] = self.coke
 		self.items['nutella'] = self.nutella
 		self.items['orange'] = self.orange
-		# self.items['pepsi'] = self.pepsi 
+		self.items['pepsi'] = self.pepsi 
 		self.items['cereal'] = self.cereal
 		self.items['lysol'] = self.lysol
 		self.items['lipton'] = self.lipton
@@ -363,8 +380,14 @@ class Grocery_packing:
 		item = self.items[targetID]
 		if item.dummy:
 			return False
+		for it in self.objects_list:
+            if it.item_on_top == targetID:
+                it.item_on_top = None
+		if item.inbox:
+			self.box.remove_item(targetID)
 		item.inbox = False
 		item.inclutter = False 
+		self.gripper.holding = targetID
 
 		(olx,oly,olz) = self.lgripper.get_position()
 		(orx,ory,orz) = self.rgripper.get_position()
@@ -447,10 +470,11 @@ class Grocery_packing:
 
 	def put_in_box(self,targetID,bx,by,bz):
 		item = self.items[targetID]
-		if item.dummy:
+		if item.dummy or bx == 99:
 			return False
 		item.inbox = True
 		item.inclutter = False
+		self.gripper.holding = None
 
 		(olx,oly,olz) = self.lgripper.get_position()
 		(orx,ory,orz) = self.rgripper.get_position()
@@ -542,8 +566,13 @@ class Grocery_packing:
 		bot = self.items[botitem]
 		if item.dummy or bot.dummy:
 			return False
-		item.inbox = True
+		# item.inbox = True
+		self.gripper.holding = None
 		bot.item_on_top = topitem
+		if bot.inclutter:
+			item.inclutter = True
+		elif bot.inbox:
+			top.inbox = True
 
 		(bx, by, bz) = bot.get_position()
 		bz = bz + bot.height
@@ -638,6 +667,7 @@ class Grocery_packing:
 
 		bx,by = self.clutter_ps.pop()
 		bz = 0.7
+		self.gripper.holding = None 
 
 		item.inclutter = True
 		item.inbox = False
@@ -761,11 +791,23 @@ class Grocery_packing:
 			alias[item] = 'm'+str(mc)
 			mc+=1
 
+		if self.gripper.holding is not None:
+			name = self.gripper.holding
+			if self.items[name].mass == 'heavy':
+				alias[name] = 'h'+str(hc)
+				hc+=1
+			else:
+				alias[name] = 'm'+str(mc)
+				mc+=1
+
 		init = "(:init (handempty) "
+		if self.gripper.holding is not None:
+			init = "(:init (holding "+alias[self.gripper.holding]+") "
+
 		for item in inbox:
 			init += "(inbox "+alias[item]+") "
 			it = self.items[item].item_on_top
-			if it != None:
+			if it != None and it in alias:
 				init+= "(on "+alias[it]+" "+alias[item]+") "
 			else:
 				init += "(topfree "+alias[item]+") "
@@ -776,8 +818,8 @@ class Grocery_packing:
 				init += "(topfree "+alias[item]+") "
 				init += "(inclutter "+alias[item]+") "
 
-		# if self.box.num_items >= 5:
-		#     init += "(boxfull)"
+		if self.box.num_items ==self.box.full_cpty:
+			init += "(boxfull)"
 
 		init +=  ")\n"    
 
@@ -837,10 +879,22 @@ class Grocery_packing:
 		return prob_path, swapped_alias
 
 
-	def execute_plan(self, plan, alias):
+
+	def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias):
+		f = Fast_Downward()
+		start = time.time()
+		plan = f.plan(domain_path, problem_path)
+		self.planning_time += time.time()-start
+
 		if plan is None or len(plan) == 0:
 			print('NO  VALID PLAN FOUND')
 			print(self.scene_belief)
+			for it in self.scene_belief:
+				if len(self.scene_belief[it]) != 0:
+					cf = self.scene_belief[it][0][1]
+					self.confidence_threshold = round(cf,2)
+
+
 
 			return
 		self.convert_to_string_and_publish(plan, alias)
@@ -849,49 +903,31 @@ class Grocery_packing:
 			a = String()
 			f = list(action)
 			f[1] = alias[action[1]]
+			if len(action) == 3:
+				f[2] = alias[action[2]]
 			f = str(f)
 			a.data = f 
 			
 			self.action_pub.publish(a)
-			self.belief_execute_action(action, alias)
+			result = self.execute_sbp_action(action, alias)
+			if not result:
+				self.current_action = "Action: REPLANNING..."  
+				print('REPLANNING')
+				inboxlist, topfreelist, mediumlist, heavylist = \
+					self.select_perceived_objects_and_classify_weights()
+				new_problem_path, nalias = self.create_pddl_problem(inboxlist, topfreelist,
+												mediumlist, heavylist)
+				self.plan_and_run_belief_space_planning(self.domain_path, new_problem_path, nalias)
+				break
 		a = String()
 		a.data = ''
 		
 		self.action_pub.publish(a)
 		self.plan_pub.publish(a)
+		return
 
 
-	def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias):
-		f = Fast_Downward()
-		start = time.time()
-		plan = f.plan(domain_path, problem_path)
-		self.planning_time += time.time()-start
-		self.execute_plan(plan, alias)
-
-
-	def belief_execute_action(self, action, alias):
-		if action[0] == 'pick-from-clutter':
-			self.pick_up(alias[action[1]])
-			self.box.remove_item(alias[action[1]])
-
-		elif action[0] == 'pick-from-box':
-			self.pick_up(alias[action[1]])
-			self.box.remove_item(alias[action[1]])
-
-		elif action[0] == 'pick-from':
-			self.pick_up(alias[action[1]])
-			self.box.remove_item(alias[action[1]])
-
-		elif action[0] == 'put-in-box':
-			x,y,z = self.box.add_item(alias[action[1]])
-			self.put_in_box(alias[action[1]],x,y,z)
-
-		elif action[0] == 'put-in-clutter':
-			self.put_in_clutter(alias[action[1]])
-
-		elif action[0] == 'put-on':
-			self.put_on(alias[action[1]], alias[action[2]])
-
+	
 
 	def is_clutter_empty(self):
 		for item in self.objects_list:
@@ -982,6 +1018,16 @@ class Grocery_packing:
 		for item in mediumlist:
 			alias[item] = 'm'+str(mc)
 			mc+=1
+
+		if self.gripper.holding is not None:
+			name = self.gripper.holding
+			if self.items[name].mass == 'heavy':
+				alias[name] = 'h'+str(hc)
+				hc+=1
+			else:
+				alias[name] = 'm'+str(mc)
+				mc+=1
+
 
 		init = "(:init (handempty) "
 		for item in inbox:
@@ -1100,6 +1146,8 @@ class Grocery_packing:
 		for action in plan:
 			action = list(action)
 			action[1] = alias[action[1]]
+			if len(action) == 3:
+				action[2] = alias[action[2]]
 			concat+=str(action)
 			concat+='_'
 		p = String()
@@ -1114,13 +1162,16 @@ class Grocery_packing:
 		if len(plan) == 0 or plan == None:
 			print('NO PLAN FOUND')
 			return
-		self.convert_to_string_and_publish(plan,alias)
 		self.planning_time += time.time() - start
+		self.convert_to_string_and_publish(plan,alias)
+		
 		for action in plan:
 			print(action)
 			a = String()
 			f = list(action)
 			f[1] = alias[action[1]]
+			if len(action) == 3:
+				f[2] = alias[action[2]]
 			f = str(f)
 			a.data = f
 			
@@ -1143,6 +1194,7 @@ class Grocery_packing:
 		return
 
 
+
 	def execute_sbp_action(self,action, alias):
 		self.current_action = "Action: "+str(action)
 		success = True
@@ -1163,7 +1215,7 @@ class Grocery_packing:
 			success = self.put_in_box(alias[action[1]],x,y,z)
 
 		elif action[0] == 'put-in-clutter':
-			success = self.drop_in_clutter(alias[action[1]])
+			success = self.put_in_clutter(alias[action[1]])
 
 		elif action[0] == 'put-on':
 			success = self.put_on(alias[action[1]], alias[action[2]])
@@ -1309,17 +1361,21 @@ class Grocery_packing:
 				suh +=1
 
 		print("sNUM HEAVY: "+str(suh)+" over "+str(len(surface_items)))
-		sh = float(suh)/float(len(surface_items))
+		if len(surface_items) == 0:
+			sh = 1
+		else:
+			sh = float(suh)/float(len(surface_items))
 		return oh, sh
 
 
 	def declutter_surface_items(self):
 		occluded_items = []
-		print(self.scene_belief)
+		# print(self.scene_belief)
 		for item in self.scene_belief:
 			if not self.items[item].dummy:
-				if self.scene_belief[item][0][1] < self.confidence_threshold+0.1:
-					occluded_items.append(self.scene_belief[item][0][0])
+				if len(self.scene_belief[item]) > 0:
+					if self.scene_belief[item][0][1] < self.confidence_threshold+0.1:
+						occluded_items.append(self.scene_belief[item][0][0])
 		for item in occluded_items:
 			self.pick_up(item)
 			self.put_in_clutter(item)
@@ -1341,12 +1397,8 @@ class Grocery_packing:
 
 			if sh >= oh:
 				print('\nPERFORMING OPT\n')
-				
-				f = Fast_Downward()
-				start = time.time()
-				plan = f.plan(self.domain_path, problem_path)
-				self.planning_time += time.time() - start
-				self.execute_plan(plan, alias)
+				self.plan_and_run_belief_space_planning(self.domain_path, \
+										problem_path, alias)
 			else:
 				print(('\nPERFORMING DECLUTTER\n'))
 				self.declutter_surface_items()
@@ -1575,8 +1627,8 @@ if __name__ == '__main__':
 		rospy.init_node('grocery_packing')
 		strategy = args[1]
 		g = Grocery_packing()
-		time.sleep(30)
-		# g.run_strategy(strategy)
+		time.sleep(10)
+		g.run_strategy(strategy)
 	# g.perform_pick_n_roll()
 	# g.perform_conveyor_belt_pack()
 	# g.perform_dynamic_grocery_packing('divergent_set_1')
