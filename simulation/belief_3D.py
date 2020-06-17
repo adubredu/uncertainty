@@ -114,8 +114,8 @@ class Grocery_item:
 class Grocery_packing:
 	def __init__(self):
 		self.table = Grocery_item(0,0,0, 0,0,0, "table/table.urdf",1,1,1,'table','heavy',False)
-		self.lgripper = Grocery_item(0.2,-0.3,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light',False)
-		self.rgripper = Grocery_item(0.23,-0.3,1.5, 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light',False)
+		self.lgripper = Grocery_item(0.2,-0.3,1., 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light',False)
+		self.rgripper = Grocery_item(0.23,-0.3,1., 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light',False)
 		p.setAdditionalSearchPath('/home/developer/uncertainty/simulation/models')
 		self.tray = Grocery_item(-.5,.0,0.62, 0,0,0, "container/container.urdf",0.3,0.3,0.3,'tray','heavy',False)
 		self.items = {
@@ -124,11 +124,13 @@ class Grocery_packing:
 						'rgripper':self.rgripper,
 						'tray': self.tray
 		}
+		self.start_time = time.time()
+		self.time_pub = rospy.Publisher('/time', String, queue_size=1)
+
 		self.box = Box(3)
 		self.gripper = Gripper()
 		self.item_list = ['ambrosia','apple','banana','bottle','cereal','coke',\
 						'lipton','lysol','milk','nutella','orange','oreo']
-		self.init_clutter()
 
 		self.planning_time = 0
 		self.num_mc_samples = 100
@@ -136,10 +138,11 @@ class Grocery_packing:
 		
 
 		self.plan_pub = rospy.Publisher('/plan', String, queue_size=1)
+		self.boxitems_pub = rospy.Publisher('/box_items', String, queue_size=1)
 		self.scene_belief_publisher = rospy.Publisher('/scene_belief', String, queue_size=1)
 		self.action_pub = rospy.Publisher('/current_action', String, queue_size=1)
-		self.alive_pub = rospy.Publisher('/stay_alive', Bool, queue_size=1)
-
+		self.method_pub = rospy.Publisher('/method', String, queue_size=1)
+		self.items_in_box = []
 		
 		self.delta = 0.01
 		self.confidence_threshold = 0.4
@@ -152,11 +155,8 @@ class Grocery_packing:
 			for y in ys:
 				self.clutter_ps.append((x,y))
 
-		
+		self.init_clutter()
 		self.alive = True
-		a = Bool()
-		a.data = True
-		self.alive_pub.publish(a)
 		self.perception = threading.Thread(target=self.start_perception,args=(1,))
 		self.perception.start()
 
@@ -165,6 +165,19 @@ class Grocery_packing:
 		for key in self.items:
 			if not self.items[key].dummy:
 				self.items[key].update_object_position()
+		duration = int(time.time()-self.start_time)
+		d = String()
+		d.data = str(int(duration))
+		self.time_pub.publish(d)
+
+		a=''
+		for it in self.items_in_box:
+			a+=it 
+			a+='_'
+		a=a[:-1]
+		b = String()
+		b.data = a 
+		self.boxitems_pub.publish(b)
 		p.stepSimulation()
 
 
@@ -387,6 +400,10 @@ class Grocery_packing:
 				it.item_on_top = None
 		if item.inbox:
 			self.box.remove_item(targetID)
+		try:
+			self.items_in_box.remove(targetID)
+		except:
+			pass
 		item.inbox = False
 		item.inclutter = False 
 		self.gripper.holding = targetID
@@ -477,7 +494,7 @@ class Grocery_packing:
 		item.inbox = True
 		item.inclutter = False
 		self.gripper.holding = None
-
+		self.items_in_box.append(targetID)
 		(olx,oly,olz) = self.lgripper.get_position()
 		(orx,ory,orz) = self.rgripper.get_position()
 
@@ -558,6 +575,7 @@ class Grocery_packing:
 			self.rgripper.y = self.lgripper.y
 			time.sleep(1./self.fps)
 			self.refresh_world()
+
 		return True
 
 
@@ -571,6 +589,7 @@ class Grocery_packing:
 		# item.inbox = True
 		self.gripper.holding = None
 		bot.item_on_top = topitem
+		self.items_in_box.append(topitem)
 		# if bot.inclutter:
 		# 	item.inclutter = True
 		# elif bot.inbox:
@@ -915,6 +934,8 @@ class Grocery_packing:
 			if not result:
 				self.current_action = "Action: REPLANNING..."  
 				print('REPLANNING')
+				a.data = 'REPLANNING'		
+				self.action_pub.publish(a)
 				print('Box num is: '+str(self.box.num_items))
 				inboxlist, topfreelist, mediumlist, heavylist = \
 					self.select_perceived_objects_and_classify_weights()
@@ -1036,7 +1057,7 @@ class Grocery_packing:
 		for item in inbox:
 			init += "(inbox "+alias[item]+") "
 			it = self.items[item].item_on_top
-			if it != None:
+			if it != None and it in alias:
 				init+= "(on "+alias[it]+" "+alias[item]+") "
 			else:
 				init += "(topfree "+alias[item]+") "
@@ -1176,12 +1197,13 @@ class Grocery_packing:
 			if len(action) == 3:
 				f[2] = alias[action[2]]
 			f = str(f)
-			a.data = f
-			
+			a.data = f		
 			self.action_pub.publish(a)
 			result = self.execute_sbp_action(action, alias)
 			if not result:
 				self.current_action = "Action: REPLANNING..."  
+				a.data = 'REPLANNING'		
+				self.action_pub.publish(a)
 				print('REPLANNING')
 				inboxlist, topfreelist, mediumlist, heavylist = \
 					self.select_perceived_objects_and_classify_weights()
@@ -1423,41 +1445,48 @@ class Grocery_packing:
 		return obs
 
 	def perform_conveyor_belt_pack(self):
-		items_in_order = self.get_objects_in_order()
+		# items_in_order = self.get_objects_in_order()
 		start = time.time()
-		for item in items_in_order:
-			inboxlist, topfreelist, mediumlist, heavylist = \
-					self.select_perceived_objects_and_classify_weights()
-			for t in topfreelist:
-				if t != item:
-					try:
-						mediumlist.remove(t)
-					except:
-						pass
-			for t in topfreelist:
-				if t != item:
-					try:
-						heavylist.remove(t)
-					except:
-						pass
-			topfreelist = [item]
+		empty_clutter = self.is_clutter_empty()
 
-			if self.items[item].mass == 'heavy':
-				if item not in heavylist:
-					heavylist.append(item)
-			else:
-				if item not in mediumlist:
-					mediumlist.append(item)
-				self
-			print(inboxlist)
-			print(topfreelist)
-			print(mediumlist)
-			print(heavylist)
+		while not empty_clutter:
 
-			problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
-												mediumlist, heavylist)
-			self.plan_and_run_belief_space_planning(self.domain_path, 
-														problem_path, alias)
+			_,items_in_order,_,_ = self.select_perceived_objects_and_classify_weights()
+			
+			for item in items_in_order:
+				inboxlist, topfreelist, mediumlist, heavylist = \
+						self.select_perceived_objects_and_classify_weights()
+				for t in topfreelist:
+					if t != item:
+						try:
+							mediumlist.remove(t)
+						except:
+							pass
+				for t in topfreelist:
+					if t != item:
+						try:
+							heavylist.remove(t)
+						except:
+							pass
+				topfreelist = [item]
+
+				if self.items[item].mass == 'heavy':
+					if item not in heavylist:
+						heavylist.append(item)
+				else:
+					if item not in mediumlist:
+						mediumlist.append(item)
+					self
+				# print(inboxlist)
+				# print(topfreelist)
+				# print(mediumlist)
+				# print(heavylist)
+
+				problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
+													mediumlist, heavylist)
+				self.plan_and_run_belief_space_planning(self.domain_path, 
+															problem_path, alias)
+				empty_clutter = self.is_clutter_empty()
 		end = time.time()
 		total = end-start
 		exe = total - self.planning_time
@@ -1540,22 +1569,49 @@ class Grocery_packing:
 
 	def run_strategy(self, strategy):
 		if strategy == 'conveyor-belt':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
 			self.perform_conveyor_belt_pack()
 		elif strategy == 'pick-n-roll':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
 			self.perform_pick_n_roll()
 		elif strategy == 'bag-sort':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
 			self.perform_bag_sort()
 		elif strategy == 'sbp':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
 			self.perform_sbp_grocery_packing()
 		elif strategy == 'optimistic':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
 			self.perform_optimistic()
 		elif strategy == 'declutter':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
 			self.perform_declutter_belief_grocery_packing()
 		elif strategy == 'mc-dynamic':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
 			self.perform_dynamic_grocery_packing('mc_sample')
 		elif strategy == 'weighted-dynamic':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
 			self.perform_dynamic_grocery_packing('weighted_sample')
 		elif strategy == 'divergent-dynamic':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
 			self.perform_dynamic_grocery_packing('divergent_set_1')
 		self.alive = False
 		a = Bool()
