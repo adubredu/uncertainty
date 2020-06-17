@@ -134,6 +134,7 @@ class Grocery_packing:
 
 		self.planning_time = 0
 		self.num_mc_samples = 100
+		self.num_pick_from_box = 0
 		self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
 		
 
@@ -149,10 +150,10 @@ class Grocery_packing:
 		self.fps = 60
 		self.scene_belief = {}
 		self.clutter_ps = []
-		xs = [0.65,  .45,  .25, .10]
-		ys = [-.3, -.2, .3, .2]
-		for x in xs:
-			for y in ys:
+		self.xs = [0.65,  .45,  .25, .10]
+		self.ys = [-.3, -.2, .3, .2]
+		for x in self.xs:
+			for y in self.ys:
 				self.clutter_ps.append((x,y))
 
 		self.init_clutter()
@@ -189,10 +190,18 @@ class Grocery_packing:
 		elif space == "medium":
 			delta = 0.2
 			self.box.full_cpty = 6
+			self.clutter_ps=[]
+			for x in self.xs[:-1]:
+				for y in self.ys[:-1]:
+					self.clutter_ps.append((x,y))
 		else:
 			delta = 0.1
 			self.box = Box(2)
 			self.box.full_cpty = 4
+			self.clutter_ps=[]
+			for x in self.xs[:-2]:
+				for y in self.ys[:-2]:
+					self.clutter_ps.append((x,y))
 
 		x = np.random.uniform(low=mx-delta, high=mx+delta)
 		y = np.random.uniform(low=my-delta, high=my+delta)
@@ -685,8 +694,8 @@ class Grocery_packing:
 		item = self.items[itemname]
 		if item.dummy:
 			return False
-
-		bx,by = self.clutter_ps.pop()
+		r = np.random.randint(len(self.clutter_ps))
+		bx,by = self.clutter_ps[r]
 		bz = 0.7
 		self.gripper.holding = None 
 
@@ -981,6 +990,8 @@ class Grocery_packing:
 		exe = total - self.planning_time
 		print('PLANNING TIME FOR OPTIMISTIC: '+str(self.planning_time))
 		print('EXECUTION TIME FOR OPTIMISTIC: '+str(total - self.planning_time))
+		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+
 		self.save_results('Optimistic',self.planning_time,exe)
 
 
@@ -1018,6 +1029,7 @@ class Grocery_packing:
 		exe = total - self.planning_time
 		print('PLANNING TIME FOR DECLUTTER: '+str(self.planning_time))
 		print('EXECUTION TIME FOR DECLUTTER: '+str(total - self.planning_time))
+		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
 		self.save_results('Declutter',self.planning_time,exe)
 
 	def create_sbp_problem(self, inbox, topfree, mediumlist, heavylist):
@@ -1228,10 +1240,12 @@ class Grocery_packing:
 			self.box.remove_item(alias[action[1]])
 
 		elif action[0] == 'pick-from-box':
+			self.num_pick_from_box+=1
 			success = self.pick_up(alias[action[1]])
 			self.box.remove_item(alias[action[1]])
 
 		elif action[0] == 'pick-from':
+			self.num_pick_from_box+=1
 			success = self.pick_up(alias[action[1]])
 			self.box.remove_item(alias[action[1]])
 
@@ -1266,6 +1280,8 @@ class Grocery_packing:
 		exe = total-self.planning_time
 		print('PLANNING TIME FOR SBP: '+str(self.planning_time))
 		print('EXECUTION TIME FOR SBP: '+str(total-self.planning_time))
+		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+
 		self.save_results('sbp',self.planning_time,exe)
 
 
@@ -1434,6 +1450,8 @@ class Grocery_packing:
 		exe = total-self.planning_time
 		print('PLANNING TIME FOR DYNAMIC: '+str(self.planning_time))
 		print('EXECUTION TIME FOR DYNAMIC: '+str(total-self.planning_time))
+		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+
 		self.save_results('Dynamic_'+sample_procedure,self.planning_time,exe)
 
 
@@ -1492,6 +1510,8 @@ class Grocery_packing:
 		exe = total - self.planning_time
 		print('PLANNING TIME FOR CONVEYORBELT: '+str(self.planning_time))
 		print('EXECUTION TIME FOR CONVEYORBELT: '+str(total - self.planning_time))
+		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+
 		self.save_results('Conveyor_Belt',self.planning_time,exe)
 
 
@@ -1555,6 +1575,8 @@ class Grocery_packing:
 		duration = time.time() - st
 		print("PLANNING TIME FOR PICKNROLL: 0")
 		print("EXECUTION TIME FOR PICKNROLL: "+str(duration))
+		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+
 		self.save_results('Bag_sort',0,duration)
 
 
