@@ -8,6 +8,7 @@
                  (handempty)
                  (holding ?x - item)
                  (topfree ?x - item)
+                 (boxfull)
                  )
                  
     
@@ -20,6 +21,18 @@
                 (not (inbox ?x))
                 (not (inclutter ?x))
                 (not (topfree ?x)))
+    )
+
+    (:action pick-from-box
+            :parameters (?x - item)
+            :precondition (and (topfree ?x) (handempty) (inbox ?x))
+            :effect
+            (and (holding ?x)
+                (not (handempty))
+                (not (inbox ?x))
+                (not (inclutter ?x))
+                (not (topfree ?x))
+                (not (boxfull)))
     )
     
     (:action pick-from
@@ -46,7 +59,7 @@
     
     (:action put-in-box
             :parameters (?x - item)
-            :precondition  (holding ?x)
+            :precondition  (holding ?x) (not (boxfull))
             :effect
             (and (not (holding ?x))
                 (handempty)
