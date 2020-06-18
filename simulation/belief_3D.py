@@ -132,6 +132,9 @@ class Grocery_packing:
 		self.item_list = ['ambrosia','apple','banana','bottle','cereal','coke',\
 						'lipton','lysol','milk','nutella','orange','oreo']
 
+
+		self.arrangement_difficulty = 'hard'
+
 		self.planning_time = 0
 		self.num_mc_samples = 100
 		self.num_pick_from_box = 0
@@ -158,8 +161,8 @@ class Grocery_packing:
 
 		self.init_clutter()
 		self.alive = True
-		self.perception = threading.Thread(target=self.start_perception,args=(1,))
-		self.perception.start()
+		# self.perception = threading.Thread(target=self.start_perception,args=(1,))
+		# self.perception.start()
 
 
 	def refresh_world(self):
@@ -219,37 +222,65 @@ class Grocery_packing:
 		# print((x,y,z))
 		
 		taken_care_of = []
+		zs = []
+		scene_structure =[]
 		for item1 in self.item_list:
 
 			for item2 in self.item_list:
-				if item2 not in taken_care_of and item1!=item2:
+				if item2 not in taken_care_of and item1!=item2 and item1 not in taken_care_of:
 					x1 = self.items[item1].x; x2 = self.items[item2].x;
 					y1 = self.items[item1].y; y2 = self.items[item2].y;
 					dist = np.sqrt((x1-x2)**2 + (y1-y2)**2)
 					if dist < mindist:
 						# print('too close')
-						self.items[item2].z += self.items[item1].height
+						# self.items[item2].z += self.items[item1].height
+						zs.append((item2, self.items[item2].z + self.items[item1].height))
 						r = np.random.randint(2)
 						# if r == 0:
 						# 	self.items[item2].orr += 1.57
-						print(item2+' on '+item1)
+						# print(item2+' on '+item1)
+						scene_structure.append((item2, 'on', item1))
 						taken_care_of.append(item2)
-# 
+
+		points=0
+		for top, _, bot in scene_structure:
+			if self.items[top].mass == 'light' and self.items[bot].mass == 'heavy':
+				points += 1
+
+		score = points/len(scene_structure)
+		if score < 0.5:
+			# print(points)
+			arr = 'easy'
+			# print('easy')
+		else:
+			# print(points)
+			arr = 'hard'
+			# print('hard')
+
+		if arr != self.arrangement_difficulty:
+			self.generate_clutter_coordinates(space)
+		else:
+			# print('done')
+			# print('arr is: '+arr)
+			# print(zs)
+			for item, z in zs:
+				self.items[item].z = z
+
 
 
 	def init_clutter(self):
 		self.bottle = Grocery_item(.25,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.25,'bottle','light',False)
-		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.15,'coke','light',False)
+		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.10,'coke','light',False)
 		self.nutella = Grocery_item(.6, 0., .65, 0,0,0, 'nutella/nutella.urdf', 0.07,0.07,0.15,'nutella','light',False)
 		self.orange = Grocery_item(.6,.1,.65,0,0,0, 'orange/orange.urdf', 0.07,0.07,0.05, 'orange','light',False)
-		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.25, 'cereal','heavy',False)
-		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.27, 'lysol','heavy',False)
+		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.1, 'cereal','heavy',False)
+		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.22, 'lysol','heavy',False)
 		self.lipton = Grocery_item(.6, .2, .65, 0,0,0, 'lipton/lipton.urdf',0.07,0.07,0.05, 'lipton','light' ,False)
 		self.apple = Grocery_item(.7, 0., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light',False)
 
-		self.ambrosia = Grocery_item(7.7, 7., .65, 0,0,0, 'ambrosia/ambrosia.urdf', 0.07,0.07,0.27, 'ambrosia','heavy', False)
+		self.ambrosia = Grocery_item(7.7, 7., .65, 0,0,0, 'ambrosia/ambrosia.urdf', 0.07,0.07,0.2, 'ambrosia','heavy', False)
 		self.oreo = Grocery_item(7.7, 7., .65, 3.14,0,0, 'oreo/oreo.urdf', 0.07,0.07,0.02, 'oreo','light', False)
-		self.milk = Grocery_item(7.7, 7., .65, 0,0,0, 'milk/milk.urdf', 0.07,0.07,0.2, 'milk','heavy', False)
+		self.milk = Grocery_item(7.7, 7., .65, 0,0,0, 'milk/milk.urdf', 0.07,0.07,0.17, 'milk','heavy', False)
 		self.banana = Grocery_item(7.7, 7., .65, 3.14,0,0, 'banana/banana.urdf', 0.07,0.07,0.03, 'banana','light', False)
 		self.pepsi = Grocery_item(7.7, 7., .65, 3.14,0,0, 'pepsi/pepsi.urdf', 0.07,0.07,0.03, 'banana','light', True)
 
@@ -1415,7 +1446,7 @@ class Grocery_packing:
 		for item in self.scene_belief:
 			if not self.items[item].dummy:
 				if len(self.scene_belief[item]) > 0:
-					if self.scene_belief[item][0][1] < self.confidence_threshold+0.1:
+					if self.scene_belief[item][0][1] < self.confidence_threshold+0.3:
 						occluded_items.append(self.scene_belief[item][0][0])
 		for item in occluded_items:
 			self.pick_up(item)
@@ -1708,8 +1739,8 @@ if __name__ == '__main__':
 		rospy.init_node('grocery_packing')
 		strategy = args[1]
 		g = Grocery_packing()
-		time.sleep(10)
-		g.run_strategy(strategy)
+		time.sleep(1000)
+		# g.run_strategy(strategy)
 	# g.perform_pick_n_roll()
 	# g.perform_conveyor_belt_pack()
 	# g.perform_dynamic_grocery_packing('divergent_set_1')
