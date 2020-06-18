@@ -1,5 +1,5 @@
 (define (problem PACKED-GROCERY) 
 (:domain GROCERY) 
- (:objects h0 h1 h2 h4 m0 m1 - item)
-(:init (holding h4) (inbox m0) (topfree m0) (inbox h0) (topfree h0) (inbox h1) (topfree h1) (inbox h2) (topfree h2) (topfree m1) (inclutter m1) (topfree h4) (inclutter h4) (boxfull))
-(:goal (and (inbox h0) (inbox h1) (inbox h2) (inbox h4) (or (on m0 h0) (on m0 h1) (on m0 h2) (on m0 h4) ) (or (on m1 h0) (on m1 h1) (on m1 h2) (on m1 h4) ) )))
+ (:objects h0 h1 h2 h3 m0 - item)
+(:init (handempty) (inbox h0) (topfree h0) (inbox h1) (topfree h1) (inbox h2) (topfree h2) (inbox h3) (topfree h3) (topfree m0) (inclutter m0) (boxfull))
+(:goal (and (inbox h0) (inbox h1) (inbox h2) (inbox h3) (or (on m0 h0) (on m0 h1) (on m0 h2) (on m0 h3) ) )))
