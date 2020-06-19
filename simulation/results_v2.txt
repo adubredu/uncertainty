@@ -1,0 +1,116 @@
+Space = High, Arrangement = Easy
+
+Conveyor_Belt
+planning_time: 39.133989095687866
+execution_time: 170.18041324615479
+num_pick_from_box: 2
+
+Conveyor_Belt
+Failed - Cereal/Milk
+
+Conveyor_Belt
+Failed - bottle/lysol
+
+Conveyor_Belt
+planning_time: 38.87757897377014
+execution_time: 138.37324786186218
+num_pick_from_box: 0
+
+Conveyor_Belt
+planning_time: 38.76080584526062
+execution_time: 136.37172293663025
+num_pick_from_box: 0
+
+Pick_n_roll
+planning_time: 0
+execution_time: 251.60022592544556
+num_pick_from_box: 0
+
+Pick_n_roll
+planning_time: 0
+execution_time: 244.55557537078857
+num_pick_from_box: 0
+
+Pick_n_roll
+planning_time: 0
+execution_time: 247.5587751865387
+num_pick_from_box: 0
+
+Pick_n_roll
+planning_time: 0
+execution_time: 239.1108591556549
+num_pick_from_box: 0
+
+Pick_n_roll
+planning_time: 0
+execution_time: 249.7398476600647
+num_pick_from_box: 0
+
+Bag_sort
+planning_time: 0
+execution_time: 324.37183952331543
+num_pick_from_box: 0
+
+Bag_sort
+planning_time: 0
+execution_time: 329.38394236564636
+num_pick_from_box: 0
+
+Bag_sort
+planning_time: 0
+execution_time: 322.4237084388733
+num_pick_from_box: 0
+
+Bag_sort
+planning_time: 0
+execution_time: 308.94011545181274
+num_pick_from_box: 0
+
+Bag_sort
+planning_time: 0
+execution_time: 322.8291094303131
+num_pick_from_box: 0
+
+SBP
+Failed bottle/lysol
+
+sbp
+planning_time: 10.005263328552246
+execution_time: 203.6421341896057
+num_pick_from_box: 0
+
+sbp
+planning_time: 10.564760684967041
+execution_time: 138.3775019645691
+num_pick_from_box: 0
+
+sbp
+planning_time: 7.398798942565918
+execution_time: 144.24581861495972
+num_pick_from_box: 0
+
+sbp
+planning_time: 10.14295244216919
+execution_time: 144.07215476036072
+num_pick_from_box: 0
+
+Optimistic
+planning_time: 315.3807530403137
+execution_time: 156.63097667694092
+num_pick_from_box: 1
+
+Optimistic
+planning_time: 7.285756349563599
+execution_time: 141.76222920417786
+num_pick_from_box: 0
+
+Optimistic
+planning_time: 7.759154558181763
+execution_time: 141.28625583648682
+num_pick_from_box: 0
+
+Optimistic
+planning_time: 19.656915187835693
+execution_time: 655.3162188529968
+num_pick_from_box: 0
+
