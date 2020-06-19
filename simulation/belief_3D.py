@@ -358,7 +358,7 @@ class Grocery_packing:
 				projectionMatrix=projectionMatrix,
 				shadow=True,
 				renderer=p.ER_BULLET_HARDWARE_OPENGL)
-			model = core.Model.load('/home/developer/garage/grocery_detector.pth', \
+			model = core.Model.load('/home/developer/garage/grocery_detector_v2.pth', \
 				['ambrosia','apple','banana','bottle','cereal','coke',\
 						'lipton','lysol','milk','nutella','orange','oreo','pepsi'])
 			
@@ -1616,7 +1616,7 @@ class Grocery_packing:
 
 	def save_results(self, algo, planning_time, execution_time):
 		# return
-		f = open("results.txt","a")		
+		f = open("results_v2.txt","a")		
 		f.write(algo)
 		f.write('\n')
 		f.write('planning_time: '+str(planning_time)+'\n')
