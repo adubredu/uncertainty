@@ -1,3 +1,1 @@
-(pick-from-clutter m0)
-(put-on m0 h0)
-; cost = 2 (unit cost)
+; cost = 0 (unit cost)

@@ -133,7 +133,8 @@ class Grocery_packing:
 						'lipton','lysol','milk','nutella','orange','oreo']
 
 
-		self.arrangement_difficulty = 'hard'
+		self.arrangement_difficulty = 'easy'
+		self.space_allowed = 'high'
 
 		self.planning_time = 0
 		self.num_mc_samples = 100
@@ -161,8 +162,8 @@ class Grocery_packing:
 
 		self.init_clutter()
 		self.alive = True
-		# self.perception = threading.Thread(target=self.start_perception,args=(1,))
-		# self.perception.start()
+		self.perception = threading.Thread(target=self.start_perception,args=(1,))
+		self.perception.start()
 
 
 	def refresh_world(self):
@@ -246,16 +247,17 @@ class Grocery_packing:
 		for top, _, bot in scene_structure:
 			if self.items[top].mass == 'light' and self.items[bot].mass == 'heavy':
 				points += 1
-
-		score = points/len(scene_structure)
-		if score < 0.5:
-			# print(points)
-			arr = 'easy'
-			# print('easy')
-		else:
-			# print(points)
-			arr = 'hard'
-			# print('hard')
+		arr = 'n'
+		if len(scene_structure) > 0:
+			score = points/len(scene_structure)
+			if score < 0.5:
+				# print(points)
+				arr = 'easy'
+				# print('easy')
+			else:
+				# print(points)
+				arr = 'hard'
+				# print('hard')
 
 		if arr != self.arrangement_difficulty:
 			self.generate_clutter_coordinates(space)
@@ -300,7 +302,7 @@ class Grocery_packing:
 		self.items['milk'] = self.milk
 		self.items['banana'] = self.banana
 
-		self.generate_clutter_coordinates('low')
+		self.generate_clutter_coordinates(self.space_allowed)
 
 		self.objects_list = [self.bottle, self.coke, self.nutella, 
 					self.orange, self.cereal, self.lysol, self.lipton,
@@ -953,7 +955,8 @@ class Grocery_packing:
 			for it in self.scene_belief:
 				if len(self.scene_belief[it]) != 0:
 					cf = self.scene_belief[it][0][1]
-					self.confidence_threshold = round(cf,2)
+					if cf < self.confidence_threshold:
+						self.confidence_threshold = round(cf,2)
 
 
 
@@ -1612,13 +1615,14 @@ class Grocery_packing:
 
 
 	def save_results(self, algo, planning_time, execution_time):
-		return
-		# f = open("results.txt","a")		
-		# f.write(algo)
-		# f.write('\n')
-		# f.write('planning_time: '+str(planning_time)+'\n')
-		# f.write('execution_time: '+str(execution_time) +'\n\n')
-		# f.close()
+		# return
+		f = open("results.txt","a")		
+		f.write(algo)
+		f.write('\n')
+		f.write('planning_time: '+str(planning_time)+'\n')
+		f.write('execution_time: '+str(execution_time) +'\n')
+		f.write('num_pick_from_box: '+str(self.num_pick_from_box)+'\n\n')
+		f.close()
 
 	def run_strategy(self, strategy):
 		if strategy == 'conveyor-belt':
@@ -1739,8 +1743,8 @@ if __name__ == '__main__':
 		rospy.init_node('grocery_packing')
 		strategy = args[1]
 		g = Grocery_packing()
-		time.sleep(1000)
-		# g.run_strategy(strategy)
+		time.sleep(10)
+		g.run_strategy(strategy)
 	# g.perform_pick_n_roll()
 	# g.perform_conveyor_belt_pack()
 	# g.perform_dynamic_grocery_packing('divergent_set_1')
