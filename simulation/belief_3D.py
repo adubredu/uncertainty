@@ -1607,8 +1607,8 @@ class Grocery_packing:
 			self.put_in_box(item,x,y,z)
 
 		duration = time.time() - st
-		print("PLANNING TIME FOR PICKNROLL: 0")
-		print("EXECUTION TIME FOR PICKNROLL: "+str(duration))
+		print("PLANNING TIME FOR BAGSORT: 0")
+		print("EXECUTION TIME FOR BAGSORT: "+str(duration))
 		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
 
 		self.save_results('Bag_sort',0,duration)
