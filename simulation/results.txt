@@ -12,6 +12,21 @@ Conveyor_Belt
 failed
 
 Conveyor_Belt
+planning_time: 42.76843595504761
+execution_time: 140.42011976242065
+num_pick_from_box: 0
+
+Conveyor_Belt
+planning_time: 39.11907124519348
+execution_time: 155.26688313484192
+num_pick_from_box: 1
+
+Conveyor_Belt
+planning_time: 39.280272006988525
+execution_time: 159.7757728099823
+num_pick_from_box: 1
+
+Conveyor_Belt
 planning_time: 39.80614638328552
 execution_time: 172.84937143325806
 num_pick_from_box: 2
@@ -36,6 +51,11 @@ planning_time: 0
 execution_time: 257.82704401016235
 num_pick_from_box: 0
 
+Pick_n_roll
+planning_time: 0
+execution_time: 252.56207466125488
+num_pick_from_box: 0
+
 Bag_sort
 planning_time: 0
 execution_time: 327.00336813926697
@@ -54,6 +74,11 @@ num_pick_from_box: 0
 Bag_sort
 planning_time: 0
 execution_time: 345.9521896839142
+num_pick_from_box: 0
+
+Bag_sort
+planning_time: 0
+execution_time: 336.4606604576111
 num_pick_from_box: 0
 
 sbp
@@ -81,24 +106,6 @@ planning_time: 13.42504620552063
 execution_time: 138.55565977096558
 num_pick_from_box: 0
 
-Optimistic
-planning_time: 132.8319489955902
-execution_time: 149.04301404953003
-num_pick_from_box: 0
-
-Optimistic
-planning_time: 5.451737880706787
-execution_time: 146.3552474975586
-num_pick_from_box: 0
-
-Optimistic
-Failed
-
-Optimistic
-Failed
-
-Optimistic
-Failed
 
 Dynamic_mc_sample
 planning_time: 10.010291337966919
@@ -106,8 +113,24 @@ execution_time: 164.46468496322632
 num_pick_from_box: 1
 
 Dynamic_mc_sample
-Failed
+planning_time: 4.799152851104736
+execution_time: 141.91012620925903
+num_pick_from_box: 0
 
+Dynamic_mc_sample
+planning_time: 19.864158391952515
+execution_time: 162.225727558136
+num_pick_from_box: 1
+
+Dynamic_mc_sample
+planning_time: 13.266934633255005
+execution_time: 371.36068630218506
+num_pick_from_box: 2
+
+Dynamic_mc_sample
+planning_time: 13.426577806472778
+execution_time: 149.21962928771973
+num_pick_from_box: 0
 
 
 Dynamic_weighted_sample
@@ -149,4 +172,37 @@ Dynamic_divergent_set_1
 planning_time: 4.980151653289795
 execution_time: 151.3423717021942
 num_pick_from_box: 0
+
+
+
+
+
+
+
+Optimistic
+planning_time: 4.8499157428741455
+execution_time: 145.36552810668945
+num_pick_from_box: 0
+
+Optimistic
+planning_time: 6.581596851348877
+execution_time: 158.75974464416504
+num_pick_from_box: 1
+
+Optimistic
+planning_time: 7.2526161670684814
+execution_time: 140.8892481327057
+num_pick_from_box: 0
+
+Optimistic
+planning_time: 13.488934993743896
+execution_time: 145.37533974647522
+num_pick_from_box: 0
+
+Optimistic
+planning_time: 10.402511596679688
+execution_time: 140.8384931087494
+num_pick_from_box: 0
+
+
 

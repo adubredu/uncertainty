@@ -1,7 +1,7 @@
 <annotation>
 	<folder>Pictures</folder>
-	<filename>bottlerec2.png</filename>
-	<path>bottlerec2.png</path>
+	<filename>bowlrec.png</filename>
+	<path>bowlrec.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -12,15 +12,15 @@
 	</size>
 	<segmented>0</segmented>
 	<object>
-		<name>bottle</name>
+		<name>cereal</name>
 		<pose>Unspecified</pose>
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>1270</xmin>
-			<ymin>640</ymin>
-			<xmax>1334</xmax>
-			<ymax>681</ymax>
+			<xmin>1364</xmin>
+			<ymin>638</ymin>
+			<xmax>1417</xmax>
+			<ymax>692</ymax>
 		</bndbox>
 	</object>
 </annotation>

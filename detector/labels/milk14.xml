@@ -1,26 +1,26 @@
 <annotation>
-	<folder>Pictures</folder>
-	<filename>bottlerec2.png</filename>
-	<path>bottlerec2.png</path>
+	<folder>labels</folder>
+	<filename>milk.png</filename>
+	<path>/home/alphonsus/robots/detector/labels/milk.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
 	<size>
-		<width>1920</width>
-		<height>1080</height>
+		<width>128</width>
+		<height>128</height>
 		<depth>3</depth>
 	</size>
 	<segmented>0</segmented>
 	<object>
-		<name>bottle</name>
+		<name>milk</name>
 		<pose>Unspecified</pose>
 		<truncated>0</truncated>
 		<difficult>0</difficult>
 		<bndbox>
-			<xmin>1270</xmin>
-			<ymin>640</ymin>
-			<xmax>1334</xmax>
-			<ymax>681</ymax>
+			<xmin>56</xmin>
+			<ymin>57</ymin>
+			<xmax>70</xmax>
+			<ymax>71</ymax>
 		</bndbox>
 	</object>
 </annotation>
