@@ -114,3 +114,216 @@ planning_time: 19.656915187835693
 execution_time: 655.3162188529968
 num_pick_from_box: 0
 
+Optimistic
+Failed - banana/lipton
+
+
+Dynamic_mc_sample
+Failed -  banana/lipton
+
+Dynamic_mc_sample
+planning_time: 29.73695731163025
+execution_time: 153.3706214427948
+num_pick_from_box: 0
+
+Dynamic_mc_sample
+planning_time: 6.5843377113342285
+execution_time: 158.44896626472473
+num_pick_from_box: 1
+
+Dynamic_mc_sample
+planning_time: 13.434209823608398
+execution_time: 143.80705547332764
+num_pick_from_box: 0
+
+Dynamic_mc_sample
+Failed - bottle/lysol
+
+Dynamic_mc_sample
+Failed - banana/None
+
+
+Dynamic_weighted_sample
+planning_time: 7.163686990737915
+execution_time: 142.9436423778534
+num_pick_from_box: 0
+
+Dynamic_weighted_sample
+planning_time: 13.206512212753296
+execution_time: 173.13710141181946
+num_pick_from_box: 0
+
+Dynamic_weighted_sample
+planning_time: 6.629995346069336
+execution_time: 177.30710291862488
+num_pick_from_box: 1
+
+Dynamic_weighted_sample
+planning_time: 6.79283332824707
+execution_time: 143.31237483024597
+num_pick_from_box: 0
+
+Dynamic_weighted_sample
+planning_time: 7.576223134994507
+execution_time: 144.62276792526245
+num_pick_from_box: 0
+
+Dynamic_divergent_set_1
+planning_time: 16.80860710144043
+execution_time: 187.7669961452484
+num_pick_from_box: 2
+
+Dynamic_divergent_set_1
+planning_time: 7.162099123001099
+execution_time: 142.444518327713
+num_pick_from_box: 0
+
+Dynamic_divergent_set_1
+Failed banana/lipton
+
+Dynamic_divergent_set_1
+planning_time: 7.815525054931641
+execution_time: 142.01009941101074
+num_pick_from_box: 0
+
+Dynamic_divergent_set_1
+Planning stuck
+
+Dynamic_divergent_set_1
+Failed bottle/lysolDeclutter
+planning_time: 313.8153443336487
+execution_time: 244.03954482078552
+num_pick_from_box: 1
+
+Declutter
+Failed - bottle/lysol
+
+Declutter
+planning_time: 29.68571972846985
+execution_time: 223.3229901790619
+num_pick_from_box: 1
+
+Declutter
+planning_time: 33.25117897987366
+execution_time: 238.048175573349
+num_pick_from_box: 2
+
+Declutter
+planning_time: 30.12101936340332
+execution_time: 230.3817858695984
+num_pick_from_box: 1
+
+Declutter
+planning_time: 36.32523775100708
+execution_time: 256.621568441391
+num_pick_from_box: 2
+
+
+
+SPACE = MEDIUM, ARRANGEMENT = EASY
+
+Conveyor_Belt
+planning_time: 38.86834168434143
+execution_time: 158.78671765327454
+num_pick_from_box: 2
+
+Conveyor_Belt
+planning_time: 39.14547252655029
+execution_time: 169.94447422027588
+num_pick_from_box: 2
+
+Pick_n_roll
+planning_time: 0
+execution_time: 251.6864573955536
+num_pick_from_box: 0
+
+Pick_n_roll
+planning_time: 0
+execution_time: 254.65527367591858
+num_pick_from_box: 0
+
+Pick_n_roll
+planning_time: 0
+execution_time: 258.1822907924652
+num_pick_from_box: 0
+
+Pick_n_roll
+planning_time: 0
+execution_time: 254.27564644813538
+num_pick_from_box: 0
+
+Pick_n_roll
+planning_time: 0
+execution_time: 255.76363849639893
+num_pick_from_box: 0
+
+Bag_sort
+planning_time: 0
+execution_time: 324.2131061553955
+num_pick_from_box: 0
+
+Bag_sort
+planning_time: 0
+execution_time: 331.50020241737366
+num_pick_from_box: 0
+
+Bag_sort
+planning_time: 0
+execution_time: 313.02953147888184
+num_pick_from_box: 0
+
+Bag_sort
+planning_time: 0
+execution_time: 309.27080941200256
+num_pick_from_box: 0
+
+sbp
+planning_time: 12.031874418258667
+execution_time: 201.9911596775055
+num_pick_from_box: 0
+
+sbp
+planning_time: 10.311143159866333
+execution_time: 148.61288332939148
+num_pick_from_box: 0
+
+sbp
+planning_time: 6.944826126098633
+execution_time: 141.1085968017578
+num_pick_from_box: 0
+
+sbp
+planning_time: 10.031100749969482
+execution_time: 152.98810267448425
+num_pick_from_box: 1
+
+sbp
+planning_time: 10.308098316192627
+execution_time: 153.21618008613586
+num_pick_from_box: 1
+
+Optimistic
+planning_time: 23.038201332092285
+execution_time: 168.24444103240967
+num_pick_from_box: 2
+
+Optimistic
+planning_time: 16.53107714653015
+execution_time: 137.006281375885
+num_pick_from_box: 0
+
+Optimistic
+planning_time: 26.40828847885132
+execution_time: 169.1131718158722
+num_pick_from_box: 2
+
+Optimistic
+planning_time: 19.63542652130127
+execution_time: 185.30622577667236
+num_pick_from_box: 3
+
+Optimistic
+planning_time: 22.963682413101196
+execution_time: 168.03593373298645
+num_pick_from_box: 2
+
