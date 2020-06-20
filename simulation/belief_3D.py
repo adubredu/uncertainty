@@ -133,8 +133,8 @@ class Grocery_packing:
 						'lipton','lysol','milk','nutella','orange','oreo']
 
 
-		self.arrangement_difficulty = 'easy'
-		self.space_allowed = 'medium'
+		self.arrangement_difficulty = 'hard'
+		self.space_allowed = 'low'
 
 		self.planning_time = 0
 		self.num_mc_samples = 100
@@ -162,8 +162,8 @@ class Grocery_packing:
 		self.num_false = 0
 		self.init_clutter()
 		self.alive = True
-		self.perception = threading.Thread(target=self.start_perception,args=(1,))
-		self.perception.start()
+		# self.perception = threading.Thread(target=self.start_perception,args=(1,))
+		# self.perception.start()
 
 
 	def refresh_world(self):
@@ -1549,7 +1549,7 @@ class Grocery_packing:
 				else:
 					if item not in mediumlist:
 						mediumlist.append(item)
-					self
+					# self
 				# print(inboxlist)
 				# print(topfreelist)
 				# print(mediumlist)
@@ -1764,8 +1764,8 @@ if __name__ == '__main__':
 		rospy.init_node('grocery_packing')
 		strategy = args[1]
 		g = Grocery_packing()
-		time.sleep(10)
-		g.run_strategy(strategy)
+		time.sleep(100)
+		# g.run_strategy(strategy)
 	# g.perform_pick_n_roll()
 	# g.perform_conveyor_belt_pack()
 	# g.perform_dynamic_grocery_packing('divergent_set_1')
