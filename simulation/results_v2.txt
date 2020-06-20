@@ -327,3 +327,48 @@ planning_time: 22.963682413101196
 execution_time: 168.03593373298645
 num_pick_from_box: 2
 
+Dynamic_mc_sample
+planning_time: 33.01398944854736
+execution_time: 232.38180828094482
+num_pick_from_box: 2
+
+Dynamic_mc_sample
+planning_time: 23.216898679733276
+execution_time: 296.0249447822571
+num_pick_from_box: 2
+
+Dynamic_mc_sample
+planning_time: 23.742759704589844
+execution_time: 430.5341022014618
+num_pick_from_box: 2
+
+Dynamic_mc_sample
+planning_time: 17.220110654830933
+execution_time: 138.6783730983734
+num_pick_from_box: 0
+
+Dynamic_weighted_sample
+planning_time: 24.019718885421753
+execution_time: 187.94800543785095
+num_pick_from_box: 1
+
+Dynamic_weighted_sample
+planning_time: 29.540088176727295
+execution_time: 217.9639585018158
+num_pick_from_box: 1
+
+Dynamic_weighted_sample
+planning_time: 56.282169580459595
+execution_time: 233.991450548172
+num_pick_from_box: 1
+
+Dynamic_weighted_sample
+planning_time: 74.665531873703
+execution_time: 692.1356949806213
+num_pick_from_box: 1
+
+Dynamic_weighted_sample
+planning_time: 23.31991219520569
+execution_time: 142.7496201992035
+num_pick_from_box: 0
+
