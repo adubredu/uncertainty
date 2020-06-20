@@ -31,8 +31,6 @@ do
 done
 
 
-
-
 for i in {1..5}
 do 
 	python3 belief_3D.py mc-dynamic

@@ -134,7 +134,7 @@ class Grocery_packing:
 
 
 		self.arrangement_difficulty = 'easy'
-		self.space_allowed = 'high'
+		self.space_allowed = 'medium'
 
 		self.planning_time = 0
 		self.num_mc_samples = 100
@@ -150,7 +150,7 @@ class Grocery_packing:
 		self.items_in_box = []
 		
 		self.delta = 0.01
-		self.confidence_threshold = 0.4
+		self.confidence_threshold = 0.6
 		self.fps = 60
 		self.scene_belief = {}
 		self.clutter_ps = []
@@ -159,7 +159,7 @@ class Grocery_packing:
 		for x in self.xs:
 			for y in self.ys:
 				self.clutter_ps.append((x,y))
-
+		self.num_false = 0
 		self.init_clutter()
 		self.alive = True
 		self.perception = threading.Thread(target=self.start_perception,args=(1,))
@@ -825,7 +825,28 @@ class Grocery_packing:
 		for item in self.scene_belief:
 			if len(self.scene_belief[item]) > 0 and item in self.items:
 				if self.scene_belief[item][0][1] >= self.confidence_threshold:
-					confident_seen_list.append(item)
+					if len(self.scene_belief[item]) == 2 and self.num_false > 2:
+						cf1 = self.scene_belief[item][0][1]
+						cf2 = self.scene_belief[item][1][1]
+						nm1 = self.scene_belief[item][0][0]
+						nm2 = self.scene_belief[item][1][0]
+						wts = [cf1, cf2]/np.sum([cf1, cf2])
+						choice = np.random.choice([nm1, nm2], size=1,p=wts)
+						confident_seen_list.append(choice[0])
+						print('USED NUM FALSE')
+					elif len(self.scene_belief[item]) > 2 and self.num_false > 2:
+						cf1 = self.scene_belief[item][0][1]
+						cf2 = self.scene_belief[item][1][1]
+						cf3 = self.scene_belief[item][2][1]
+						nm1 = self.scene_belief[item][0][0]
+						nm2 = self.scene_belief[item][1][0]
+						nm3 = self.scene_belief[item][2][0]
+						wts = [cf1, cf2, cf3]/np.sum([cf1, cf2,cf3])
+						choice = np.random.choice([nm1, nm2,nm3], size=1,p=wts)
+						confident_seen_list.append(choice[0])
+						print('USED NUM FALSE')
+					else:
+						confident_seen_list.append(item)
 
 		for item in self.objects_list:
 			if item.inbox and not item.dummy:
@@ -952,12 +973,9 @@ class Grocery_packing:
 		if plan is None or len(plan) == 0:
 			print('NO  VALID PLAN FOUND')
 			print(self.scene_belief)
-			for it in self.scene_belief:
-				if len(self.scene_belief[it]) != 0:
-					cf = self.scene_belief[it][0][1]
-					if cf < self.confidence_threshold:
-						self.confidence_threshold = round(cf,2)
-
+			self.num_false +=1
+			if self.confidence_threshold > 0:
+				self.confidence_threshold -= 0.1
 
 
 			return
@@ -1231,6 +1249,9 @@ class Grocery_packing:
 		plan = f.plan(domain_path, problem_path)
 		if len(plan) == 0 or plan == None:
 			print('NO PLAN FOUND')
+			self.num_false +=1
+			if self.confidence_threshold > 0:
+				self.confidence_threshold -= 0.1
 			return
 		self.planning_time += time.time() - start
 		self.convert_to_string_and_publish(plan,alias)
