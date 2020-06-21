@@ -1,0 +1,41 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='mustard_test'>
+    <link name='link_1'>
+    <static>false</static>
+      <inertial>
+        <mass>0.0001</mass>
+        <inertia>
+          <ixx>0.166667</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.166667</iyy>
+          <iyz>0</iyz>
+          <izz>0.166667</izz>
+        </inertia>
+      </inertial>
+      <pose frame=''>0.016 0.025 0 0 -0 0</pose>
+      <visual name='visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>/home/user/catkin_ws/src/mobile_manipulation/srp-md/srp_md/model/grocery_models/mustard_test/meshes/textured.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+        <transparency>0</transparency>
+        <cast_shadows>1</cast_shadows>
+      </visual>
+      <collision name="collision">
+        <geometry>
+	  <box>
+            <size>0.08 0.06 0.19</size>
+          </box>
+        </geometry>
+	<pose>-0.016 -0.025 0.095</pose>
+      </collision>
+    </link>
+    <static>0</static>
+    <allow_auto_disable>1</allow_auto_disable>
+  </model>
+</sdf>
