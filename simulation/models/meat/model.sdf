@@ -1,0 +1,57 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='meat_test'>
+    <link name='link_1'>
+    <static>false</static>
+      <inertial>
+        <mass>0.0001</mass>
+        <inertia>
+          <ixx>0.166667</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.166667</iyy>
+          <iyz>0</iyz>
+          <izz>0.166667</izz>
+        </inertia>
+      </inertial>
+      <pose frame=''>0.036 0.025 0 0 -0 0</pose>
+      <visual name='visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>/home/user/catkin_ws/src/mobile_manipulation/srp-md/srp_md/model/grocery_models/meat_test/meshes/textured.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+        <transparency>0</transparency>
+        <cast_shadows>1</cast_shadows>
+      </visual>
+      <collision name="collision">
+        <geometry>
+	  <box>
+            <size>0.092 0.05 0.084</size>
+          </box>
+        </geometry>
+	<pose>-0.034 -0.027 0.038</pose>
+	<surface>
+	  <friction>
+	    <ode>
+	      <mu>100</mu>
+	      <mu2>100</mu2>
+	    </ode>
+	  </friction>
+	  <contact>
+	    <ode>
+	      <min_depth>0.001</min_depth>
+<!--            <kp>1e9</kp>-->
+	      <soft_cfm>0.2</soft_cfm>
+	      <soft_erp>0.4</soft_erp>
+	    </ode>
+	  </contact>
+        </surface>
+      </collision>
+    </link>
+    <static>0</static>
+    <allow_auto_disable>1</allow_auto_disable>
+  </model>
+</sdf>

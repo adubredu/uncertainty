@@ -1,0 +1,50 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='soup_test'>
+    <link name='link_1'>
+    <static>false</static>
+      <inertial>
+        <mass>0.0001</mass>
+        <inertia>
+          <ixx>0.166667</ixx>
+          <ixy>0.01</ixy>
+          <ixz>0.01</ixz>
+          <iyy>0.166667</iyy>
+          <iyz>0.01</iyz>
+          <izz>0.166667</izz>
+        </inertia>
+      </inertial>
+      <pose frame=''>-0 -0.084 0 0 -0 0</pose>
+      <visual name='visual'>
+        <pose frame=''>0 -0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>/home/user/catkin_ws/src/mobile_manipulation/srp-md/srp_md/model/grocery_models/soup_test/meshes/textured.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+        <transparency>0</transparency>
+        <cast_shadows>1</cast_shadows>
+      </visual>
+      <collision name="collision">
+        <geometry>
+          <cylinder>
+            <radius>0.034</radius>
+            <length>0.102</length>
+          </cylinder>
+        </geometry>
+	<pose>-0.01 +0.084 0.053</pose>
+	<surface>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+    </link>
+    <static>0</static>
+    <allow_auto_disable>1</allow_auto_disable>
+  </model>
+</sdf>
