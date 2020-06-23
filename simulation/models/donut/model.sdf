@@ -1,12 +1,13 @@
 <?xml version='1.0'?>
 <sdf version='1.6'>
+  <world name='grocery_world'>
   <model name='donut_1'>
     <link name='link_6'>
        <visual name='visual'>
         <pose frame=''>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
-            <uri>model://donut_1/meshes/donut1.dae</uri>
+            <uri>meshes/donut1.dae</uri>
             <scale>1 1 1</scale>
           </mesh>
         </geometry>
@@ -33,13 +34,26 @@
         <pose frame=''>0 0 0 0 -0 0</pose>
         <geometry>
           <mesh>
-            <uri>model://donut_1/meshes/donut1.dae</uri>
+            <uri>meshes/donut1.dae</uri>
             <scale>1 1 1</scale>
           </mesh>
         </geometry>
        </collision>
+       <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>0.56</mass>
+          <inertia>
+            <ixx>0.004878</ixx>
+            <ixy>-6.2341e-07</ixy>
+            <ixz>-7.4538e-07</ixz>
+            <iyy>0.00090164</iyy>
+            <iyz>-0.00014394</iyz>
+            <izz>0.0042946</izz>
+          </inertia>
+    </inertial>
     </link>
     <static>1</static>
     <allow_auto_disable>1</allow_auto_disable>
   </model>
+</world>
 </sdf>
