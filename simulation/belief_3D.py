@@ -11,13 +11,18 @@ import numpy as np
 from fd import Fast_Downward
 import rospy
 from std_msgs.msg import String, Bool
+from grocery_items import Shopping_List, Grocery_item
 
 physicsClient = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.configureDebugVisualizer(p.COV_ENABLE_GUI,0)
 print(pybullet_data.getDataPath())
 p.setGravity(0,0,0)
-planeId = p.loadURDF("plane.urdf") 
+p.setAdditionalSearchPath('models')
+planeId = p.loadURDF("plane/plane.urdf") 
+tableId = p.loadURDF("table/table.urdf",[0,0,0],p.getQuaternionFromEuler([0,0,0]))
+trayId = p.loadURDF("container/container.urdf", [-.5,.0,0.62],p.getQuaternionFromEuler([0,0,0]))
+
 
 
 class Gripper:
@@ -75,95 +80,81 @@ class Box:
 			self.num_items-=1
 
 
-
-class Grocery_item:
-	def __init__(self, x, y, z, orr, op, oy, urdf_path, width, 
-				breadth, height, object_name, mass,dummy):
-		self.x = x
-		self.y = y
-		self.z = z
-		self.width = width 
-		self.breadth = breadth 
-		self.height = height 
-		self.mass = mass 
-		self.inbox = False
-		self.inclutter = True
-		self.dummy = dummy
-
-		self.item_on_top = None 
-
-		self.orr = orr 
-		self.op = op 
-		self.oy = oy 
-		self.quat = p.getQuaternionFromEuler([self.orr,self.op,self.oy])
-		self.name = object_name
-		if not dummy:
-			self.id = p.loadURDF(urdf_path, [self.x,self.y,self.z], self.quat)
-		
-
-	def update_object_position(self):
-		p.resetBasePositionAndOrientation(self.id, \
-			[self.x,self.y,self.z], p.getQuaternionFromEuler([self.orr,self.op,self.oy]))
-
-	def get_position(self):
-		(x,y,z), _ = p.getBasePositionAndOrientation(self.id)
-		self.x = x; self.y = y; self.z = z;
-		return (x,y,z)
-
-
 class Grocery_packing:
 	def __init__(self):
-		self.table = Grocery_item(0,0,0, 0,0,0, "table/table.urdf",1,1,1,'table','heavy',False)
-		self.lgripper = Grocery_item(0.2,-0.3,1., 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_left_finger.urdf",1,1,1,'lgripper','light',False)
-		self.rgripper = Grocery_item(0.23,-0.3,1., 0,3.14,3.14, "gripper/wsg50_one_motor_gripper_right_finger.urdf",1,1,1,'rgripper','light',False)
-		p.setAdditionalSearchPath('/home/developer/uncertainty/simulation/models')
-		self.tray = Grocery_item(-.5,.0,0.62, 0,0,0, "container/container.urdf",0.3,0.3,0.3,'tray','heavy',False)
-		self.items = {
-						'table':self.table,
-						'lgripper':self.lgripper,
-						'rgripper':self.rgripper,
-						'tray': self.tray
-		}
 		self.start_time = time.time()
 		self.time_pub = rospy.Publisher('/time', String, queue_size=1)
 
 		self.box = Box(3)
 		self.gripper = Gripper()
-		self.item_list = ['ambrosia','apple','banana','bottle','cereal','coke',\
-						'lipton','lysol','milk','nutella','orange','oreo']
+		self.item_list = ['baseball',
+					  'beer',
+					  'can_coke',
+					  'can_pepsi',
+					  'can_fanta',
+					  'can_sprite',
+					  'chips_can',
+					  'coffee_box',
+					  'cracker',
+					  'cup',
+					  'donut',
+					  'fork',
+					  'gelatin',
+					  'meat',
+					  'mustard',
+					  'newspaper',
+					  'orange',
+					  'pear',
+					  'plate',
+					  'soccer_ball',
+					  'soup',
+					  'sponge',
+					  'sugar',
+					  'toy']
 
-
-		self.arrangement_difficulty = 'hard'
-		self.space_allowed = 'low'
-
-		self.planning_time = 0
-		self.num_mc_samples = 100
-		self.num_pick_from_box = 0
-		self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
-		
-
-		self.plan_pub = rospy.Publisher('/plan', String, queue_size=1)
-		self.boxitems_pub = rospy.Publisher('/box_items', String, queue_size=1)
-		self.scene_belief_publisher = rospy.Publisher('/scene_belief', String, queue_size=1)
-		self.action_pub = rospy.Publisher('/current_action', String, queue_size=1)
-		self.method_pub = rospy.Publisher('/method', String, queue_size=1)
-		self.items_in_box = []
-		
-		self.delta = 0.01
-		self.confidence_threshold = 0.6
-		self.fps = 60
-		self.scene_belief = {}
 		self.clutter_ps = []
 		self.xs = [0.65,  .45,  .25, .10]
 		self.ys = [-.3, -.2, .3, .2]
 		for x in self.xs:
 			for y in self.ys:
 				self.clutter_ps.append((x,y))
+
+		self.shopping_list = Shopping_List(p)
+		self.items = self.shopping_list.get_items_dict()
+		self.objects_list = self.shopping_list.get_items_list()
+		self.items_in_box = []
+
+		self.plan_pub = rospy.Publisher('/plan', String, queue_size=1)
+		self.boxitems_pub = rospy.Publisher('/box_items', String, queue_size=1)
+		self.scene_belief_publisher = rospy.Publisher('/scene_belief', String, queue_size=1)
+		self.action_pub = rospy.Publisher('/current_action', String, queue_size=1)
+		self.method_pub = rospy.Publisher('/method', String, queue_size=1)
+		
+
+		self.arrangement_difficulty = 'easy'
+		self.space_allowed = 'low'
+		arrangement_num = 5
+		self.init_clutter(arrangement_num)
+		# self.generate_clutter_coordinates(self.space_allowed)
+
+
+		self.planning_time = 0
+		self.num_mc_samples = 100
+		self.num_pick_from_box = 0
+		self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
+
+		
+		
+		self.delta = 0.01
+		self.confidence_threshold = 0.6
+		self.fps = 60
+		self.scene_belief = {}
+		
 		self.num_false = 0
-		self.init_clutter()
 		self.alive = True
 		# self.perception = threading.Thread(target=self.start_perception,args=(1,))
 		# self.perception.start()
+		time.sleep(1000)
 
 
 	def refresh_world(self):
@@ -214,32 +205,25 @@ class Grocery_packing:
 
 
 
+
 	def generate_clutter_coordinates(self, space):
 		mindist = 0.05
+		generated = {}
 		for item in self.item_list:
 			(x,y,z) = self.generate_init_coordinates(space)
-			# x,y,z = 0.4205859705048461, 0.05045225889073787, 0.65
-			self.items[item].x = x; self.items[item].y = y; self.items[item].z = z
-		# print((x,y,z))
+			generated[item] = [x,y,z]
 		
 		taken_care_of = []
 		zs = []
 		scene_structure =[]
-		for item1 in self.item_list:
-
-			for item2 in self.item_list:
+		for item1 in generated:
+			for item2 in generated:
 				if item2 not in taken_care_of and item1!=item2 and item1 not in taken_care_of:
-					x1 = self.items[item1].x; x2 = self.items[item2].x;
-					y1 = self.items[item1].y; y2 = self.items[item2].y;
+					x1 = generated[item1][0]; x2 = generated[item2][0];
+					y1 = generated[item1][1]; y2 = generated[item2][1];
 					dist = np.sqrt((x1-x2)**2 + (y1-y2)**2)
 					if dist < mindist:
-						# print('too close')
-						# self.items[item2].z += self.items[item1].height
-						zs.append((item2, self.items[item2].z + self.items[item1].height))
-						r = np.random.randint(2)
-						# if r == 0:
-						# 	self.items[item2].orr += 1.57
-						# print(item2+' on '+item1)
+						zs.append((item2, generated[item2][2] + self.items[item1].height))
 						scene_structure.append((item2, 'on', item1))
 						taken_care_of.append(item2)
 
@@ -251,64 +235,54 @@ class Grocery_packing:
 		if len(scene_structure) > 0:
 			score = points/len(scene_structure)
 			if score < 0.5:
-				# print(points)
 				arr = 'easy'
-				# print('easy')
 			else:
-				# print(points)
 				arr = 'hard'
-				# print('hard')
 
 		if arr != self.arrangement_difficulty:
 			self.generate_clutter_coordinates(space)
 		else:
-			# print('done')
-			# print('arr is: '+arr)
-			# print(zs)
 			for item, z in zs:
-				self.items[item].z = z
+				generated[item][2] = z 
+
+			f = open(self.arrangement_difficulty+'_'+self.space_allowed+'.txt', 'a')
+			for item in generated:
+				x = generated[item][0]; y=generated[item][1]; z=generated[item][2];
+				f.write(item + ','+str(x) + ',' +str(y) + ','+str(z))
+				f.write('\n')
+			f.write('*\n')
+			f.close()
+			print('DONE GENERATING!')
 
 
 
-	def init_clutter(self):
-		self.bottle = Grocery_item(.25,0.,0.65, 1.57,0,0, "bottle/bottle.urdf",0.07,0.07,0.25,'bottle','light',False)
-		self.coke = Grocery_item(.5,.1,.65, 0,0,0, 'coke/coke.urdf', 0.07,0.07,0.10,'coke','light',False)
-		self.nutella = Grocery_item(.6, 0., .65, 0,0,0, 'nutella/nutella.urdf', 0.07,0.07,0.15,'nutella','light',False)
-		self.orange = Grocery_item(.6,.1,.65,0,0,0, 'orange/orange.urdf', 0.07,0.07,0.05, 'orange','light',False)
-		self.cereal = Grocery_item(.5, .2, .65, 1.57,0,0, 'cereal/cereal.urdf',0.07,0.07,0.1, 'cereal','heavy',False)
-		self.lysol = Grocery_item(.6, -.1, .65, 0,0,0, 'lysol/lysol.urdf', 0.07,0.07,0.22, 'lysol','heavy',False)
-		self.lipton = Grocery_item(.6, .2, .65, 0,0,0, 'lipton/lipton.urdf',0.07,0.07,0.05, 'lipton','light' ,False)
-		self.apple = Grocery_item(.7, 0., .65, 3.14,0,0, 'apple/apple.urdf', 0.07,0.07,0.03, 'apple','light',False)
+	def init_clutter(self, index):
+		init_positions = self.read_init_positions(index)
+		for name, x, y, z in init_positions:
+			self.items[name].x = float(x)
+			self.items[name].y = float(y)
+			self.items[name].z = float(z)
 
-		self.ambrosia = Grocery_item(7.7, 7., .65, 0,0,0, 'ambrosia/ambrosia.urdf', 0.07,0.07,0.2, 'ambrosia','heavy', False)
-		self.oreo = Grocery_item(7.7, 7., .65, 3.14,0,0, 'oreo/oreo.urdf', 0.07,0.07,0.02, 'oreo','light', False)
-		self.milk = Grocery_item(7.7, 7., .65, 0,0,0, 'milk/milk.urdf', 0.07,0.07,0.17, 'milk','heavy', False)
-		self.banana = Grocery_item(7.7, 7., .65, 3.14,0,0, 'banana/banana.urdf', 0.07,0.07,0.03, 'banana','light', False)
-		self.pepsi = Grocery_item(7.7, 7., .65, 3.14,0,0, 'pepsi/pepsi.urdf', 0.07,0.07,0.03, 'banana','light', True)
-
-
-		self.items['bottle'] = self.bottle
-		self.items['coke'] = self.coke
-		self.items['nutella'] = self.nutella
-		self.items['orange'] = self.orange
-		self.items['pepsi'] = self.pepsi 
-		self.items['cereal'] = self.cereal
-		self.items['lysol'] = self.lysol
-		self.items['lipton'] = self.lipton
-		self.items['apple'] = self.apple
-
-		self.items['ambrosia'] = self.ambrosia
-		self.items['oreo'] = self.oreo
-		self.items['milk'] = self.milk
-		self.items['banana'] = self.banana
-
-		self.generate_clutter_coordinates(self.space_allowed)
-
-		self.objects_list = [self.bottle, self.coke, self.nutella, 
-					self.orange, self.cereal, self.lysol, self.lipton,
-					self.apple, self.ambrosia, self.oreo, self.milk,
-					self.banana]
+		# self.generate_clutter_coordinates(self.space_allowed)
+		# self.objects_list = self.shopping_list.get_items_list()
 		self.refresh_world()
+
+
+	def read_init_positions(self, index):
+		f = open(self.arrangement_difficulty+'_'+self.space_allowed+'.txt','r')
+		content = f.read()
+		stages = content.split('*')
+		coords = stages[index-1].split('\n')
+		xyz = []
+		for coord in coords:
+			abc = coord.split(',')
+			xyz.append(abc)
+		xyz = xyz[:-1]
+		if index!=1:
+			xyz = xyz[1:]
+
+		# print(xyz)
+		return xyz
 
 
 	def start_perception(self,x):

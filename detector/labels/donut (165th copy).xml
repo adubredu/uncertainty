@@ -1,0 +1,26 @@
+<annotation>
+	<folder>labels</folder>
+	<filename>8-14.png</filename>
+	<path>/home/alphonsus/3dmodels/uncertainty/detector/labels/8-14.png</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>640</width>
+		<height>640</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>donut</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>296</xmin>
+			<ymin>199</ymin>
+			<xmax>340</xmax>
+			<ymax>239</ymax>
+		</bndbox>
+	</object>
+</annotation>

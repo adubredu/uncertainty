@@ -1,5 +1,6 @@
 <?xml version='1.0'?>
 <sdf version='1.6'>
+  <world name='grocery_world'>
   <model name='newspaper_1'>
     <link name='link_0'>
        <visual name='visual'>
@@ -8,13 +9,6 @@
             <size>0.35 0.25 0.02</size>
           </box>
         </geometry>
-       	<material>
-          <script>
-            <uri>model://newspaper_1/materials/scripts</uri>
-            <uri>model://newspaper_1/materials/textures</uri>
-            <name>newspaper_1</name>
-          </script>
-        </material>
         <cast_shadows>1</cast_shadows>
         <transparency>0</transparency>
       </visual>
@@ -28,8 +22,21 @@
           </box>
         </geometry>
        </collision>
+        <inertial>
+          <pose>0 0 0 0 0 0</pose>
+          <mass>0.56</mass>
+          <inertia>
+            <ixx>0.004878</ixx>
+            <ixy>-6.2341e-07</ixy>
+            <ixz>-7.4538e-07</ixz>
+            <iyy>0.00090164</iyy>
+            <iyz>-0.00014394</iyz>
+            <izz>0.0042946</izz>
+          </inertia>
+    </inertial>
     </link>
     <static>1</static>
     <allow_auto_disable>1</allow_auto_disable>
   </model>
+</world>
 </sdf>
