@@ -132,8 +132,8 @@ class Grocery_packing:
 		
 
 		self.arrangement_difficulty = 'easy'
-		self.space_allowed = 'low'
-		arrangement_num = 5
+		self.space_allowed = 'high'
+		arrangement_num = 1
 		self.init_clutter(arrangement_num)
 		# self.generate_clutter_coordinates(self.space_allowed)
 
@@ -141,20 +141,20 @@ class Grocery_packing:
 		self.planning_time = 0
 		self.num_mc_samples = 100
 		self.num_pick_from_box = 0
-		self.domain_path='/home/developer/uncertainty/pddl/belief_domain.pddl'
+		self.domain_path='/home/alphonsus/3dmodels/uncertainty/pddl/belief_domain.pddl'
 
 		
 		
 		self.delta = 0.01
-		self.confidence_threshold = 0.6
+		self.confidence_threshold = 0.4
 		self.fps = 60
 		self.scene_belief = {}
 		
 		self.num_false = 0
 		self.alive = True
-		# self.perception = threading.Thread(target=self.start_perception,args=(1,))
-		# self.perception.start()
-		time.sleep(1000)
+		self.perception = threading.Thread(target=self.start_perception,args=(1,))
+		self.perception.start()
+		# time.sleep(1000)
 
 
 	def refresh_world(self):
@@ -290,6 +290,8 @@ class Grocery_packing:
 		import time
 		import pybullet_data
 		import math
+		import sys
+		sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 		import cv2
 		import numpy as np 
 		from detecto import core, utils, visualize
@@ -315,9 +317,9 @@ class Grocery_packing:
 
 		while self.alive:
 			viewMatrix = p.computeViewMatrix(
-			cameraEyePosition=[0, 0, 2],
-			cameraTargetPosition=[0, 0, 0],
-			cameraUpVector=[0, 1, 0])
+				cameraEyePosition=[0, -1., 2],
+				cameraTargetPosition=[0, 0, 0],
+				cameraUpVector=[0, 1, 0])
 
 			projectionMatrix = p.computeProjectionMatrixFOV(
 				fov=60.0,
@@ -326,15 +328,37 @@ class Grocery_packing:
 				farVal=3.1)
 
 			width, height, rgbImg, depthImg, segImg = p.getCameraImage(
-				width=480, 
-				height=480,
+				width=640, 
+				height=640,
 				viewMatrix=viewMatrix,
 				projectionMatrix=projectionMatrix,
 				shadow=True,
-				renderer=p.ER_BULLET_HARDWARE_OPENGL)
-			model = core.Model.load('/home/developer/garage/grocery_detector_v2.pth', \
-				['ambrosia','apple','banana','bottle','cereal','coke',\
-						'lipton','lysol','milk','nutella','orange','oreo','pepsi'])
+					renderer=p.ER_BULLET_HARDWARE_OPENGL)
+			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v3.pth', \
+				['baseball',
+					  'beer',
+					  'can_coke',
+					  'can_pepsi',
+					  'can_fanta',
+					  'can_sprite',
+					  'chips_can',
+					  'coffee_box',
+					  'cracker',
+					  'cup',
+					  'donut',
+					  'fork',
+					  'gelatin',
+					  'meat',
+					  'mustard',
+					  'newspaper',
+					  'orange',
+					  'pear',
+					  'plate',
+					  'soccer_ball',
+					  'soup',
+					  'sponge',
+					  'sugar',
+					  'toy'])
 			
 			rgbImg = Image.fromarray(rgbImg).convert('RGB')
 			predictions = model.predict(rgbImg)
@@ -400,6 +424,7 @@ class Grocery_packing:
 						scene_data.data +=nm+'-'+str(round(cf,2))+'_'
 			
 			self.scene_belief_publisher.publish(scene_data)
+			print(self.scene_belief)
 			cv2.imshow('Grocery Item detection', camera_view)
 			if cv2.waitKey(1) & 0xFF == ord('q'):
 				break
