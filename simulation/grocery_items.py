@@ -69,9 +69,9 @@ class Grocery_item:
 class Shopping_List:
 	def __init__(self, p):
 		self.lgripper = Grocery_item(urdf_path="gripper/wsg50_one_motor_gripper_left_finger.urdf", 
-			object_name='lgripper', urdf=True, p=p, x=0.2, y=-.3, z=1., orr=0, op=3.14, oy=3.14)
+			object_name='lgripper', urdf=True, p=p, x=-0.13, y=-.5, z=1., orr=0, op=3.14, oy=3.14)
 		self.rgripper = Grocery_item(urdf_path="gripper/wsg50_one_motor_gripper_right_finger.urdf",
-			object_name='rgripper',urdf=True, p=p, x=0.23, y=-.3, z=1., orr=0, op=3.14, oy=3.14)
+			object_name='rgripper',urdf=True, p=p, x=-0.1, y=-.5, z=1., orr=0, op=3.14, oy=3.14)
 		self.baseball = Grocery_item(urdf_path='models/baseball/textured.obj',
 			object_name='baseball', height=0.073, urdf=False, p=p)
 		self.bottle_beer = Grocery_item(urdf_path='models/bottle_beer/model.sdf',
