@@ -155,7 +155,7 @@ class Grocery_packing:
 		
 		
 		self.delta = 0.01
-		self.confidence_threshold = 0.4
+		self.confidence_threshold = 0.7
 		self.fps = 60
 		self.scene_belief = {}
 		
@@ -313,7 +313,7 @@ class Grocery_packing:
 				norm_scene[item]=[]
 				for name,wt,cd in scene[item]:
 
-					if cd[0] > 300 and cd[1] > 60:
+					if cd[0] > 300 and cd[1] > 60 and cd[1]<400:
 						names.append(name)
 						weights.append(wt)
 						coord.append([int(c) for c in cd])
@@ -345,7 +345,7 @@ class Grocery_packing:
 				shadow=True,
 					renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
-			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v4.pth', \
+			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v8.pth', \
 
 				['baseball',
 					  'beer',
@@ -859,11 +859,14 @@ class Grocery_packing:
 						confident_seen_list.append(choice[0])
 						print('USED NUM FALSE')
 					else:
+						# if self.items[item].inclutter:  #BIAS TO ONLY RECOGNIZE ITEMS IN CLUTTER
 						confident_seen_list.append(item)
 
-		for item in self.objects_list:
-			if item.inbox and not item.dummy:
-				inbox_list.append(item.name)
+		# for item in self.objects_list:
+		# 	if item.inbox and not item.dummy:
+				# inbox_list.append(item.name)
+		for key in self.box.items_added:
+			inbox_list.append(key)
 
 		for item in inbox_list+confident_seen_list:
 			if item in self.items and not self.items[item].dummy:
@@ -921,18 +924,54 @@ class Grocery_packing:
 		init +=  ")\n"    
 
 		goal = "(:goal (and "
-		for h in heavylist:
+		for h in heavylist[:self.box.full_cpty]:
 			goal += "(inbox "+alias[h]+") "
+
+		hleft = heavylist[self.box.full_cpty:]
+		hin = heavylist[:self.box.full_cpty]
+		hputon = hin[:len(hleft)]
+
+		for l, i in zip(hleft, hputon):
+			goal += "(on "+alias[l]+" "+alias[i]+") "
+
+
+		hvlist_free = hleft + hin[len(hleft):]
 			
 		mlen=len(mediumlist)
-		hlen=len(heavylist)
+		hlen=len(hvlist_free)
 		stop = self.box.full_cpty - hlen
 
+		if hlen >= self.box.full_cpty and mlen > hlen:
+			for m,h in zip(mediumlist[:hlen],hvlist_free):
+				goal += "(on "+alias[m]+" "+alias[h]+") "
+
+			lenontop = len(mediumlist[:hlen])
+			for m, mm in zip(mediumlist[hlen:][:lenontop], mediumlist[:hlen]):
+				goal += "(on "+alias[m]+" "+alias[mm]+") "
+
+			# lenleft
+		else:
+			for m in mediumlist[:stop]:
+				goal += "(inbox "+alias[m]+") "
+
+			currfreeinbox = hvlist_free+mediumlist[:stop]
+			for m, mh in zip(mediumlist[stop:(stop+self.box.full_cpty)], currfreeinbox):
+				goal +="(on "+alias[m]+" "+alias[mh]+") "
+
+			left = mediumlist[(stop+self.box.full_cpty):]
+			newcurron = mediumlist[stop:(stop+self.box.full_cpty)]
+			for m, mm in zip(left, newcurron[:len(left)]):
+				goal +="(on "+alias[m]+" "+alias[mm]+") "
+
+		goal+=")))\n"
+		'''
+		# USES DISJUNCTIONS. SEEMS LIKE A DIFFICULT
+		#PLANNING PROBLEM FOR LARGE STATE SPACES: N>16
 		if hlen == self.box.full_cpty and mlen > hlen:
 
 			for m in mediumlist[:hlen]:
 				goal += "(or "
-				for h in heavylist:
+				for h in hvlist_free:
 					goal += "(on "+alias[m]+" "+alias[h]+") "
 				goal+=") "
 
@@ -948,7 +987,7 @@ class Grocery_packing:
 				goal += "(inbox "+alias[m]+") "
 			for m in mediumlist[stop:stop+self.box.full_cpty]:
 				goal+="(or "
-				for mm in heavylist+mediumlist[:stop]:
+				for mm in hvlist_free+mediumlist[:stop]:
 					goal += "(on "+alias[m]+" "+alias[mm]+") "
 				goal+=") "
 			for m in mediumlist[stop+self.box.full_cpty:]:
@@ -957,7 +996,7 @@ class Grocery_packing:
 					goal += "(on "+alias[m]+" "+alias[mm]+") "
 				goal+=") "
 			goal +=")))"
-
+			'''
 
 		definition = "(define (problem PACKED-GROCERY) \n(:domain GROCERY) \n (:objects "
 		for al in alias.values():
@@ -989,14 +1028,14 @@ class Grocery_packing:
 			print('NO  VALID PLAN FOUND')
 			print(self.scene_belief)
 			self.num_false +=1
-			if self.confidence_threshold > 0:
+			if self.confidence_threshold > 0.2:
 				self.confidence_threshold -= 0.1
+				print(self.confidence_threshold)
 
 
 			return
 		self.convert_to_string_and_publish(plan, alias)
 		for action in plan:
-			print('Performing action: '+str(action))
 			a = String()
 			f = list(action)
 			f[1] = alias[action[1]]
@@ -1004,7 +1043,7 @@ class Grocery_packing:
 				f[2] = alias[action[2]]
 			f = str(f)
 			a.data = f 
-			
+			print(f)
 			self.action_pub.publish(a)
 			result = self.execute_sbp_action(action, alias)
 			if not result:
@@ -1141,7 +1180,8 @@ class Grocery_packing:
 			else:
 				init += "(topfree "+alias[item]+") "
 
-
+		if self.box.num_items >= self.box.full_cpty:
+			init += "(boxfull)"
 		# for item in topfree:
 		# 	init += "(topfree "+alias[item]+") "
 		# 	init += "(inclutter "+alias[item]+") "
@@ -1187,21 +1227,34 @@ class Grocery_packing:
 					init += "(topfree "+alias[item]+") "
 					init += "(inclutter "+alias[item]+") "
 
+		if self.gripper.holding is not None:
+			print('IS HOLDING '+self.gripper.holding)
+			init+="(holding "+alias[self.gripper.holding]+") "
 		init +=  ")\n"
 
 		goal = "(:goal (and "
-		for h in heavylist:
+
+		for h in heavylist[:self.box.full_cpty]:
 			goal += "(inbox "+alias[h]+") "
+
+		hleft = heavylist[self.box.full_cpty:]
+		hin = heavylist[:self.box.full_cpty]
+		hputon = hin[:len(hleft)]
+
+		for l, i in zip(hleft, hputon):
+			goal += "(on "+alias[l]+" "+alias[i]+") "
+
+		hvlist_free = hleft + hin[len(hleft):]
 			
 		mlen=len(mediumlist)
-		hlen=len(heavylist)
+		hlen=len(hvlist_free)
 		stop = self.box.full_cpty - hlen
 
 		if hlen == self.box.full_cpty and mlen > hlen:
 
 			for m in mediumlist[:hlen]:
 				goal += "(or "
-				for h in heavylist:
+				for h in hvlist_free:
 					goal += "(on "+alias[m]+" "+alias[h]+") "
 				goal+=") "
 
@@ -1217,7 +1270,7 @@ class Grocery_packing:
 				goal += "(inbox "+alias[m]+") "
 			for m in mediumlist[stop:stop+self.box.full_cpty]:
 				goal+="(or "
-				for mm in heavylist+mediumlist[:stop]:
+				for mm in hvlist_free+mediumlist[:stop]:
 					goal += "(on "+alias[m]+" "+alias[mm]+") "
 				goal+=") "
 			for m in mediumlist[stop+self.box.full_cpty:]:
@@ -1264,21 +1317,23 @@ class Grocery_packing:
 		plan = f.plan(domain_path, problem_path)
 		if len(plan) == 0 or plan == None:
 			print('NO PLAN FOUND')
+			print(self.confidence_threshold)
 			self.num_false +=1
-			if self.confidence_threshold > 0:
+			if self.confidence_threshold > 0.2:
 				self.confidence_threshold -= 0.1
 			return
 		self.planning_time += time.time() - start
 		self.convert_to_string_and_publish(plan,alias)
 		
 		for action in plan:
-			print(action)
+			# print(action)
 			a = String()
 			f = list(action)
 			f[1] = alias[action[1]]
 			if len(action) == 3:
 				f[2] = alias[action[2]]
 			f = str(f)
+			print(f)
 			a.data = f		
 			self.action_pub.publish(a)
 			result = self.execute_sbp_action(action, alias)
@@ -1306,10 +1361,16 @@ class Grocery_packing:
 		self.current_action = "Action: "+str(action)
 		success = True
 		if action[0] == 'pick-from-clutter':
+			if not self.items[alias[action[1]]].inclutter:
+				print('Wrong pick')
+				return False
 			success = self.pick_up(alias[action[1]])
 			self.box.remove_item(alias[action[1]])
 
 		elif action[0] == 'pick-from-box':
+			if not self.items[alias[action[1]]].inbox:
+				print('Wrong pick')
+				return False
 			self.num_pick_from_box+=1
 			success = self.pick_up(alias[action[1]])
 			self.box.remove_item(alias[action[1]])

@@ -1,3 +1,3 @@
-(pick-from-clutter h4)
-(put-in-box h4)
+(pick-from-clutter h9)
+(put-on h9 h0)
 ; cost = 2 (unit cost)

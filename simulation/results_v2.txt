@@ -698,3 +698,8 @@ planning_time: 26.786038398742676
 execution_time: 146.36853909492493
 num_pick_from_box: 0
 
+Declutter
+planning_time: 98.77421426773071
+execution_time: 809.7779190540314
+num_pick_from_box: 4
+

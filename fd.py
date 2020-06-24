@@ -12,7 +12,7 @@ class Fast_Downward:
             'dijkstra': '--heuristic "h=blind(transform=adapt_costs(cost_type=NORMAL))" '
                         '--search "astar(h,cost_type=NORMAL,max_time=300)"',
             'max-astar': '--heuristic "h=hmax(transform=adapt_costs(cost_type=NORMAL))"'
-                         ' --search "astar(h,cost_type=NORMAL,max_time=%s,bound=%s)"',
+                         ' --search "astar(h,cost_type=NORMAL,max_time=300)"',
             'cerberus':  '--heuristic "h=hmax(transform=adapt_costs(cost_type=NORMAL))"'
                          ' --search "astar(h,cost_type=NORMAL,max_time=%s,bound=%s)"',
             'lmcut-astar': '--heuristic "h=lmcut(transform=adapt_costs(cost_type=NORMAL))"'
