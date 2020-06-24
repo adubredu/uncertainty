@@ -21,7 +21,7 @@ p.setGravity(0,0,0)
 p.setAdditionalSearchPath('models')
 planeId = p.loadURDF("plane/plane.urdf") 
 tableId = p.loadURDF("table/table.urdf",[0,0,0],p.getQuaternionFromEuler([0,0,0]))
-trayId = p.loadURDF("container/container.urdf", [-.5,.0,0.62],p.getQuaternionFromEuler([0,0,0]))
+trayId = p.loadURDF("container/container.urdf", [-.5,.0,0.65],p.getQuaternionFromEuler([0,0,0]))
 
 
 
@@ -42,7 +42,7 @@ class Box:
 		if self.cpty == 2:
 			self.ys = [-0.05,  0.05]
 			self.xs = [-0.55,  -0.45]
-		self.z = 0.7
+		self.z = 0.8
 		#i is per row, j is per column
 		self.occupancy = [[0 for j in range(self.cpty)] for i in range(self.cpty)]
 		self.items_added = {}
@@ -143,6 +143,8 @@ class Grocery_packing:
 		self.num_pick_from_box = 0
 		self.domain_path='/home/alphonsus/3dmodels/uncertainty/pddl/belief_domain.pddl'
 
+		self.lgripper = self.items['lgripper']
+		self.rgripper = self.items['rgripper']
 		
 		
 		self.delta = 0.01
@@ -303,7 +305,7 @@ class Grocery_packing:
 				names=[]; weights=[];coord=[]
 				norm_scene[item]=[]
 				for name,wt,cd in scene[item]:
-					if cd[0] > 200:
+					if cd[0] > 300 and cd[1] > 60:
 						names.append(name)
 						weights.append(wt)
 						coord.append([int(c) for c in cd])
@@ -334,7 +336,7 @@ class Grocery_packing:
 				projectionMatrix=projectionMatrix,
 				shadow=True,
 					renderer=p.ER_BULLET_HARDWARE_OPENGL)
-			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v3.pth', \
+			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v4.pth', \
 				['baseball',
 					  'beer',
 					  'can_coke',
@@ -424,7 +426,7 @@ class Grocery_packing:
 						scene_data.data +=nm+'-'+str(round(cf,2))+'_'
 			
 			self.scene_belief_publisher.publish(scene_data)
-			print(self.scene_belief)
+			# print(self.scene_belief)
 			cv2.imshow('Grocery Item detection', camera_view)
 			if cv2.waitKey(1) & 0xFF == ord('q'):
 				break
@@ -962,7 +964,7 @@ class Grocery_packing:
 		return prob_path, swapped_alias
 
 
-
+		#FDREPLAN ALGO
 	def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias):
 		f = Fast_Downward()
 		start = time.time()
@@ -1763,8 +1765,8 @@ if __name__ == '__main__':
 		rospy.init_node('grocery_packing')
 		strategy = args[1]
 		g = Grocery_packing()
-		time.sleep(100)
-		# g.run_strategy(strategy)
+		time.sleep(30)
+		g.run_strategy(strategy)
 	# g.perform_pick_n_roll()
 	# g.perform_conveyor_belt_pack()
 	# g.perform_dynamic_grocery_packing('divergent_set_1')

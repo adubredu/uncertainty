@@ -10,7 +10,7 @@ class Fast_Downward:
         self.search_options = {
             # Optimal
             'dijkstra': '--heuristic "h=blind(transform=adapt_costs(cost_type=NORMAL))" '
-                        '--search "astar(h,cost_type=NORMAL,max_time=30)"',
+                        '--search "astar(h,cost_type=NORMAL,max_time=300)"',
             'max-astar': '--heuristic "h=hmax(transform=adapt_costs(cost_type=NORMAL))"'
                          ' --search "astar(h,cost_type=NORMAL,max_time=%s,bound=%s)"',
             'cerberus':  '--heuristic "h=hmax(transform=adapt_costs(cost_type=NORMAL))"'
@@ -26,7 +26,7 @@ class Fast_Downward:
             'ff-eager-pref': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
                              '--search "eager_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
             'ff-lazy': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-                       '--search "lazy_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
+                       '--search "lazy_greedy([h],preferred=[h],max_time=300)"',
             'goal-lazy': '--heuristic "h=goalcount(transform=no_transform())" '
                          '--search "lazy_greedy([h],randomize_successors=True,max_time=%s,bound=%s)"',
             'add-random-lazy': '--heuristic "h=add(transform=adapt_costs(cost_type=PLUSONE))" '
@@ -55,10 +55,10 @@ class Fast_Downward:
                            'preferred_successors_first=true,cost_type=PLUSONE,max_time=%s,bound=%s)"'.format(w)
 
         self.default_max_time = 30 # INF
-        self.default_planner = 'ff-astar'
+        self.default_planner = 'ff-lazy'
         self.max_fd_cost = 1e8
-        self.plan_file = '/home/developer/uncertainty/simulation/sas_plan'
-        self.fd_path = '/home/developer/pybullet/pddlstream/FastDownward/fast-downward.py'
+        self.plan_file = '/home/alphonsus/3dmodels/uncertainty/simulation/sas_plan'
+        self.fd_path = '/home/alphonsus/3dmodels/uncertainty/FastDownward/fast-downward.py'
         # self.fd_path = '/home/developer/garage/FastDownward/fast-downward.py'
 
 

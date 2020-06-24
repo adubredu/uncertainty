@@ -1,0 +1,6 @@
+/home/alphonsus/3dmodels/uncertainty/FastDownward/builds/release/CMakeFiles/edit_cache.dir
+/home/alphonsus/3dmodels/uncertainty/FastDownward/builds/release/CMakeFiles/rebuild_cache.dir
+/home/alphonsus/3dmodels/uncertainty/FastDownward/builds/release/CMakeFiles/translate.dir
+/home/alphonsus/3dmodels/uncertainty/FastDownward/builds/release/search/CMakeFiles/edit_cache.dir
+/home/alphonsus/3dmodels/uncertainty/FastDownward/builds/release/search/CMakeFiles/rebuild_cache.dir
+/home/alphonsus/3dmodels/uncertainty/FastDownward/builds/release/search/CMakeFiles/downward.dir
