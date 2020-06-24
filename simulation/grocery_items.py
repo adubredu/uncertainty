@@ -69,7 +69,6 @@ class Grocery_item:
 class Shopping_List:
 	def __init__(self, p):
 		self.lgripper = Grocery_item(urdf_path="gripper/wsg50_one_motor_gripper_left_finger.urdf", 
-<<<<<<< HEAD
 			object_name='lgripper', urdf=True, p=p, x=-0.13, y=-.5, z=1.5, orr=0, op=3.14, oy=3.14)
 		self.rgripper = Grocery_item(urdf_path="gripper/wsg50_one_motor_gripper_right_finger.urdf",
 			object_name='rgripper',urdf=True, p=p, x=-0.1, y=-.5, z=1.5, orr=0, op=3.14, oy=3.14)
@@ -77,15 +76,6 @@ class Shopping_List:
 			object_name='baseball', height=0.073, urdf=False, p=p)
 		self.bottle_beer = Grocery_item(urdf_path='models/bottle_beer/model.sdf',
 			object_name='beer', mass='heavy',height=0.16, urdf=True, p=p, x=0.15)
-=======
-			object_name='lgripper', urdf=True, p=p, x=-0.13, y=-.5, z=1., orr=0, op=3.14, oy=3.14)
-		self.rgripper = Grocery_item(urdf_path="gripper/wsg50_one_motor_gripper_right_finger.urdf",
-			object_name='rgripper',urdf=True, p=p, x=-0.1, y=-.5, z=1., orr=0, op=3.14, oy=3.14)
-		self.baseball = Grocery_item(urdf_path='models/baseball/textured.obj',
-			object_name='baseball', height=0.073, urdf=False, p=p)
-		self.bottle_beer = Grocery_item(urdf_path='models/bottle_beer/model.sdf',
-			object_name='bottle_beer', mass='heavy',height=0.16, urdf=True, p=p, x=0.15)
->>>>>>> 7a083f14c92c0a070ae27a81c752239e2791490c
 		self.can_coke = Grocery_item(urdf_path='models/can_coke/coke.obj',
 			object_name='can_coke', height=0.122, orr=1.57, urdf=False, p=p, x=0.3)
 		self.can_pepsi = Grocery_item(urdf_path='models/can_pepsi/pepsi.obj',
@@ -121,11 +111,7 @@ class Shopping_List:
 		self.pear = Grocery_item(urdf_path='models/pear/textured.obj',
 			object_name='pear', height=0.076, urdf=False, p=p, y=-0.5)
 		self.plate = Grocery_item(urdf_path='models/bowl/textured.obj',
-<<<<<<< HEAD
 			object_name='plate',mass='heavy', height=0.05, urdf=False, p=p, x=0.2, y=-0.5)
-=======
-			object_name='bowl',mass='heavy', height=0.05, urdf=False, p=p, x=0.2, y=-0.5)
->>>>>>> 7a083f14c92c0a070ae27a81c752239e2791490c
 		self.soccer_ball = Grocery_item(urdf_path='models/soccer_ball/textured.obj',
 			object_name='soccer_ball',mass='heavy',height=0.15, urdf=False, p=p, x=0.35, y=-0.5)
 		self.soup = Grocery_item(urdf_path='models/soup/meshes/soup.obj',
