@@ -10,7 +10,11 @@ class Fast_Downward:
         self.search_options = {
             # Optimal
             'dijkstra': '--heuristic "h=blind(transform=adapt_costs(cost_type=NORMAL))" '
+<<<<<<< HEAD
                         '--search "astar(h,cost_type=NORMAL,max_time=300)"',
+=======
+                        '--search "astar(h,cost_type=NORMAL,max_time=30)"',
+>>>>>>> 7a083f14c92c0a070ae27a81c752239e2791490c
             'max-astar': '--heuristic "h=hmax(transform=adapt_costs(cost_type=NORMAL))"'
                          ' --search "astar(h,cost_type=NORMAL,max_time=%s,bound=%s)"',
             'cerberus':  '--heuristic "h=hmax(transform=adapt_costs(cost_type=NORMAL))"'
@@ -26,7 +30,11 @@ class Fast_Downward:
             'ff-eager-pref': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
                              '--search "eager_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
             'ff-lazy': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
+<<<<<<< HEAD
                        '--search "lazy_greedy([h],preferred=[h],max_time=300)"',
+=======
+                       '--search "lazy_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
+>>>>>>> 7a083f14c92c0a070ae27a81c752239e2791490c
             'goal-lazy': '--heuristic "h=goalcount(transform=no_transform())" '
                          '--search "lazy_greedy([h],randomize_successors=True,max_time=%s,bound=%s)"',
             'add-random-lazy': '--heuristic "h=add(transform=adapt_costs(cost_type=PLUSONE))" '
@@ -55,10 +63,17 @@ class Fast_Downward:
                            'preferred_successors_first=true,cost_type=PLUSONE,max_time=%s,bound=%s)"'.format(w)
 
         self.default_max_time = 30 # INF
+<<<<<<< HEAD
         self.default_planner = 'ff-lazy'
         self.max_fd_cost = 1e8
         self.plan_file = '/home/alphonsus/3dmodels/uncertainty/simulation/sas_plan'
         self.fd_path = '/home/alphonsus/3dmodels/uncertainty/FastDownward/fast-downward.py'
+=======
+        self.default_planner = 'ff-astar'
+        self.max_fd_cost = 1e8
+        self.plan_file = '/home/developer/uncertainty/simulation/sas_plan'
+        self.fd_path = '/home/developer/pybullet/pddlstream/FastDownward/fast-downward.py'
+>>>>>>> 7a083f14c92c0a070ae27a81c752239e2791490c
         # self.fd_path = '/home/developer/garage/FastDownward/fast-downward.py'
 
 
