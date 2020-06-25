@@ -1,0 +1,10 @@
+Optimistic_1
+planning_time: 42.394442558288574
+execution_time: 699.7669997215271
+num_pick_from_box: 6
+
+Optimistic_3
+planning_time: 29.719175815582275
+execution_time: 788.4675333499908
+num_pick_from_box: 8
+

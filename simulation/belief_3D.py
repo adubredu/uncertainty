@@ -6,9 +6,11 @@ import pybullet as p
 import time
 import pybullet_data
 import math
+import copy
 import threading
 import numpy as np
 from fd import Fast_Downward
+from planner import Planner 
 import rospy
 from std_msgs.msg import String, Bool
 from grocery_items import Shopping_List, Grocery_item
@@ -135,11 +137,12 @@ class Grocery_packing:
 		self.scene_belief_publisher = rospy.Publisher('/scene_belief', String, queue_size=1)
 		self.action_pub = rospy.Publisher('/current_action', String, queue_size=1)
 		self.method_pub = rospy.Publisher('/method', String, queue_size=1)
-		
+		self.should_plan = rospy.Publisher('/should_plan', Bool, queue_size=1)
+
 
 		self.arrangement_difficulty = 'easy'
 		self.space_allowed = 'high'
-		self.arrangement_num = 1
+		self.arrangement_num = 5
 		self.init_clutter(self.arrangement_num)
 		# self.generate_clutter_coordinates(self.space_allowed)
 
@@ -161,9 +164,25 @@ class Grocery_packing:
 		
 		self.num_false = 0
 		self.alive = True
+		# self.f = Planner()
 		self.perception = threading.Thread(target=self.start_perception,args=(1,))
 		self.perception.start()
 		# time.sleep(1000)
+
+
+	def get_plan(self, data):
+		raw = data.data 
+		if raw != 'Fail':
+			p = raw.split('_')
+			retplan = []
+			for act in p:
+				tup = act.replace(')','').replace('(','').replace("'","").split(' ')
+				tup = tuple(tup)
+				retplan.append(tup)
+			self.current_plan = retplan
+		else:
+			self.current_plan = None
+
 
 
 	def refresh_world(self):
@@ -834,26 +853,27 @@ class Grocery_packing:
 	def select_perceived_objects_and_classify_weights(self):
 		confident_seen_list = []; inbox_list = []
 		lightlist = []; heavylist=[]
+		scene_belief = copy.deepcopy(self.scene_belief)
 
-		for item in self.scene_belief:
-			if len(self.scene_belief[item]) > 0 and item in self.items:
-				if self.scene_belief[item][0][1] >= self.confidence_threshold:
-					if len(self.scene_belief[item]) == 2 and self.num_false > 2:
-						cf1 = self.scene_belief[item][0][1]
-						cf2 = self.scene_belief[item][1][1]
-						nm1 = self.scene_belief[item][0][0]
-						nm2 = self.scene_belief[item][1][0]
+		for item in scene_belief:
+			if len(scene_belief[item]) > 0 and item in self.items:
+				if scene_belief[item][0][1] >= self.confidence_threshold:
+					if len(scene_belief[item]) == 2 and self.num_false > 2:
+						cf1 = scene_belief[item][0][1]
+						cf2 = scene_belief[item][1][1]
+						nm1 = scene_belief[item][0][0]
+						nm2 = scene_belief[item][1][0]
 						wts = [cf1, cf2]/np.sum([cf1, cf2])
 						choice = np.random.choice([nm1, nm2], size=1,p=wts)
 						confident_seen_list.append(choice[0])
 						print('USED NUM FALSE')
-					elif len(self.scene_belief[item]) > 2 and self.num_false > 2:
-						cf1 = self.scene_belief[item][0][1]
-						cf2 = self.scene_belief[item][1][1]
-						cf3 = self.scene_belief[item][2][1]
-						nm1 = self.scene_belief[item][0][0]
-						nm2 = self.scene_belief[item][1][0]
-						nm3 = self.scene_belief[item][2][0]
+					elif len(scene_belief[item]) > 2 and self.num_false > 2:
+						cf1 = scene_belief[item][0][1]
+						cf2 = scene_belief[item][1][1]
+						cf3 = scene_belief[item][2][1]
+						nm1 = scene_belief[item][0][0]
+						nm2 = scene_belief[item][1][0]
+						nm3 = scene_belief[item][2][0]
 						wts = [cf1, cf2, cf3]/np.sum([cf1, cf2,cf3])
 						choice = np.random.choice([nm1, nm2,nm3], size=1,p=wts)
 						confident_seen_list.append(choice[0])
@@ -861,7 +881,7 @@ class Grocery_packing:
 					else:
 						# if self.items[item].inclutter:  #BIAS TO ONLY RECOGNIZE ITEMS IN CLUTTER
 						confident_seen_list.append(item)
-
+		print('confidently scene items: '+str(confident_seen_list))
 		# for item in self.objects_list:
 		# 	if item.inbox and not item.dummy:
 				# inbox_list.append(item.name)
@@ -1014,24 +1034,50 @@ class Grocery_packing:
 		swapped_alias  = dict([(value, key) for key, value in alias.items()]) 
 		return prob_path, swapped_alias
 
+	def read_plan(self):
+		filename = 'fdplan'
+		try:
+			with open(filename, 'r') as f:
+				plan = f.read()
+		except:
+			return None
+		p = plan.split('\n')[:-2]
+		retplan = []
+		for act in p:
+			tup = act.replace(')','').replace('(','').replace("'","").replace(" ","").split(',')
+			tup = tuple(tup)
+			retplan.append(tup)
+		return retplan
+
 
 
 		#FDREPLAN ALGO
 
-	def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias):
+	def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias, declutter=False):
 		f = Fast_Downward()
 		start = time.time()
-		plan = f.plan(domain_path, problem_path)
+		
+		b = Bool(); b.data = True; self.should_plan.publish(b)
+		# rospy.Subscriber('/planned', String, self.get_plan)
+		# time.sleep(2)
+			# print('planning...')
+			# rospy.Subscriber('/planned', String, self.get_plan)
+
+		# plan = f.plan(domain_path, problem_path)
+		time.sleep(5)
+		plan = self.read_plan()
+		print(plan)
 		self.planning_time += time.time()-start
 
 		if plan is None or len(plan) == 0:
-			print('NO  VALID PLAN FOUND')
+			print('NO VALID PLAN FOUND')
 			print(self.scene_belief)
+			if declutter:
+				self.declutter_surface_items()
 			self.num_false +=1
 			if self.confidence_threshold > 0.2:
 				self.confidence_threshold -= 0.1
 				print(self.confidence_threshold)
-
 
 			return
 		self.convert_to_string_and_publish(plan, alias)
@@ -1047,8 +1093,14 @@ class Grocery_packing:
 			self.action_pub.publish(a)
 			result = self.execute_sbp_action(action, alias)
 			if not result:
+				try:
+					os.remove('fdplan')
+				except:
+					pass
 				self.current_action = "Action: REPLANNING..."  
 				print('REPLANNING')
+				self.current_plan = 'Blah'
+				self.num_false+=1
 				a.data = 'REPLANNING'		
 				self.action_pub.publish(a)
 				print('Box num is: '+str(self.box.num_items))
@@ -1058,6 +1110,10 @@ class Grocery_packing:
 												mediumlist, heavylist)
 				self.plan_and_run_belief_space_planning(self.domain_path, new_problem_path, nalias)
 				break
+		try:
+			os.remove('fdplan')
+		except:
+			pass
 		a = String()
 		a.data = ''
 		
@@ -1075,16 +1131,19 @@ class Grocery_packing:
 		return True
 
 
-	def perform_optimistic_belief_grocery_packing(self):
+	def perform_optimistic_belief_grocery_packing(self,declutter=False):
 		empty_clutter = self.is_clutter_empty()
 
 		while not empty_clutter:
+			if declutter:
+				self.declutter_surface_items()
 			inboxlist, topfreelist, lightlist, heavylist = \
 					self.select_perceived_objects_and_classify_weights()
 			problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
 												lightlist, heavylist)
+
 			self.plan_and_run_belief_space_planning(self.domain_path, 
-														problem_path, alias)
+														problem_path, alias,declutter=declutter)
 			empty_clutter = self.is_clutter_empty()
 
 	
@@ -1129,7 +1188,7 @@ class Grocery_packing:
 		self.should_declutter = True
 		self.declutter_surface_items()
 		self.should_declutter = False
-		self.perform_optimistic_belief_grocery_packing()
+		self.perform_optimistic_belief_grocery_packing(declutter=True)
 		end = time.time()
 		total = end - start
 		exe = total - self.planning_time
@@ -1312,9 +1371,9 @@ class Grocery_packing:
 		self.plan_pub.publish(p)
 
 	def run_sbp(self, domain_path, problem_path, alias):
-		f = Fast_Downward()
+		# f = Planner()#PFast_Downward()
 		start = time.time()
-		plan = f.plan(domain_path, problem_path)
+		plan = self.f.plan(domain_path, problem_path)
 		if len(plan) == 0 or plan == None:
 			print('NO PLAN FOUND')
 			print(self.confidence_threshold)
@@ -1382,6 +1441,7 @@ class Grocery_packing:
 
 		elif action[0] == 'put-in-box':
 			x,y,z = self.box.add_item(alias[action[1]])
+			print(x,y,z)
 			success = self.put_in_box(alias[action[1]],x,y,z)
 
 		elif action[0] == 'put-in-clutter':
@@ -1599,9 +1659,9 @@ class Grocery_packing:
 		empty_clutter = self.is_clutter_empty()
 
 		while not empty_clutter:
-
+			print('Beginning while')
 			_,items_in_order,_,_ = self.select_perceived_objects_and_classify_weights()
-			
+			print('ITEMS IN ORDER: '+str(len(items_in_order)))
 			for item in items_in_order:
 				inboxlist, topfreelist, mediumlist, heavylist = \
 						self.select_perceived_objects_and_classify_weights()
@@ -1625,17 +1685,16 @@ class Grocery_packing:
 				else:
 					if item not in mediumlist:
 						mediumlist.append(item)
-					# self
-				# print(inboxlist)
-				# print(topfreelist)
-				# print(mediumlist)
-				# print(heavylist)
 
+				print('creating prob')
 				problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
 													mediumlist, heavylist)
+				print('planning and running')
 				self.plan_and_run_belief_space_planning(self.domain_path, 
-															problem_path, alias)
-				empty_clutter = self.is_clutter_empty()
+														problem_path, alias)
+			print('RUN IS OVER')
+			empty_clutter = self.is_clutter_empty()
+
 		end = time.time()
 		total = end-start
 		exe = total - self.planning_time
