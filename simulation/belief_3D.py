@@ -139,8 +139,8 @@ class Grocery_packing:
 
 		self.arrangement_difficulty = 'easy'
 		self.space_allowed = 'high'
-		arrangement_num = 1
-		self.init_clutter(arrangement_num)
+		self.arrangement_num = 1
+		self.init_clutter(self.arrangement_num)
 		# self.generate_clutter_coordinates(self.space_allowed)
 
 
@@ -1713,8 +1713,8 @@ class Grocery_packing:
 
 	def save_results(self, algo, planning_time, execution_time):
 		# return
-		f = open("results_v2.txt","a")		
-		f.write(algo)
+		f = open("results_"+self.arrangement_difficulty+'_'+self.space_allowed+'.txt',"a")		
+		f.write(algo+'_'+str(self.arrangement_num))
 		f.write('\n')
 		f.write('planning_time: '+str(planning_time)+'\n')
 		f.write('execution_time: '+str(execution_time) +'\n')
