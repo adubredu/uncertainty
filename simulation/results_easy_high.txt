@@ -8,3 +8,43 @@ planning_time: 29.719175815582275
 execution_time: 788.4675333499908
 num_pick_from_box: 8
 
+Declutter_1
+planning_time: 50.50744652748108
+execution_time: 993.6198964118958
+num_pick_from_box: 5
+
+Dynamic_mc_sample_1
+planning_time: 60.51199197769165
+execution_time: 794.5843224525452
+num_pick_from_box: 8
+
+Dynamic_weighted_sample_1
+planning_time: 30.16192603111267
+execution_time: 676.6515126228333
+num_pick_from_box: 5
+
+Dynamic_divergent_set_1_1
+planning_time: 35.17422127723694
+execution_time: 903.8745901584625
+num_pick_from_box: 8
+
+Pick_n_roll_1
+planning_time: 0
+execution_time: 651.386524438858
+num_pick_from_box: 0
+
+Pick_n_roll_1
+planning_time: 0
+execution_time: 841.9666891098022
+num_pick_from_box: 0
+
+Bag_sort_1
+planning_time: 0
+execution_time: 1031.9120421409607
+num_pick_from_box: 0
+
+Pick_n_roll_2
+planning_time: 0
+execution_time: 825.0264127254486
+num_pick_from_box: 0
+

@@ -1,56 +1,80 @@
-storage
---------
+(define (domain GROCERY)
+    (:requirements :strips :typing :adl)
+    (:types item)
+    (:predicates (on ?x - item ?y - item)
+                 (inbox ?x - item)
+                 (inclutter ?x - item)
+                 (beside ?x - item ?y - item)
+                 (handempty)
+                 (holding ?x - item)
+                 (topfree ?x - item)
+                 (boxfull)
+                 )
+                 
+    
+    (:action pick-up
+            :parameters (?x - item)
+            :precondition (and (topfree ?x) (handempty))
+            :effect
+            (and (holding ?x)
+                (not (handempty))
+                (not (inbox ?x))
+                (not (inclutter ?x))
+                (not (topfree ?x)))
+    )
 
-import os
-import numpy as np 
-
-# (:goal (and (on pepsi bleach) (on lipton pepsi) 
-# 	(toleft coke bleach) (toright nutella bleach)))
-
-heavy_objects = ['h1','h2','h3']
-medium_objects = ['m1','m2','m3','m4']
-
-goal = "(:goal (and "
-for h in heavy_objects:
-	goal += "(inbox "+h+") "
-	
-mlen=len(medium_objects)
-hlen=len(heavy_objects)
-stop = hlen
-goal += " (and "
-for m in medium_objects[:stop]:
-	goal += "(or "
-	for h in heavy_objects:
-		goal += "(on "+m+" "+h+") "
-	goal +=") "
-# goal+=")"
-for m in medium_objects[stop:]:
-	goal+="(or "
-	for mm in medium_objects[:stop]:
-		goal += "(on "+m+" "+mm+") "
-	goal+=")"
-goal +=")))"
-
-
-print(goal)
-
-# (:goal (or (and (beside h1 h2) (beside h1 h3))
-# 		    (and (beside h2 h1) (beside h2 h3)) 
-# 		    (and (beside h3 h1) (beside h3 h2))
-# 	   )
-# )
-
-# (:goal (and (or (on m1 h1) (on m1 h2) ) 
-# 			(or (on m2 h1) (on m2 h2) ) 
-# 			(or (on m3 m1) (on m3 m2) )))
-
-
-
-# (:goal (and (inbox h1) (inbox h2) (inbox h3)  
-# 			(and (or (on m1 h1) (on m1 h2) (on m1 h3) ) 
-# 				 (or (on m2 h1) (on m2 h2) (on m2 h3) ) 
-# 				 (or (on m3 h1) (on m3 h2) (on m3 h3) ) 
-# 				 (or (on m4 m1) (on m4 m2) (on m4 m3) )
-# 			)
-# 		)
-# )
+    (:action pick-from-box
+            :parameters (?x - item)
+            :precondition (and (topfree ?x) (handempty) (inbox ?x))
+            :effect
+            (and (holding ?x)
+                (not (handempty))
+                (not (inbox ?x))
+                (not (inclutter ?x))
+                (not (topfree ?x))
+                (not (boxfull)))
+    )
+    
+    (:action pick-from
+            :parameters (?x - item ?y - item)
+            :precondition (and (on ?x ?y) (topfree ?x) (handempty))
+            :effect
+            (and (holding ?x)
+                (not (handempty))
+                (not (inbox ?x))
+                (not (inclutter ?x))
+                (not (topfree ?x))
+                (topfree ?y))
+    )
+    
+    (:action put-in-clutter
+            :parameters (?x - item)
+            :precondition (holding ?x)
+            :effect
+            (and (not (holding ?x))
+                (handempty)
+                (inclutter ?x)
+                (topfree ?x))
+    )
+    
+    (:action put-in-box
+            :parameters (?x - item)
+            :precondition  (and (holding ?x) (not (boxfull)))
+            :effect
+            (and (not (holding ?x))
+                (handempty)
+                (inbox ?x)
+                (topfree ?x))
+    )
+    
+    (:action put-on 
+            :parameters (?x - item ?y - item)
+            :precondition (and (holding ?x) (topfree ?y) )
+            :effect
+            (and (not (holding ?x))
+                (on ?x ?y)
+                (handempty)
+                (topfree ?x)
+                (not (topfree ?y)))
+    )
+)

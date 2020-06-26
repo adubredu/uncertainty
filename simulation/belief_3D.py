@@ -35,7 +35,7 @@ class Gripper:
 		self.holding = None 
 
 class Box:
-	def __init__(self, bottom_capacity):
+	def __init__(self, bottom_capacity, vast=False):
 		self.cpty = bottom_capacity
 		self.full_cpty = 9
 		self.index = 0
@@ -49,6 +49,7 @@ class Box:
 			self.xs = [-0.55,  -0.45]
 
 		self.z = 0.8
+		self.vast = vast
 
 
 		#i is per row, j is per column
@@ -74,11 +75,14 @@ class Box:
 			self.items_added[item] = xyind
 			self.num_items+=1
 		else:
-			print('Box full')
-			print(self.items_added)
-			print(self.num_items)
-			return (99,99,99)
-		return x,y,self.z
+			if not self.vast:
+				print('Box full')
+				print(self.items_added)
+				print(self.num_items)
+				return (99,99,99)
+			else:
+				return -.5,0,.8
+		return x,y,0.8
 
 	def remove_item(self, item):
 		if item in self.items_added:
@@ -142,7 +146,7 @@ class Grocery_packing:
 
 		self.arrangement_difficulty = 'easy'
 		self.space_allowed = 'high'
-		self.arrangement_num = 5
+		self.arrangement_num = 3
 		self.init_clutter(self.arrangement_num)
 		# self.generate_clutter_coordinates(self.space_allowed)
 
@@ -168,20 +172,6 @@ class Grocery_packing:
 		self.perception = threading.Thread(target=self.start_perception,args=(1,))
 		self.perception.start()
 		# time.sleep(1000)
-
-
-	def get_plan(self, data):
-		raw = data.data 
-		if raw != 'Fail':
-			p = raw.split('_')
-			retplan = []
-			for act in p:
-				tup = act.replace(')','').replace('(','').replace("'","").split(' ')
-				tup = tuple(tup)
-				retplan.append(tup)
-			self.current_plan = retplan
-		else:
-			self.current_plan = None
 
 
 
@@ -364,7 +354,7 @@ class Grocery_packing:
 				shadow=True,
 					renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
-			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v8.pth', \
+			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v9_2.pth', \
 
 				['baseball',
 					  'beer',
@@ -501,7 +491,7 @@ class Grocery_packing:
 			time.sleep(1./self.fps)
 
 			self.refresh_world()
-
+		# print('start with x')
 		while math.fabs(self.lgripper.y - item.y)>self.delta or math.fabs(self.rgripper.y - item.y)>self.delta:
 			if self.lgripper.y < item.y:
 				self.lgripper.y+=self.delta
@@ -510,7 +500,7 @@ class Grocery_packing:
 			self.rgripper.y = self.lgripper.y
 			time.sleep(1./self.fps)
 			self.refresh_world()
-
+		# print('start with y')
 		while math.fabs(self.lgripper.z - (item.z+0.05))>self.delta:
 			if self.lgripper.z < (item.z+0.05):
 				self.lgripper.z+=self.delta
@@ -519,7 +509,7 @@ class Grocery_packing:
 			self.rgripper.z = self.lgripper.z
 			time.sleep(1./self.fps)
 			self.refresh_world()
-
+		# print('start with z')
 		##########################################
 		while math.fabs(self.lgripper.z - (olz+0.05))>self.delta:
 			if self.lgripper.z < (olz+0.05):
@@ -531,7 +521,7 @@ class Grocery_packing:
 			self.rgripper.z = self.lgripper.z
 			time.sleep(1./self.fps)
 			self.refresh_world()
-
+		# print('done with z')
 		while math.fabs(self.lgripper.x - (olx-(width/2)))>self.delta \
 		 or math.fabs(self.rgripper.x - (olx+(width/2)))>self.delta:
 			if self.lgripper.x < (olx-(width/2)):
@@ -546,7 +536,7 @@ class Grocery_packing:
 				self.rgripper.x-=self.delta
 			time.sleep(1./self.fps)
 			self.refresh_world()
-
+		# print('done with x')
 		while math.fabs(self.lgripper.y - oly)>self.delta or math.fabs(self.rgripper.y - oly)>self.delta:
 			if self.lgripper.y < oly:
 				self.lgripper.y+=self.delta
@@ -558,10 +548,13 @@ class Grocery_packing:
 			time.sleep(1./self.fps)
 
 			self.refresh_world()
+		# print('done with y')
 		return True
 
 
 	def put_in_box(self,targetID,bx,by,bz):
+		print('box coord: ',end='')
+		print((bx,by,bz))
 		item = self.items[targetID]
 		if item.dummy or bx == 99:
 			return False
@@ -865,7 +858,8 @@ class Grocery_packing:
 						nm2 = scene_belief[item][1][0]
 						wts = [cf1, cf2]/np.sum([cf1, cf2])
 						choice = np.random.choice([nm1, nm2], size=1,p=wts)
-						confident_seen_list.append(choice[0])
+						if not self.items[choice[0]].inbox:
+							confident_seen_list.append(choice[0])
 						print('USED NUM FALSE')
 					elif len(scene_belief[item]) > 2 and self.num_false > 2:
 						cf1 = scene_belief[item][0][1]
@@ -876,11 +870,13 @@ class Grocery_packing:
 						nm3 = scene_belief[item][2][0]
 						wts = [cf1, cf2, cf3]/np.sum([cf1, cf2,cf3])
 						choice = np.random.choice([nm1, nm2,nm3], size=1,p=wts)
-						confident_seen_list.append(choice[0])
+						if not self.items[choice[0]].inbox:
+							confident_seen_list.append(choice[0])
 						print('USED NUM FALSE')
 					else:
 						# if self.items[item].inclutter:  #BIAS TO ONLY RECOGNIZE ITEMS IN CLUTTER
-						confident_seen_list.append(item)
+						if not self.items[item].inbox:
+							confident_seen_list.append(item)
 		print('confidently scene items: '+str(confident_seen_list))
 		# for item in self.objects_list:
 		# 	if item.inbox and not item.dummy:
@@ -1041,7 +1037,7 @@ class Grocery_packing:
 				plan = f.read()
 		except:
 			return None
-		p = plan.split('\n')[:-2]
+		p = plan.split('\n')
 		retplan = []
 		for act in p:
 			tup = act.replace(')','').replace('(','').replace("'","").replace(" ","").split(',')
@@ -1069,7 +1065,7 @@ class Grocery_packing:
 		print(plan)
 		self.planning_time += time.time()-start
 
-		if plan is None or len(plan) == 0:
+		if plan is None or len(plan) <= 1:
 			print('NO VALID PLAN FOUND')
 			print(self.scene_belief)
 			if declutter:
@@ -1080,6 +1076,16 @@ class Grocery_packing:
 				print(self.confidence_threshold)
 
 			return
+
+		for action in plan:
+			if action[1] not in alias:
+				print('wrong aliasing')
+				return
+			else:
+				if len(action) == 3:
+					if action[2] not in alias:
+						print('wrong aliasing')
+						return
 		self.convert_to_string_and_publish(plan, alias)
 		for action in plan:
 			a = String()
@@ -1373,15 +1379,33 @@ class Grocery_packing:
 	def run_sbp(self, domain_path, problem_path, alias):
 		# f = Planner()#PFast_Downward()
 		start = time.time()
-		plan = self.f.plan(domain_path, problem_path)
-		if len(plan) == 0 or plan == None:
-			print('NO PLAN FOUND')
-			print(self.confidence_threshold)
+
+		b = Bool(); b.data = True; self.should_plan.publish(b)
+		time.sleep(5)
+		plan = self.read_plan()
+		print(plan)
+		self.planning_time += time.time()-start
+
+		if plan is None or len(plan) <= 1:
+			print('NO VALID PLAN FOUND')
+			print(self.scene_belief)
 			self.num_false +=1
 			if self.confidence_threshold > 0.2:
 				self.confidence_threshold -= 0.1
+				print(self.confidence_threshold)
+
 			return
-		self.planning_time += time.time() - start
+
+		for action in plan:
+			if action[1] not in alias:
+				print('wrong aliasing')
+				return
+			else:
+				if len(action) == 3:
+					if action[2] not in alias:
+						print('wrong aliasing')
+						return
+
 		self.convert_to_string_and_publish(plan,alias)
 		
 		for action in plan:
@@ -1409,6 +1433,10 @@ class Grocery_packing:
 				break
 		a = String()
 		a.data = ''
+		try:
+			os.remove('fdplan')
+		except:
+			pass
 		
 		self.action_pub.publish(a)
 		self.plan_pub.publish(a)
@@ -1498,11 +1526,11 @@ class Grocery_packing:
 			sampled_items = self.single_sample(occluded_items)
 			joined=''
 			for it in set(sampled_items):
-				joined+= it+'_'
+				joined+= it+'*'
 			mc_samples.append(joined[:-1])
 
 		final_sample = max(set(mc_samples), key=mc_samples.count)
-		sample = final_sample.split('_')
+		sample = final_sample.split('*')
 		return sample
 
 
@@ -1709,7 +1737,7 @@ class Grocery_packing:
 		st = time.time()
 		items_in_order = self.get_objects_in_order()
 		light = []
-		box = Box(3)
+		box = Box(3,vast=True)
 		box.cascade = True 
 
 		for item in items_in_order:
@@ -1739,7 +1767,7 @@ class Grocery_packing:
 		st = time.time()
 		items_in_order = self.get_objects_in_order()
 		light = []; heavy=[]
-		box = Box(3)
+		box = Box(3,vast=True)
 		box.cascade = True 
 
 		for item in items_in_order:

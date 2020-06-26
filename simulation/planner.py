@@ -32,6 +32,6 @@ if __name__=='__main__':
 		# p = Planner()
 		# prob = open('newprob.pddl','r').read()
 		# open('newprob.pddl','w').write(prob)
-	f = Fast_Downward()
+	f = Planner()
 	print(f.plan('belief_domain.pddl', 'newprob.pddl'))
 	time.sleep(2)
