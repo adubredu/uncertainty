@@ -1,0 +1,100 @@
+Declutter_1
+planning_time: 50.33370876312256
+execution_time: 3033.319062948227
+num_pick_from_box: 6
+
+Dynamic_mc_sample_1
+planning_time: 45.16190028190613
+execution_time: 723.7907752990723
+num_pick_from_box: 3
+
+Dynamic_mc_sample_2
+planning_time: 110.49508142471313
+execution_time: 683.0549283027649
+num_pick_from_box: 3
+
+Dynamic_weighted_sample_2
+planning_time: 50.22696089744568
+execution_time: 2305.45320892334
+num_pick_from_box: 6
+
+Dynamic_divergent_set_1_2
+planning_time: 55.37569189071655
+execution_time: 968.513322353363
+num_pick_from_box: 6
+
+Dynamic_mc_sample_3
+planning_time: 45.20345401763916
+execution_time: 871.2465748786926
+num_pick_from_box: 4
+
+Dynamic_weighted_sample_3
+planning_time: 55.2287700176239
+execution_time: 1362.511006116867
+num_pick_from_box: 7
+
+Dynamic_divergent_set_1_4
+planning_time: 100.52751851081848
+execution_time: 1653.8467149734497
+num_pick_from_box: 5
+
+Declutter_5
+planning_time: 65.28746175765991
+execution_time: 998.414057970047
+num_pick_from_box: 6
+
+Dynamic_weighted_sample_5
+planning_time: 125.58237171173096
+execution_time: 1054.3252701759338
+num_pick_from_box: 5
+
+Pick_n_roll_1
+planning_time: 0
+execution_time: 468.00683856010437
+num_pick_from_box: 0
+
+Bag_sort_1
+planning_time: 0
+execution_time: 539.7900183200836
+num_pick_from_box: 0
+
+Pick_n_roll_2
+planning_time: 0
+execution_time: 448.920125246048
+num_pick_from_box: 0
+
+Bag_sort_2
+planning_time: 0
+execution_time: 549.744745016098
+num_pick_from_box: 0
+
+Pick_n_roll_3
+planning_time: 0
+execution_time: 465.3257420063019
+num_pick_from_box: 0
+
+Bag_sort_3
+planning_time: 0
+execution_time: 548.1432917118073
+num_pick_from_box: 0
+
+Pick_n_roll_4
+planning_time: 0
+execution_time: 462.2213182449341
+num_pick_from_box: 0
+
+Bag_sort_4
+planning_time: 0
+execution_time: 562.1186397075653
+num_pick_from_box: 0
+
+Pick_n_roll_5
+planning_time: 0
+execution_time: 440.7636797428131
+num_pick_from_box: 0
+
+Bag_sort_5
+planning_time: 0
+execution_time: 556.4452579021454
+num_pick_from_box: 0
+

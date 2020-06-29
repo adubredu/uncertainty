@@ -144,9 +144,9 @@ class Grocery_packing:
 		self.should_plan = rospy.Publisher('/should_plan', Bool, queue_size=1)
 
 
-		self.arrangement_difficulty = 'easy'
-		self.space_allowed = 'high'
-		self.arrangement_num = 3
+		self.arrangement_difficulty = 'hard'
+		self.space_allowed = 'low'
+		self.arrangement_num = 2
 		self.init_clutter(self.arrangement_num)
 		# self.generate_clutter_coordinates(self.space_allowed)
 
@@ -354,7 +354,7 @@ class Grocery_packing:
 				shadow=True,
 					renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
-			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v9_2.pth', \
+			model = core.Model.load('/home/bill/backyard/grocery_detector_v9_2.pth', \
 
 				['baseball',
 					  'beer',
@@ -472,8 +472,8 @@ class Grocery_packing:
 		item.inclutter = False 
 		self.gripper.holding = targetID
 
-		(olx,oly,olz) = self.lgripper.get_position()
-		(orx,ory,orz) = self.rgripper.get_position()
+		(olx,oly,olz) = (-0.13,-.5,1.5)
+		(orx,ory,orz) = (-0.1, -.5, 1.5)
 
 		width = self.items[targetID].width
 		breadth = self.items[targetID].breadth
@@ -553,8 +553,6 @@ class Grocery_packing:
 
 
 	def put_in_box(self,targetID,bx,by,bz):
-		print('box coord: ',end='')
-		print((bx,by,bz))
 		item = self.items[targetID]
 		if item.dummy or bx == 99:
 			return False
@@ -1168,9 +1166,8 @@ class Grocery_packing:
 
 	def perform_declutter(self):
 		obs = []; too_close=[]
-		for item in self.items:
-			if item!='table' and item!='lgripper' and\
-				item!='rgripper' and item!='tray':
+		for item in self.item_list:
+			if self.items[item].inclutter:
 				obs.append(item)
 		for item1 in obs:
 			for item2 in obs:
@@ -1178,9 +1175,10 @@ class Grocery_packing:
 					it1 = self.items[item1]
 					it2 = self.items[item2]
 					dist = np.sqrt((it1.x-it2.x)**2+(it1.y-it2.y)**2)
-					if dist < 0.1:
+					if dist < 0.05 and self.items[item2].inclutter:
 						too_close.append(item2)
 		too_close = list(set(too_close))
+		print(too_close)
 
 		for item in too_close:
 			self.pick_up(item)
@@ -1191,9 +1189,9 @@ class Grocery_packing:
 	def perform_declutter_belief_grocery_packing(self):
 		time.sleep(5)
 		start = time.time()
-		self.should_declutter = True
-		self.declutter_surface_items()
-		self.should_declutter = False
+		# self.should_declutter = True
+		# self.declutter_surface_items()
+		# self.should_declutter = False
 		self.perform_optimistic_belief_grocery_packing(declutter=True)
 		end = time.time()
 		total = end - start
@@ -1236,7 +1234,7 @@ class Grocery_packing:
 				mc+=1
 
 
-		init = "(:init (handempty) "
+		init = "(:init "
 		for item in inbox:
 			init += "(inbox "+alias[item]+") "
 			it = self.items[item].item_on_top
@@ -1295,6 +1293,8 @@ class Grocery_packing:
 		if self.gripper.holding is not None:
 			print('IS HOLDING '+self.gripper.holding)
 			init+="(holding "+alias[self.gripper.holding]+") "
+		else:
+			init+='(handempty) '
 		init +=  ")\n"
 
 		goal = "(:goal (and "
@@ -1469,7 +1469,6 @@ class Grocery_packing:
 
 		elif action[0] == 'put-in-box':
 			x,y,z = self.box.add_item(alias[action[1]])
-			print(x,y,z)
 			success = self.put_in_box(alias[action[1]],x,y,z)
 
 		elif action[0] == 'put-in-clutter':
@@ -1581,7 +1580,11 @@ class Grocery_packing:
 					occluded_items.append(self.scene_belief[item])
 
 		if len(occluded_items) == 0:
-			return 0,1
+			r = np.random.randint(2)
+			if r == 0:
+				return 1,0
+			else:
+				return 0,1
 		#one-time weighted sample. To change sampling strategy, alter 
 		#the function: self.high_uncertainty_sample(name)
 		if sample_procedure == 'weighted_sample':
@@ -1629,16 +1632,24 @@ class Grocery_packing:
 
 
 	def declutter_surface_items(self):
+		self.perform_declutter()
+		'''
 		occluded_items = []
+		num = int(len(self.item_list)/4)
+
+		for item in self.item_list:
+			if self.items[item].inclutter:
+				occluded_items.append(item)
 		# print(self.scene_belief)
-		for item in self.scene_belief:
-			if not self.items[item].dummy:
-				if len(self.scene_belief[item]) > 0:
-					if self.scene_belief[item][0][1] < self.confidence_threshold+0.3:
-						occluded_items.append(self.scene_belief[item][0][0])
-		for item in occluded_items:
+		# for item in self.scene_belief:
+		# 	if not self.items[item].dummy:
+		# 		if len(self.scene_belief[item]) > 0:
+		# 			if self.scene_belief[item][0][1] < self.confidence_threshold+0.3:
+		# 				occluded_items.append(self.scene_belief[item][0][0])
+		for item in occluded_items[:num]:
 			self.pick_up(item)
 			self.put_in_clutter(item)
+		'''
 		
 
 	def perform_dynamic_grocery_packing(self,sample_procedure):
@@ -1922,10 +1933,11 @@ def test_pick_place():
 if __name__ == '__main__':
 	args = sys.argv
 	if len(args) != 2:
-		print("Arguments should be strategy and difficulty")
+		print("Arguments should be strategy and order")
 	else:        
 		rospy.init_node('grocery_packing')
 		strategy = args[1]
+		# order = int(args[2])
 		g = Grocery_packing()
 
 		time.sleep(30)
