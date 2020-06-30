@@ -57,8 +57,8 @@ class Fast_Downward:
         self.default_max_time = 30 # INF
         self.default_planner = 'ff-lazy'
         self.max_fd_cost = 1e8
-        self.plan_file = '/home/bill/uncertainty/simulation/sas_plan'
-        self.fd_path = '/home/bill/backyard/FastDownward/downward/fast-downward.py'
+        self.plan_file = '/home/alphonsus/3dmodels/uncertainty/simulation/sas_plan'
+        self.fd_path = '/home/alphonsus/3dmodels/FastDownward/fast-downward.py'
 
         # self.fd_path = '/home/developer/garage/FastDownward/fast-downward.py'
 

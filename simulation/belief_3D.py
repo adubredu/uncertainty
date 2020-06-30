@@ -187,7 +187,7 @@ class Grocery_packing:
 		a=''
 		for it in self.items_in_box:
 			a+=it 
-			a+='_'
+			a+='*'
 		a=a[:-1]
 		b = String()
 		b.data = a 
@@ -354,7 +354,7 @@ class Grocery_packing:
 				shadow=True,
 					renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
-			model = core.Model.load('/home/bill/backyard/grocery_detector_v9_2.pth', \
+			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v9_2.pth', \
 
 				['baseball',
 					  'beer',
@@ -442,7 +442,7 @@ class Grocery_packing:
 						 cd[1]), (cd[2], cd[3]),color , 1)
 						cv2.putText(camera_view, nm+':'+str(round(cf,2)), (cd[0],cd[1]-10),\
 							cv2.FONT_HERSHEY_SIMPLEX, 0.5, color,2)
-						scene_data.data +=nm+'-'+str(round(cf,2))+'_'
+						scene_data.data +=nm+'-'+str(round(cf,2))+'*'
 			
 			self.scene_belief_publisher.publish(scene_data)
 
@@ -1048,7 +1048,6 @@ class Grocery_packing:
 		#FDREPLAN ALGO
 
 	def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias, declutter=False):
-		f = Fast_Downward()
 		start = time.time()
 		
 		b = Bool(); b.data = True; self.should_plan.publish(b)
@@ -1062,6 +1061,7 @@ class Grocery_packing:
 		plan = self.read_plan()
 		print(plan)
 		self.planning_time += time.time()-start
+		self.convert_to_string_and_publish(plan,alias)
 
 		if plan is None or len(plan) <= 1:
 			print('NO VALID PLAN FOUND')
@@ -1078,11 +1078,13 @@ class Grocery_packing:
 		for action in plan:
 			if action[1] not in alias:
 				print('wrong aliasing')
+				print(alias)
 				return
 			else:
 				if len(action) == 3:
 					if action[2] not in alias:
 						print('wrong aliasing')
+						print(alias)
 						return
 		self.convert_to_string_and_publish(plan, alias)
 		for action in plan:
@@ -1365,12 +1367,13 @@ class Grocery_packing:
 	def convert_to_string_and_publish(self,plan,alias):
 		concat = ''
 		for action in plan:
-			action = list(action)
-			action[1] = alias[action[1]]
-			if len(action) == 3:
-				action[2] = alias[action[2]]
-			concat+=str(action)
-			concat+='_'
+			if action[0]!='Fail':
+				action = list(action)
+				action[1] = alias[action[1]]
+				if len(action) == 3:
+					action[2] = alias[action[2]]
+				concat+=str(action)
+				concat+='_'
 		p = String()
 		p.data = concat
 		

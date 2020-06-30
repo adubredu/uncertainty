@@ -101,22 +101,24 @@ class  visualizer:
 				self.display_text(p, 360, y, (0,0,0), 15)
 			y+=20
 
-		objects = self.scene_belief.split('_')[:-1]
+		objects = self.scene_belief.split('*')[:-1]
+		# print(objects)
 
 		for name, (x,y) in zip(objects, self.object_coordinates):
 			nc = name.split('-')
 			nm = nc[0]; cf=nc[1]
-			self.win.blit(pygame.image.load('assets/'+nm+'.jpg'), (x,y))
+			self.win.blit(pygame.image.load('assets/'+nm+'.png'), (x,y))
 			self.display_text(cf, x, y-16, (0,0,0),14)
 
 
-		bobjects = self.box_items.split('_')
-		# print(bobjects)
+		bobjects = self.box_items.split('*')
+		print(bobjects)
 
 
 		if not self.box_items == 'None' or not self.box_items == '':
 			for name, (x,y) in zip(bobjects, self.box_coordinates):
-				self.win.blit(pygame.image.load('assets/'+name+'.jpg'), (x,y))
+				if name != '' and name!='None':
+					self.win.blit(pygame.image.load('assets/'+name+'.png'), (x,y))
 
 		self.display_text('Items in Grocery Box', 10, 360, (0,0, 255), 17)
 		self.display_text('Duration: '+self.duration+' seconds', 400, 600, (100,250,100), 18)
