@@ -15,6 +15,7 @@ class  visualizer:
 		self.plan = 'None' 
 		self.box_items = 'None'
 		self.method = 'None'
+		self.holding = 'None'
 		self.stay_alive = True
 		self.clock = pygame.time.Clock()
 
@@ -26,13 +27,12 @@ class  visualizer:
 		self.win = pygame.display.set_mode((self.window_width,self.window_height))
 		self.win.fill((255,255,255))
 
-		self.object_coordinates = [(50,100), (150,100), (250,100), 
-								   (50,200), (150,200), (250,200), 
-								   (50,300), (150,300), (250,300), 
-								   (50,400), (150,400), (250,400)]
-		self.box_coordinates = [(50,400), (150,400), (250,400), (300,400),
-							   (50,500), (150,500), (250,500),  (300,500),
-							   (50,600), (150,600), (250,600), 	(300, 600)]
+		self.object_coordinates = [(10,100), (50,100), (90,100), (130,100),(170,100),(210,100),(250,100),(290,100),(330,100),
+								   (10,200), (50,200), (90,200), (130,200),(170,200),(210,200),(250,200),(290,200),(330,200), 
+								   (10,300), (50,300), (90,300), (130,300),(170,300),(210,300),(250,300),(290,300),(330,300)]
+		self.box_coordinates = [(10,400), (50,400), (90,400), (130,400),(170,400),(210,400),(250,400),(290,400),(330,400),
+								   (10,500), (50,500), (90,500), (130,500),(170,500),(210,500),(250,500),(290,500),(330,500), 
+								   (10,600), (50,600), (90,600), (130,600),(170,600),(210,600),(250,600),(290,600),(330,600)]
 		# self.box_items = 'ambrosia_apple_banana_bottle_cereal_coke_lipton_lysol_milk_nutella_orange_oreo'
 
 		# while not rospy.is_shutdown():
@@ -43,6 +43,8 @@ class  visualizer:
 		rospy.Subscriber('/method', String, self.method_callback)
 		rospy.Subscriber('/box_items', String, self.boxitems_callback)
 		rospy.Subscriber('/time', String, self.time_callback)
+		rospy.Subscriber('/holding', String, self.holding_callback)
+
 
 		rospy.spin()
 
@@ -59,6 +61,10 @@ class  visualizer:
 
 	def plan_callback(self, inputs):
 		self.plan = inputs.data
+		self.refresh_window()
+
+	def holding_callback(self, inputs):
+		self.holding = inputs.data 
 		self.refresh_window()
 
 	def time_callback(self, inputs):
@@ -93,7 +99,7 @@ class  visualizer:
 		pygame.draw.line(self.win, (0,0,0), (350,90), (800,90),2)
 		self.display_text('Current Plan: ', 360, 120, (0,0,255),17)
 		y = 150
-		plan = self.plan.split('_')[:-1]
+		plan = self.plan.split('*')[:-1]
 		for p in plan:
 			if p == self.current_action:
 				self.display_text(p, 360, y, (255,0,0), 15)
@@ -112,7 +118,7 @@ class  visualizer:
 
 
 		bobjects = self.box_items.split('*')
-		print(bobjects)
+		# print(bobjects)
 
 
 		if not self.box_items == 'None' or not self.box_items == '':
@@ -123,6 +129,9 @@ class  visualizer:
 		self.display_text('Items in Grocery Box', 10, 360, (0,0, 255), 17)
 		self.display_text('Duration: '+self.duration+' seconds', 400, 600, (100,250,100), 18)
 		self.display_text('Method: '+self.method, 400, 620, (0,100,250), 18)
+
+		self.display_text('Gripper holding: '+self.holding, 10, 620, (250,100,250), 18)
+
 
 		pygame.display.update()
 		self.clock.tick(self.fps)

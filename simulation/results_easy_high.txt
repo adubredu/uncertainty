@@ -48,3 +48,23 @@ planning_time: 0
 execution_time: 825.0264127254486
 num_pick_from_box: 0
 
+Optimistic_3
+planning_time: 101.23642802238464
+execution_time: 413.06228160858154
+num_pick_from_box: 3
+
+Dynamic_mc_sample_1
+planning_time: 45.5844988822937
+execution_time: 520.3715491294861
+num_pick_from_box: 6
+
+Dynamic_weighted_sample_1
+planning_time: 50.462801456451416
+execution_time: 512.582884311676
+num_pick_from_box: 6
+
+Dynamic_divergent_set_1_1
+planning_time: 30.156885862350464
+execution_time: 910.3896200656891
+num_pick_from_box: 6
+

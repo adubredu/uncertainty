@@ -98,3 +98,13 @@ planning_time: 0
 execution_time: 556.4452579021454
 num_pick_from_box: 0
 
+Declutter_1
+planning_time: 35.42808938026428
+execution_time: 1437.1711831092834
+num_pick_from_box: 7
+
+Dynamic_mc_sample_3
+planning_time: 75.39352059364319
+execution_time: 1491.302763223648
+num_pick_from_box: 9
+

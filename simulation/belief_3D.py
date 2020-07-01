@@ -135,6 +135,7 @@ class Grocery_packing:
 		self.items = self.shopping_list.get_items_dict()
 		self.objects_list = self.shopping_list.get_items_list()
 		self.items_in_box = []
+		self.deccount = 0
 
 		self.plan_pub = rospy.Publisher('/plan', String, queue_size=1)
 		self.boxitems_pub = rospy.Publisher('/box_items', String, queue_size=1)
@@ -142,9 +143,10 @@ class Grocery_packing:
 		self.action_pub = rospy.Publisher('/current_action', String, queue_size=1)
 		self.method_pub = rospy.Publisher('/method', String, queue_size=1)
 		self.should_plan = rospy.Publisher('/should_plan', Bool, queue_size=1)
+		self.holding_pub = rospy.Publisher('/holding', String, queue_size=1)
 
 
-		self.arrangement_difficulty = 'hard'
+		self.arrangement_difficulty = 'easy'
 		self.space_allowed = 'low'
 		self.arrangement_num = 2
 		self.init_clutter(self.arrangement_num)
@@ -549,6 +551,9 @@ class Grocery_packing:
 
 			self.refresh_world()
 		# print('done with y')
+		hold = String()
+		hold.data = item.name 
+		self.holding_pub.publish(hold)
 		return True
 
 
@@ -1373,7 +1378,7 @@ class Grocery_packing:
 				if len(action) == 3:
 					action[2] = alias[action[2]]
 				concat+=str(action)
-				concat+='_'
+				concat+='*'
 		p = String()
 		p.data = concat
 		
@@ -1635,6 +1640,9 @@ class Grocery_packing:
 
 
 	def declutter_surface_items(self):
+		a = String()
+		a.data = "Decluttering..."
+		self.action_pub.publish(a)
 		self.perform_declutter()
 		'''
 		occluded_items = []
@@ -1668,13 +1676,19 @@ class Grocery_packing:
 			unoccluded_items = topfreelist
 			oh, sh = self.estimate_clutter_content(unoccluded_items,inboxlist,sample_procedure)
 			print("probs are "+str(oh)+" "+str(sh))
+			if self.deccount >=5:
+				sh = 1; oh = 0;
+				self.deccount = 0
+				print('do opt now')
 
 			if sh >= oh:
 				print('\nPERFORMING OPT\n')
 				self.plan_and_run_belief_space_planning(self.domain_path, \
 										problem_path, alias)
+				
 			else:
 				print(('\nPERFORMING DECLUTTER\n'))
+				self.deccount+=1
 				self.declutter_surface_items()
 			
 			empty_clutter = self.is_clutter_empty()
