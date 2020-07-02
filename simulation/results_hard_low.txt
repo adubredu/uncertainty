@@ -1,85 +1,50 @@
-Declutter_1
-planning_time: 55.257323265075684
-execution_time: 936.8186218738556
-num_pick_from_box: 4
-
 Pick_n_roll_1
 planning_time: 0
-execution_time: 435.3082435131073
+execution_time: 462.9405343532562
 num_pick_from_box: 0
 
 Bag_sort_1
 planning_time: 0
-execution_time: 542.4636542797089
+execution_time: 558.895361661911
 num_pick_from_box: 0
 
 Pick_n_roll_2
 planning_time: 0
-execution_time: 457.6488356590271
+execution_time: 450.56321811676025
 num_pick_from_box: 0
 
 Bag_sort_2
 planning_time: 0
-execution_time: 547.0715200901031
+execution_time: 561.0275466442108
 num_pick_from_box: 0
 
 Pick_n_roll_3
 planning_time: 0
-execution_time: 467.0895321369171
+execution_time: 452.35930466651917
 num_pick_from_box: 0
 
 Bag_sort_3
 planning_time: 0
-execution_time: 548.3578124046326
+execution_time: 549.9019596576691
 num_pick_from_box: 0
 
 Pick_n_roll_4
 planning_time: 0
-execution_time: 458.80176186561584
+execution_time: 448.95247077941895
 num_pick_from_box: 0
 
 Bag_sort_4
 planning_time: 0
-execution_time: 545.060964345932
+execution_time: 545.2439634799957
 num_pick_from_box: 0
 
 Pick_n_roll_5
 planning_time: 0
-execution_time: 459.14789366722107
+execution_time: 475.48525047302246
 num_pick_from_box: 0
 
 Bag_sort_5
 planning_time: 0
-execution_time: 548.7814288139343
+execution_time: 533.4064452648163
 num_pick_from_box: 0
-
-Dynamic_mc_sample_1
-planning_time: 70.35657024383545
-execution_time: 1258.639719247818
-num_pick_from_box: 4
-
-Dynamic_weighted_sample_1
-planning_time: 70.32641458511353
-execution_time: 962.6787037849426
-num_pick_from_box: 3
-
-Dynamic_divergent_set_1_1
-planning_time: 60.25776791572571
-execution_time: 822.6888709068298
-num_pick_from_box: 5
-
-Declutter_2
-planning_time: 65.25637626647949
-execution_time: 1035.3676953315735
-num_pick_from_box: 4
-
-Dynamic_mc_sample_2
-planning_time: 65.33462381362915
-execution_time: 1243.4124293327332
-num_pick_from_box: 4
-
-Dynamic_weighted_sample_2
-planning_time: 70.23458218574524
-execution_time: 1039.9610073566437
-num_pick_from_box: 6
 

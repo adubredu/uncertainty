@@ -25,6 +25,9 @@ planeId = p.loadURDF("plane/plane.urdf")
 tableId = p.loadURDF("table/table.urdf",[0,0,0],p.getQuaternionFromEuler([0,0,0]))
 
 trayId = p.loadURDF("container/container.urdf", [-.5,.0,0.65],p.getQuaternionFromEuler([0,0,0]))
+# tid = p.loadTexture('container/boxtexture.png')
+# p.changeVisualShape(trayId, -1, textureUniqueId=tid)
+
 
 
 
@@ -97,7 +100,6 @@ class Grocery_packing:
 		self.start_time = time.time()
 		self.time_pub = rospy.Publisher('/time', String, queue_size=1)
 
-		self.box = Box(3)
 		self.gripper = Gripper()
 		self.item_list = ['baseball',
 					  'beer',
@@ -149,6 +151,12 @@ class Grocery_packing:
 		self.arrangement_difficulty = 'easy'
 		self.space_allowed = 'low'
 		self.arrangement_num = 2
+
+		if self.space_allowed == 'high':
+			self.box = Box(3)
+		else:
+			self.box = Box(2) 
+			self.box.full_cpty = 4
 		self.init_clutter(self.arrangement_num)
 		# self.generate_clutter_coordinates(self.space_allowed)
 
@@ -356,7 +364,7 @@ class Grocery_packing:
 				shadow=True,
 					renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
-			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v9_2.pth', \
+			model = core.Model.load('/home/bill/backyard/grocery_detector_v9_2.pth', \
 
 				['baseball',
 					  'beer',
@@ -659,7 +667,12 @@ class Grocery_packing:
 		# item.inbox = True
 		self.gripper.holding = None
 		bot.item_on_top = topitem
-		self.items_in_box.append(topitem)
+		if bot.inbox:
+			item.inbox = True
+			self.items_in_box.append(topitem)
+		else:
+			item.inclutter=True
+			item.inbox=False
 		# if bot.inclutter:
 		# 	item.inclutter = True
 		# elif bot.inbox:
@@ -1066,7 +1079,7 @@ class Grocery_packing:
 		plan = self.read_plan()
 		print(plan)
 		self.planning_time += time.time()-start
-		self.convert_to_string_and_publish(plan,alias)
+		
 
 		if plan is None or len(plan) <= 1:
 			print('NO VALID PLAN FOUND')
@@ -1079,7 +1092,7 @@ class Grocery_packing:
 				print(self.confidence_threshold)
 
 			return
-
+		self.convert_to_string_and_publish(plan,alias)
 		for action in plan:
 			if action[1] not in alias:
 				print('wrong aliasing')
