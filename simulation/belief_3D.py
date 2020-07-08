@@ -149,7 +149,7 @@ class Grocery_packing:
 
 
 		self.arrangement_difficulty = 'easy'
-		self.space_allowed = 'low'
+		self.space_allowed = 'high'
 		self.arrangement_num = 5
 
 		if self.space_allowed == 'high':
