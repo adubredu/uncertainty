@@ -178,10 +178,9 @@ class Grocery_packing:
 		
 		self.num_false = 0
 		self.alive = True
-		# self.f = Planner()
+		
 		self.perception = threading.Thread(target=self.start_perception,args=(1,))
 		self.perception.start()
-		# time.sleep(1000)
 
 
 
@@ -486,7 +485,6 @@ class Grocery_packing:
 		(orx,ory,orz) = (-0.1, -.5, 1.5)
 
 		width = self.items[targetID].width
-		breadth = self.items[targetID].breadth
 
 		while math.fabs(self.lgripper.x - (item.x-(width/2)))>self.delta \
 		 or math.fabs(self.rgripper.x - (item.x+(width/2)))>self.delta:
@@ -494,7 +492,7 @@ class Grocery_packing:
 				self.lgripper.x+=self.delta
 			else:
 				self.lgripper.x-=self.delta
-			if self.rgripper.x < (item.x+(breadth/2)):
+			if self.rgripper.x < (item.x+(width/2)):
 				self.rgripper.x+=self.delta
 			else:
 				self.rgripper.x-=self.delta
@@ -540,7 +538,7 @@ class Grocery_packing:
 			else:
 				self.lgripper.x-=self.delta
 				item.x-=self.delta
-			if self.rgripper.x < (olx+(breadth/2)):
+			if self.rgripper.x < (olx+(width/2)):
 				self.rgripper.x+=self.delta
 			else:
 				self.rgripper.x-=self.delta
@@ -577,7 +575,6 @@ class Grocery_packing:
 		(orx,ory,orz) = self.rgripper.get_position()
 
 		width = self.items[targetID].width
-		breadth = self.items[targetID].breadth
 
 		while math.fabs(self.lgripper.x - (bx-(width/2)))>self.delta \
 		 or math.fabs(self.rgripper.x - (bx+(width/2)))>self.delta:
@@ -587,7 +584,7 @@ class Grocery_packing:
 			else:
 				self.lgripper.x-=self.delta
 				item.x-=self.delta
-			if self.rgripper.x < (bx+(breadth/2)):
+			if self.rgripper.x < (bx+(width/2)):
 				self.rgripper.x+=self.delta
 			else:
 				self.rgripper.x-=self.delta
@@ -636,7 +633,7 @@ class Grocery_packing:
 			else:
 				self.lgripper.x-=self.delta
 				
-			if self.rgripper.x < (olx+(breadth/2)):
+			if self.rgripper.x < (olx+(width/2)):
 				self.rgripper.x+=self.delta
 			else:
 				self.rgripper.x-=self.delta
@@ -685,7 +682,6 @@ class Grocery_packing:
 		(orx,ory,orz) = self.rgripper.get_position()
 
 		width = item.width
-		breadth = item.breadth
 
 		while math.fabs(self.lgripper.x - (bx-(width/2)))>self.delta \
 		 or math.fabs(self.rgripper.x - (bx+(width/2)))>self.delta:
@@ -695,7 +691,7 @@ class Grocery_packing:
 			else:
 				self.lgripper.x-=self.delta
 				item.x-=self.delta
-			if self.rgripper.x < (bx+(breadth/2)):
+			if self.rgripper.x < (bx+(width/2)):
 				self.rgripper.x+=self.delta
 			else:
 				self.rgripper.x-=self.delta
@@ -744,7 +740,7 @@ class Grocery_packing:
 			else:
 				self.lgripper.x-=self.delta
 				
-			if self.rgripper.x < (olx+(breadth/2)):
+			if self.rgripper.x < (olx+(width/2)):
 				self.rgripper.x+=self.delta
 			else:
 				self.rgripper.x-=self.delta
@@ -780,7 +776,6 @@ class Grocery_packing:
 		(orx,ory,orz) = self.rgripper.get_position()
 
 		width = item.width
-		breadth = item.breadth
 
 		while math.fabs(self.lgripper.x - (bx-(width/2)))>self.delta \
 		 or math.fabs(self.rgripper.x - (bx+(width/2)))>self.delta:
@@ -790,7 +785,7 @@ class Grocery_packing:
 			else:
 				self.lgripper.x-=self.delta
 				item.x-=self.delta
-			if self.rgripper.x < (bx+(breadth/2)):
+			if self.rgripper.x < (bx+(width/2)):
 				self.rgripper.x+=self.delta
 			else:
 				self.rgripper.x-=self.delta
@@ -839,7 +834,7 @@ class Grocery_packing:
 			else:
 				self.lgripper.x-=self.delta
 				
-			if self.rgripper.x < (olx+(breadth/2)):
+			if self.rgripper.x < (olx+(width/2)):
 				self.rgripper.x+=self.delta
 			else:
 				self.rgripper.x-=self.delta
@@ -1910,54 +1905,85 @@ def test_pick_place():
 	# g.put_on('lysol', 'cereal')
 	# g.pick_up('lysol')
 	# g.put_in_clutter('lysol')
-	g.pick_up('bottle')
-	i,j,k = box.add_item('bottle')
-	g.put_in_box('bottle',i,j,k)
+	g.pick_up('beer')
+	i,j,k = box.add_item('beer')
+	g.put_in_box('beer',i,j,k)
 	print(g.scene_belief)
 	print("\n**********************************\n")
 
-	g.pick_up('nutella')
-	i,j,k = box.add_item('nutella')
-	g.put_in_box('nutella',i,j,k)
-	print(g.scene_belief)
-	print("\n**********************************\n")
+	g.pick_up('mustard')
+	g.put_on('mustard','beer')
+
+	g.pick_up('can_coke')
+	g.put_on('can_coke', 'mustard')
+
+	g.pick_up('soccer_ball')
+	g.put_on('soccer_ball','can_coke')
+
+	g.pick_up('can_sprite')
+	g.put_on('can_sprite','soccer_ball')
+
+	g.pick_up('gelatin')
+	g.put_on('gelatin','can_sprite')
+
+	g.pick_up('soup')
+	g.put_on('soup','gelatin')
+
+	g.pick_up('cracker')
+	g.put_on('cracker','soup')
+
+	g.pick_up('cup')
+	g.put_on('cup','cracker')
+
+	g.pick_up('sugar')
+	g.put_on('sugar','cup')
+
+	g.pick_up('plate')
+	g.put_on('plate','sugar')
+	time.sleep(30)
+
+	# g.pick_up('mustard')
+	# i,j,k = box.add_item('mustard')
+	# g.put_in_box('mustard',i,j,k)
+	# print(g.scene_belief)
+	# print("\n**********************************\n")
 
 
-	g.pick_up('coke')
-	i,j,k = box.add_item('coke')
-	g.put_in_box('coke',i,j,k)
-	print(g.scene_belief)
-	print("\n**********************************\n")
+	# g.pick_up('can_coke')
+	# i,j,k = box.add_item('can_coke')
+	# g.put_in_box('can_coke',i,j,k)
+	# print(g.scene_belief)
+	# print("\n**********************************\n")
 
 
-	g.pick_up('cereal')
-	i,j,k = box.add_item('cereal')
-	g.put_in_box('cereal',i,j,k)
-	print(g.scene_belief)
-	print("\n**********************************\n")
+	# g.pick_up('soccer_ball')
+	# i,j,k = box.add_item('soccer_ball')
+	# g.put_in_box('soccer_ball',i,j,k)
+	# print(g.scene_belief)
+	# print("\n**********************************\n")
 
-	g.pick_up('lipton')
-	i,j,k = box.add_item('lipton')
-	g.put_in_box('lipton',i,j,k)
-	print(g.scene_belief)
-	print("\n**********************************\n")
+	# g.pick_up('can_sprite')
+	# i,j,k = box.add_item('can_sprite')
+	# g.put_in_box('can_sprite',i,j,k)
+	# print(g.scene_belief)
+	# print("\n**********************************\n")
 
-	g.pick_up('orange')
-	i,j,k = box.add_item('orange')
-	g.put_in_box('orange',i,j,k)
-	print(g.scene_belief)
-	print("\n**********************************\n")
+	# g.pick_up('gelatin')
+	# i,j,k = box.add_item('gelatin')
+	# g.put_in_box('gelatin',i,j,k)
+	# print(g.scene_belief)
+	# print("\n**********************************\n")
 
-	g.pick_up('apple')
-	i,j,k = box.add_item('apple')
-	g.put_in_box('apple',i,j,k)
-	print(g.scene_belief)
-	print("\n**********************************\n")
+	# g.pick_up('soup')
+	# i,j,k = box.add_item('soup')
+	# g.put_in_box('soup',i,j,k)
+	# print(g.scene_belief)
+	# print("\n**********************************\n")
 
-	g.pick_up('lysol')
-	i,j,k = box.add_item('lysol')
-	g.put_in_box('lysol',i,j,k)	
-	print(g.scene_belief)
+	# g.pick_up('cracker')
+	# i,j,k = box.add_item('cracker')
+	# g.put_in_box('cracker',i,j,k)	
+	# print(g.scene_belief)
 
 
 if __name__ == '__main__':
@@ -1967,7 +1993,8 @@ if __name__ == '__main__':
 	else:        
 		rospy.init_node('grocery_packing')
 		strategy = args[1]
-		# order = int(args[2])
+		# test_pick_place()
+		order = int(args[2])
 		g = Grocery_packing()
 
 		time.sleep(30)

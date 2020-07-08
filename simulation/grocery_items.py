@@ -73,55 +73,55 @@ class Shopping_List:
 		self.rgripper = Grocery_item(urdf_path="gripper/wsg50_one_motor_gripper_right_finger.urdf",
 			object_name='rgripper',urdf=True, p=p,x=-0.1, y=-.5, z=1.5, orr=0, op=3.14, oy=3.14)
 		self.baseball = Grocery_item(urdf_path='models/baseball/textured.obj',
-			object_name='baseball', height=0.073, urdf=False, p=p)
+			object_name='baseball', height=0.07, width=0.08, urdf=False, p=p)
 		self.bottle_beer = Grocery_item(urdf_path='models/bottle_beer/model.sdf',
-			object_name='beer', mass='heavy',height=0.16, urdf=True, p=p, x=0.15)
+			object_name='beer', mass='heavy',height=0.25,width=0.08, urdf=True, p=p, x=0.15)
 		self.can_coke = Grocery_item(urdf_path='models/can_coke/coke.obj',
-			object_name='can_coke', height=0.122, orr=1.57, urdf=False, p=p, x=0.3)
+			object_name='can_coke', height=0.17,width=0.08, orr=1.57, urdf=False, p=p, x=0.3)
 		self.can_pepsi = Grocery_item(urdf_path='models/can_pepsi/pepsi.obj',
-			object_name='can_pepsi',height=0.122, orr=1.57, urdf=False, p=p, x=0.45)
+			object_name='can_pepsi',height=0.17,width=0.08, orr=1.57, urdf=False, p=p, x=0.45)
 		self.can_fanta = Grocery_item(urdf_path='models/can_fanta/fanta.obj',
-			object_name='can_fanta', height=0.122,orr=1.57, urdf=False, p=p, x=0.6)
+			object_name='can_fanta', height=0.17,width=0.08,orr=1.57, urdf=False, p=p, x=0.6)
 		self.can_sprite = Grocery_item(urdf_path='models/can_sprite/sprite.obj',
-			object_name='can_sprite',height=0.122, orr=1.57, urdf=False, p=p, x=0.75)
+			object_name='can_sprite',height=0.17, width=0.08,orr=1.57, urdf=False, p=p, x=0.75)
 		self.chips_can = Grocery_item(urdf_path='models/chips_can/textured.obj',
-			object_name='chips_can', height=0.3, urdf=False, p=p, x=0.9)
+			object_name='chips_can', height=0.3, width=0.08,urdf=False, p=p, x=0.9)
 		self.coffee_box = Grocery_item(urdf_path='models/coffee_box/model.sdf',
-			object_name='coffee_box', mass='heavy',height=0.17, oy=3.14, urdf=True, p=p, x=1.05,
+			object_name='coffee_box', mass='heavy',width=0.08,height=0.17, oy=3.14, urdf=True, p=p, x=1.05,
 			texture='models/coffee_box/materials/textures/coffee_box.png')
 		self.cracker = Grocery_item(urdf_path='models/cracker/meshes/cracker.obj',
-			object_name='chips_can',mass='heavy', height=0.23, oy=-1.57, urdf=False, p=p, x=1.2)
+			object_name='chips_can',mass='heavy', width=0.2,height=0.3, oy=-1.57, urdf=False, p=p, x=1.2)
 		self.cup = Grocery_item(urdf_path='models/cup/textured.obj',
-			object_name='cup',mass='heavy', height=0.1, urdf=False, p=p, x=1.35)
+			object_name='cup',mass='heavy', height=0.1,width=0.08, urdf=False, p=p, x=1.35)
 		self.donut = Grocery_item(urdf_path='models/donut/model.sdf',
-			object_name='donut',height=0.041, urdf=True, p=p, x=1.5)
+			object_name='donut',height=0.041, width=0.1,urdf=True, p=p, x=1.5)
 		self.fork = Grocery_item(urdf_path='models/fork/textured.obj',
-			object_name='fork',height=0.1, urdf=False, p=p, x=1.65)
+			object_name='fork',height=0.1, width=0.05,urdf=False, p=p, x=1.65)
 		self.gelatin = Grocery_item(urdf_path='models/gelatin/meshes/gelatin.obj',
-			object_name='gelatin', mass='heavy',height=0.094,z=0.005, op=1.9,orr=1.65, urdf=False, p=p, x=1.8)
+			object_name='gelatin', mass='heavy',width=0.08,height=0.11,z=0.005, op=1.9,orr=1.65, urdf=False, p=p, x=1.8)
 		self.meat = Grocery_item(urdf_path='models/meat/meshes/meat.obj',
-			object_name='meat', mass='heavy',urdf=False, height=0.094, p=p, x=1.95)
+			object_name='meat', mass='heavy',urdf=False,width=0.08, height=0.094, p=p, x=1.95)
 		self.mustard = Grocery_item(urdf_path='models/mustard/meshes/mustard.obj',
-			object_name='mustard',height=0.2, urdf=False, oy=3.14, p=p, x=2.05)
+			object_name='mustard',height=0.25, urdf=False, width=0.12,oy=3.14, p=p, x=2.05)
 		self.newspaper = Grocery_item(urdf_path='models/newspaper/model.sdf',
 			object_name='newspaper',height=0.005, urdf=True, p=p, x=2.2,
 			texture='models/newspaper/materials/textures/news.png')
 		self.orange = Grocery_item(urdf_path='models/orange/textured.obj',
-			object_name='orange', height=0.076,urdf=False, p=p, x=2.35)
+			object_name='orange', height=0.076,width=0.08,urdf=False, p=p, x=2.35)
 		self.pear = Grocery_item(urdf_path='models/pear/textured.obj',
-			object_name='pear', height=0.076, urdf=False, p=p, y=-0.5)
+			object_name='pear', height=0.076, width=0.08,urdf=False, p=p, y=-0.5)
 		self.plate = Grocery_item(urdf_path='models/bowl/textured.obj',
-			object_name='plate',mass='heavy', height=0.05, urdf=False, p=p, x=0.2, y=-0.5)
+			object_name='plate',mass='heavy', width=0.2,height=0.05, urdf=False, p=p, x=0.2, y=-0.5)
 		self.soccer_ball = Grocery_item(urdf_path='models/soccer_ball/textured.obj',
-			object_name='soccer_ball',mass='heavy',height=0.15, urdf=False, p=p, x=0.35, y=-0.5)
+			object_name='soccer_ball',mass='heavy',width=0.15,height=0.15, urdf=False, p=p, x=0.35, y=-0.5)
 		self.soup = Grocery_item(urdf_path='models/soup/meshes/soup.obj',
-			object_name='soup',mass='heavy',height=0.11, oy=3.14, urdf=False, p=p, x=0.5, y=-0.5)
+			object_name='soup',mass='heavy',height=0.14, width=0.08,oy=3.14, urdf=False, p=p, x=0.5, y=-0.5)
 		self.sponge = Grocery_item(urdf_path='models/sponge/textured.obj',
-			object_name='sponge',height=0.1, oy=1.57, urdf=False, p=p, x=0.75, y=-0.5)
+			object_name='sponge',height=0.1, oy=1.57,width=0.08, urdf=False, p=p, x=0.75, y=-0.5)
 		self.sugar =  Grocery_item(urdf_path='models/sugar/meshes/sugar.obj',
-			object_name='sugar',mass='heavy',height=0.17, oy=-1.57, urdf=False, p=p, x=0.9, y=-0.5)
+			object_name='sugar',mass='heavy',width=0.08,height=0.2, oy=-1.57, urdf=False, p=p, x=0.9, y=-0.5)
 		self.toy = Grocery_item(urdf_path='models/toy_airplane/textured.obj',
-			object_name='toy',height=0.08, oy=2.2, urdf=False, p=p, x=1.05, y=-0.5)
+			object_name='toy',height=0.08,width=0.05, oy=2.2, urdf=False, p=p, x=1.05, y=-0.5)
 		#################################################################
 		
 

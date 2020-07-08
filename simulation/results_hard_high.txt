@@ -1,0 +1,30 @@
+Optimistic_1
+planning_time: 85.82361483573914
+execution_time: 491.4075939655304
+num_pick_from_box: 6
+
+Declutter_2
+planning_time: 55.42624878883362
+execution_time: 672.5858156681061
+num_pick_from_box: 7
+
+Dynamic_mc_sample_2
+planning_time: 50.491581439971924
+execution_time: 1137.2267520427704
+num_pick_from_box: 6
+
+Dynamic_weighted_sample_1
+planning_time: 40.22563338279724
+execution_time: 1318.9733216762543
+num_pick_from_box: 5
+
+Dynamic_weighted_sample_1
+planning_time: 121.30653786659241
+execution_time: 504.66830253601074
+num_pick_from_box: 6
+
+Dynamic_divergent_set_1_1
+planning_time: 50.63060474395752
+execution_time: 685.4271523952484
+num_pick_from_box: 7
+
