@@ -68,3 +68,8 @@ planning_time: 160.74006056785583
 execution_time: 367.43430948257446
 num_pick_from_box: 4
 
+Dynamic_mc_sample_4
+planning_time: 70.25340986251831
+execution_time: 676.4578623771667
+num_pick_from_box: 3
+

@@ -128,3 +128,63 @@ planning_time: 55.21253681182861
 execution_time: 1101.4990725517273
 num_pick_from_box: 0
 
+Dynamic_random_1
+planning_time: 40.172266721725464
+execution_time: 1608.1742987632751
+num_pick_from_box: 2
+
+Dynamic_random_2
+planning_time: 35.20578169822693
+execution_time: 1745.2296271324158
+num_pick_from_box: 0
+
+Dynamic_random_3
+planning_time: 75.34829425811768
+execution_time: 1270.3345952033997
+num_pick_from_box: 2
+
+Dynamic_weighted_sample_1
+planning_time: 70.42112708091736
+execution_time: 962.5131232738495
+num_pick_from_box: 0
+
+Dynamic_weighted_sample_2
+planning_time: 45.13713455200195
+execution_time: 1076.5651257038116
+num_pick_from_box: 0
+
+Dynamic_weighted_sample_3
+planning_time: 30.110053300857544
+execution_time: 659.4407939910889
+num_pick_from_box: 2
+
+Dynamic_weighted_sample_4
+planning_time: 60.31839632987976
+execution_time: 675.4977989196777
+num_pick_from_box: 1
+
+Dynamic_mc_sample_1
+planning_time: 45.1824426651001
+execution_time: 1112.2489404678345
+num_pick_from_box: 2
+
+Dynamic_mc_sample_3
+planning_time: 30.088086366653442
+execution_time: 1204.4582121372223
+num_pick_from_box: 0
+
+Dynamic_random_4
+planning_time: 45.20242691040039
+execution_time: 893.1218483448029
+num_pick_from_box: 1
+
+Declutter_1
+planning_time: 30.16116237640381
+execution_time: 1033.5453608036041
+num_pick_from_box: 2
+
+Dynamic_mc_sample_1
+planning_time: 65.29921412467957
+execution_time: 653.5137140750885
+num_pick_from_box: 4
+

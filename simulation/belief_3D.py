@@ -148,9 +148,9 @@ class Grocery_packing:
 		self.holding_pub = rospy.Publisher('/holding', String, queue_size=1)
 
 
-		self.arrangement_difficulty = 'easy'
-		self.space_allowed = 'high'
-		self.arrangement_num = 5
+		self.arrangement_difficulty = 'hard'
+		self.space_allowed = 'low'
+		self.arrangement_num = 1
 
 		if self.space_allowed == 'high':
 			self.box = Box(3)
@@ -1611,6 +1611,16 @@ class Grocery_packing:
 			# SAMPLE MULTIPLE TIMES FROM ORIGINAL WEIGHT AND CHOOSE ONE WITH
 			# HIGHEST FREQ
 			sampled_occluded_items = self.monte_carlo_sample(occluded_items)
+			ws = self.single_sample(occluded_items)
+			f=open('compare_samples.txt','a')
+			f.write('mc: '+str(sampled_occluded_items))
+			f.write('\n')
+			f.write('wd: '+str(ws))
+			f.write('\n')
+			f.write('gt: '+str(occluded_items))
+			f.write('************************************\n')
+			f.write('\n')
+			f.close()
 
 		elif sample_procedure == 'divergent_set_1':
 			# 1. DRAW MULTIPLE SAMPLES, SCORE THEM BY SIMILARITY TO MC SAMPLE
@@ -1669,7 +1679,39 @@ class Grocery_packing:
 			self.pick_up(item)
 			self.put_in_clutter(item)
 		'''
-		
+	
+	def perform_random_dynamic_grocery_packing(self):
+		st = time.time()
+		empty_clutter = self.is_clutter_empty()
+
+		while not empty_clutter:
+			inboxlist, topfreelist, mediumlist, heavylist = \
+					self.select_perceived_objects_and_classify_weights()
+			problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
+												mediumlist, heavylist)
+			
+			r = np.random.randint(2)
+
+			if r == 1:
+				print('\nPERFORMING OPT\n')
+				self.plan_and_run_belief_space_planning(self.domain_path, \
+										problem_path, alias)
+				
+			else:
+				print(('\nPERFORMING DECLUTTER\n'))
+				self.deccount+=1
+				self.declutter_surface_items()
+			
+			empty_clutter = self.is_clutter_empty()
+		end = time.time()
+		total = end-st
+		exe = total-self.planning_time
+		print('PLANNING TIME FOR DYNAMIC: '+str(self.planning_time))
+		print('EXECUTION TIME FOR DYNAMIC: '+str(total-self.planning_time))
+		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+
+		self.save_results('Dynamic_random',self.planning_time,exe)
+
 
 	def perform_dynamic_grocery_packing(self,sample_procedure):
 		st = time.time()
@@ -1890,6 +1932,11 @@ class Grocery_packing:
 			m.data = strategy
 			self.method_pub.publish(m)
 			self.perform_dynamic_grocery_packing('divergent_set_1')
+		elif strategy == 'random-dynamic':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
+			self.perform_random_dynamic_grocery_packing()
 		self.alive = False
 		a = Bool()
 		a.data = False
@@ -1994,7 +2041,7 @@ if __name__ == '__main__':
 		rospy.init_node('grocery_packing')
 		strategy = args[1]
 		# test_pick_place()
-		order = int(args[2])
+		# order = int(args[2])
 		g = Grocery_packing()
 
 		time.sleep(30)
