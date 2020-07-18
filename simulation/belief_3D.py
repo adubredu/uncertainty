@@ -14,6 +14,7 @@ from planner import Planner
 import rospy
 from std_msgs.msg import String, Bool
 from grocery_items import Shopping_List, Grocery_item
+import pomcp
 
 physicsClient = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -1586,6 +1587,14 @@ class Grocery_packing:
 		pass
 
 
+	def get_whole_scene_belief(self):
+		belief = []
+		for item in self.scene_belief:
+			if len(self.scene_belief[item]) > 0:
+				belief.append(self.scene_belief[item])
+		return belief
+
+
 	def estimate_clutter_content(self,surface_items,inboxlist,sample_procedure):
 		
 		# occluded are items in self.scene_belief whose confidence < threshold
@@ -1874,6 +1883,71 @@ class Grocery_packing:
 		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
 
 		self.save_results('Bag_sort',0,duration)
+
+
+	def perform_pomcp(self):
+		start = time.time()
+		empty_clutter = self.is_clutter_empty()
+
+		while not empty_clutter:
+			belief = self.get_whole_scene_belief()
+			state = pomcp.State(state_space, belief)
+			root_node = pomcp.Node(state)
+			st = time.time()
+			result_root = pomcp.perform_pomcp(root_node, num_iterations=1000)
+			self.planning_time += time.time()-st
+			select_node = pomcp.select_action(result_root,infer=True)
+			action = select_node.birth_action
+			self.execute_pomcp_action(action)
+
+			empty_clutter = self.is_clutter_empty()
+
+		end = time.time()
+		total = end-start
+		exe = total - self.planning_time
+		print('PLANNING TIME FOR POMCP: '+str(self.planning_time))
+		print('EXECUTION TIME FOR POMCP: '+str(exe))
+		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+
+		self.save_results('pomcp',self.planning_time,exe)
+
+
+
+
+	def execute_pomcp_action(self,action):
+		self.current_action = "Action: "+str(action)
+		success = True
+		if action[0] == 'pick-from-clutter':
+			if not self.items[action[1]].inclutter:
+				print('Wrong pick')
+				return False
+			success = self.pick_up(action[1])
+			self.box.remove_item(action[1])
+
+		elif action[0] == 'pick-from-box':
+			if not self.items[action[1]].inbox:
+				print('Wrong pick')
+				return False
+			self.num_pick_from_box+=1
+			success = self.pick_up(action[1])
+			self.box.remove_item(action[1])
+
+		elif action[0] == 'pick-from':
+			self.num_pick_from_box+=1
+			success = self.pick_up(action[1])
+			self.box.remove_item(action[1])
+
+		elif action[0] == 'put-in-box':
+			x,y,z = self.box.add_item(action[1])
+			success = self.put_in_box(action[1],x,y,z)
+
+		elif action[0] == 'put-in-clutter':
+			success = self.put_in_clutter(action[1])
+
+		elif action[0] == 'put-on':
+			success = self.put_on(action[1], alias[action[2]])
+
+		return success
 
 
 	def save_results(self, algo, planning_time, execution_time):

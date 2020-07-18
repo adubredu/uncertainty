@@ -104,7 +104,7 @@ class Shopping_List:
 		self.mustard = Grocery_item(urdf_path='models/mustard/meshes/mustard.obj',
 			object_name='mustard',height=0.25, urdf=False, width=0.12,oy=3.14, p=p, x=2.05)
 		self.newspaper = Grocery_item(urdf_path='models/newspaper/model.sdf',
-			object_name='newspaper',height=0.005,dummy=True, urdf=True, p=p, x=2.2,
+			object_name='newspaper',height=0.005, urdf=True, p=p, x=2.2,
 			texture='models/newspaper/materials/textures/news.png')
 		self.orange = Grocery_item(urdf_path='models/orange/textured.obj',
 			object_name='orange', height=0.076,width=0.08,urdf=False, p=p, x=2.35)
@@ -115,7 +115,7 @@ class Shopping_List:
 		self.soccer_ball = Grocery_item(urdf_path='models/soccer_ball/textured.obj',
 			object_name='soccer_ball',mass='heavy',width=0.15,height=0.15, urdf=False, p=p, x=0.35, y=-0.5)
 		self.soup = Grocery_item(urdf_path='models/soup/meshes/soup.obj',
-			object_name='soup',mass='heavy',dummy=True,height=0.14, width=0.08,oy=3.14, urdf=False, p=p, x=0.5, y=-0.5)
+			object_name='soup',mass='heavy',height=0.14, width=0.08,oy=3.14, urdf=False, p=p, x=0.5, y=-0.5)
 		self.sponge = Grocery_item(urdf_path='models/sponge/textured.obj',
 			object_name='sponge',height=0.1, oy=1.57,width=0.08, urdf=False, p=p, x=0.75, y=-0.5)
 		self.sugar =  Grocery_item(urdf_path='models/sugar/meshes/sugar.obj',

@@ -1,10 +1,10 @@
 import numpy as np 
 import copy
 
-num_items = 10
+num_items = 5
 success = 0
 class State:
-	def __init__(self, state_space):
+	def __init__(self, state_space, scene_belief):
 		self.in_clutter = []
 		self.in_box = []
 		self.holding = None
@@ -13,18 +13,25 @@ class State:
 		self.handempty = True
 		self.heaviness = {}
 		self.state_space = state_space
+		self.num_mc_samples = 100
+		if scene_belief is not None:
+			self.belief = scene_belief
 		if state_space is not None:
 			self.populate_state(state_space)
 
 	def populate_state(self, state_space):
+		#perform sampling from scene_belief here
+		#this and the other will turn it into pomcp
+		#mainly sampling items in clutter
+		self.in_clutter = self.monte_carlo_sample()
 		if state_space['holding'] is None:
 			self.handempty = True
 		else:
 			self.holding = state_space['holding']
 		items = list(state_space['items'].values())
 		for item in items[:-2]:
-			if item.inclutter:
-				self.in_clutter.append(item.name)
+			# if item.inclutter:
+			# 	self.in_clutter.append(item.name)
 			if item.inbox:
 				self.in_box.append(item.name)
 			it = item.item_on_top
@@ -35,16 +42,55 @@ class State:
 			self.heaviness[item.name] = item.mass
 
 	def get_current_state(self):
-		state = State(None)
-		state.in_clutter = copy.deepcopy(self.in_clutter)
+		#mainly sampling items in clutter
+		state = State(None,None)
+		state.in_clutter = self.monte_carlo_sample()
 		state.in_box = copy.deepcopy(self.in_box)
 		state.holding = copy.deepcopy(self.holding)
 		state.topfree = copy.deepcopy(self.topfree)
 		state.on = copy.deepcopy(self.on)
 		state.handempty = copy.deepcopy(self.handempty)
 		state.heaviness = copy.deepcopy(self.heaviness)
+		state.belief = copy.deepcopy(self.belief)
 
 		return state
+
+	def single_sample(self):
+		sampled_items=[]
+		for bunch in self.belief:
+			# print(bunch)
+			items = [b[0] for b in bunch]
+			weights = [b[1] for b in bunch]
+			weights = weights/np.sum(weights)
+			sample = np.random.choice(items, size=1, p=weights)
+			sampled_items.append(sample[0])
+
+		return sampled_items
+
+
+	def monte_carlo_sample(self):
+		global num_items
+		mc_counts={}
+		items = list(set(self.in_clutter+self.in_box))
+		for t in items: mc_counts[t] = 0
+		mc_samples=[]
+		for i in range(self.num_mc_samples):
+			sampled_items = self.single_sample()
+			joined=''
+			for it in set(sampled_items):
+				joined+= it+'*'
+			mc_samples.append(joined[:-1])
+
+		final_sample = max(set(mc_samples), key=mc_samples.count)
+		sample = final_sample.split('*')
+
+		for it in self.in_box:
+			try:
+				sample.remove(it)
+			except:
+				pass
+		num_items = len(sample+self.in_box)
+		return sample
 
 
 
@@ -96,7 +142,10 @@ def get_next_state_node(node, action):
 	elif action[0] == 'pick-from-clutter':
 		next_state.holding = action[1]
 		next_state.handempty = False
-		next_state.in_clutter.remove(action[1])
+		try:
+			next_state.in_clutter.remove(action[1])
+		except:
+			pass
 		try:
 			next_state.topfree.remove(action[1])
 		except:
@@ -249,7 +298,7 @@ def select_action(node, infer=False):
 	return choice_node
 
 
-def perform_mcts(root, num_iterations=100):
+def perform_pomcp(root, num_iterations=100):
 	global success
 	iterr = 0
 	root_node = root
