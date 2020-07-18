@@ -31,7 +31,7 @@ trayId = p.loadURDF("container/container.urdf", [-.5,.0,0.65],p.getQuaternionFro
 if __name__ == '__main__':
 	shopping_list = Shopping_List(p)
 	items = shopping_list.get_items_dict()
-	itx = {k: items[k] for k in list(items)[:7]}	
+	itx = {k: items[k] for k in list(items)[:12]}	
 	state_space = {'holding': None, 'items':itx}
 	belief = [[('baseball',0.3), ('beer',0.5), ('can_coke',0.0), ('can_fanta',0.2),('can_pepsi',0.4)],
 			[('baseball',0.2), ('beer',0.3), ('can_coke',0.6), ('can_fanta',0.5),('can_pepsi',0.6)],

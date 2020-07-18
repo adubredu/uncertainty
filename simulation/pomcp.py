@@ -1,7 +1,7 @@
 import numpy as np 
 import copy
 
-num_items = 5
+
 success = 0
 class State:
 	def __init__(self, state_space, scene_belief):
@@ -11,11 +11,13 @@ class State:
 		self.topfree = []
 		self.on = []
 		self.handempty = True
+		self.total_num_items=10
 		self.heaviness = {}
 		self.state_space = state_space
 		self.num_mc_samples = 100
 		if scene_belief is not None:
 			self.belief = scene_belief
+			self.total_num_items = len(scene_belief)
 		if state_space is not None:
 			self.populate_state(state_space)
 
@@ -44,7 +46,8 @@ class State:
 	def get_current_state(self):
 		#mainly sampling items in clutter
 		state = State(None,None)
-		state.in_clutter = self.monte_carlo_sample()
+		clutter_sample = self.monte_carlo_sample()
+		state.in_clutter = clutter_sample[:len(self.in_clutter)]
 		state.in_box = copy.deepcopy(self.in_box)
 		state.holding = copy.deepcopy(self.holding)
 		state.topfree = copy.deepcopy(self.topfree)
@@ -52,6 +55,7 @@ class State:
 		state.handempty = copy.deepcopy(self.handempty)
 		state.heaviness = copy.deepcopy(self.heaviness)
 		state.belief = copy.deepcopy(self.belief)
+		state.total_num_items = copy.deepcopy(self.total_num_items)
 
 		return state
 
@@ -69,7 +73,7 @@ class State:
 
 
 	def monte_carlo_sample(self):
-		global num_items
+		# global num_items
 		mc_counts={}
 		items = list(set(self.in_clutter+self.in_box))
 		for t in items: mc_counts[t] = 0
@@ -89,7 +93,7 @@ class State:
 				sample.remove(it)
 			except:
 				pass
-		num_items = len(sample+self.in_box)
+		# num_items = len(sample+self.in_box)
 		return sample
 
 
@@ -117,7 +121,7 @@ class Node:
 		s="Node; children: %d; visits: %d; reward: %f"%(len(self.children), self.visits, self.value)
 		return s
 
-
+#state transition function (simulator)
 def get_next_state_node(node, action):
 	# state = node.state 
 	next_state = node.state.get_current_state()
@@ -254,7 +258,7 @@ def rollout_policy(node, depth=1000):
 	next_node = node
 	while True:
 		if len(next_node.state.in_clutter) == 0 and \
-			len(next_node.state.in_box) == num_items:
+			len(next_node.state.in_box) == next_node.state.total_num_items:
 			if successful_packing(next_node):
 				print('*'*50)
 				print('success!')

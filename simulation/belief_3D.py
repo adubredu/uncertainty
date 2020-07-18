@@ -149,9 +149,9 @@ class Grocery_packing:
 		self.holding_pub = rospy.Publisher('/holding', String, queue_size=1)
 
 
-		self.arrangement_difficulty = 'hard'
-		self.space_allowed = 'low'
-		self.arrangement_num = 1
+		self.arrangement_difficulty = 'easy'
+		self.space_allowed = 'high'
+		self.arrangement_num = 5
 
 		if self.space_allowed == 'high':
 			self.box = Box(3)
@@ -364,7 +364,7 @@ class Grocery_packing:
 				shadow=True,
 					renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
-			model = core.Model.load('/home/bill/backyard/grocery_detector_v9_2.pth', \
+			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v9_2.pth', \
 
 				['baseball',
 					  'beer',
@@ -1888,17 +1888,20 @@ class Grocery_packing:
 	def perform_pomcp(self):
 		start = time.time()
 		empty_clutter = self.is_clutter_empty()
+		state_space = {'holding':self.gripper.holding,
+		'items':self.items}
 
 		while not empty_clutter:
 			belief = self.get_whole_scene_belief()
 			state = pomcp.State(state_space, belief)
 			root_node = pomcp.Node(state)
 			st = time.time()
-			result_root = pomcp.perform_pomcp(root_node, num_iterations=1000)
+			result_root = pomcp.perform_pomcp(root_node, num_iterations=10)
 			self.planning_time += time.time()-st
 			select_node = pomcp.select_action(result_root,infer=True)
 			action = select_node.birth_action
 			self.execute_pomcp_action(action)
+
 
 			empty_clutter = self.is_clutter_empty()
 
@@ -2011,6 +2014,12 @@ class Grocery_packing:
 			m.data = strategy
 			self.method_pub.publish(m)
 			self.perform_random_dynamic_grocery_packing()
+		elif strategy == 'pomcp':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
+			self.perform_pomcp()
+
 		self.alive = False
 		a = Bool()
 		a.data = False
