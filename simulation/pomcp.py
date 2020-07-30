@@ -26,6 +26,9 @@ class State:
 		#this and the other will turn it into pomcp
 		#mainly sampling items in clutter
 		self.in_clutter = self.monte_carlo_sample()
+		if len(self.in_clutter) > 0:
+			if self.in_clutter[0] == '':
+				self.in_clutter=[]
 		if state_space['holding'] is None:
 			self.handempty = True
 		else:
@@ -47,8 +50,21 @@ class State:
 		#mainly sampling items in clutter
 		state = State(None,None)
 		clutter_sample = self.monte_carlo_sample()
-		state.in_clutter = clutter_sample[:len(self.in_clutter)]
-		state.in_box = copy.deepcopy(self.in_box)
+
+		if len(self.in_clutter) > 0:
+			if self.in_clutter[0]!='':
+				state.in_clutter = clutter_sample[:len(self.in_clutter)]
+			else:
+				state.in_clutter=[]
+		else:
+			state.in_clutter = []
+		if len(self.in_box)>0:
+			if self.in_box[0] != '':
+				state.in_box = copy.deepcopy(self.in_box)
+			else:
+				state.in_box=[]
+		else: 
+			state.in_box=[]
 		state.holding = copy.deepcopy(self.holding)
 		state.topfree = copy.deepcopy(self.topfree)
 		state.on = copy.deepcopy(self.on)
@@ -164,7 +180,10 @@ def get_next_state_node(node, action):
 		next_state.handempty = False
 		# print('picking from box: ',action[1])
 		# print(next_state.in_box)
-		next_state.in_box.remove(action[1])
+		try:
+			next_state.in_box.remove(action[1])
+		except:
+			pass
 		try:
 			next_state.topfree.remove(action[1])
 		except:
@@ -212,9 +231,13 @@ def get_valid_actions(node):
 
 	else:
 		for item in state.in_clutter:
+			if item=='':
+				print('clutter: ',state.in_clutter)
 			actions.append(('pick-from-clutter', item))
 
 		for item in state.in_box:
+			if item =='':
+				print('box: ',state.in_box)
 			actions.append(('pick-from-box', item))
 
 		for top,bottom in state.on:
@@ -258,7 +281,8 @@ def rollout_policy(node, depth=1000):
 	next_node = node
 	while True:
 		if len(next_node.state.in_clutter) == 0 and \
-			len(next_node.state.in_box) == next_node.state.total_num_items:
+			len(next_node.state.in_box) == next_node.state.total_num_items \
+			and len(next_node.state.in_box)>0:
 			if successful_packing(next_node):
 				print('*'*50)
 				print('success!')
@@ -269,13 +293,10 @@ def rollout_policy(node, depth=1000):
 			else:
 				return -10
 		actions = get_valid_actions(next_node)
-		# print(actions)
-		index = np.random.randint(len(actions))
-		random_action = actions[index]
-		# print(random_action)
-		# print(next_node.state.in_box)
-		next_node = get_next_state_node(next_node, random_action)
-		# print('was successful')
+		if len(actions) > 0:
+			index = np.random.randint(len(actions))
+			random_action = actions[index]
+			next_node = get_next_state_node(next_node, random_action)
 		iteration += 1
 		if iteration > depth:
 			return -10
@@ -298,6 +319,8 @@ def select_action(node, infer=False):
 			bestscore = score
 	if infer:
 		print('Best score is: ',bestscore)
+	if len(bestchildren) == 0:
+		return None
 	choice_node = np.random.choice(bestchildren)
 	return choice_node
 
@@ -318,14 +341,17 @@ def perform_pomcp(root, num_iterations=100):
 				depth = 0
 			else:
 				expand_node(root_node)
-				child_node = root_node.children[0]
-				value = rollout_policy(child_node)
-				backup(child_node, value)
-				print('expanding')
+				if len(root_node.children)>0:
+					child_node = root_node.children[0]
+					value = rollout_policy(child_node)
+					backup(child_node, value)
+					print('expanding')
 				root_node = root
 				depth = 0
 		else:
 			resultant_node = select_action(root_node)
+			if resultant_node == None:
+				return None
 			root_node = resultant_node
 			depth +=1
 			print('depth is ',depth)

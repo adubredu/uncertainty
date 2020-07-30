@@ -26,7 +26,7 @@ class Fast_Downward:
             'ff-eager-pref': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
                              '--search "eager_greedy([h],preferred=[h],max_time=%s,bound=%s)"',
             'ff-lazy': '--heuristic "h=ff(transform=adapt_costs(cost_type=PLUSONE))" '
-                       '--search "lazy_greedy([h],preferred=[h],max_time=300)"',
+                       '--search "lazy_greedy([h],preferred=[h],max_time=300)" ',
             'goal-lazy': '--heuristic "h=goalcount(transform=no_transform())" '
                          '--search "lazy_greedy([h],randomize_successors=True,max_time=%s,bound=%s)"',
             'add-random-lazy': '--heuristic "h=add(transform=adapt_costs(cost_type=PLUSONE))" '
@@ -57,8 +57,8 @@ class Fast_Downward:
         self.default_max_time = 30 # INF
         self.default_planner = 'ff-lazy'
         self.max_fd_cost = 1e8
-        self.plan_file = '/home/bill/uncertainty/simulation/sas_plan'
-        self.fd_path = '/home/bill/backyard/FastDownward/fast-downward.py'
+        self.plan_file = '/home/alphonsus/3dmodels/uncertainty/simulation/sas_plan'
+        self.fd_path = '/home/alphonsus/3dmodels/FastDownward/fast-downward.py'
 
         # self.fd_path = '/home/developer/garage/FastDownward/fast-downward.py'
 

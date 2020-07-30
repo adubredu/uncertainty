@@ -90,7 +90,7 @@ class Shopping_List:
 			object_name='coffee_box', mass='heavy',width=0.08,height=0.17, oy=3.14, urdf=True, p=p, x=1.05,
 			texture='models/coffee_box/materials/textures/coffee_box.png')
 		self.cracker = Grocery_item(urdf_path='models/cracker/meshes/cracker.obj',
-			object_name='chips_can',mass='heavy', width=0.2,height=0.3, oy=-1.57, urdf=False, p=p, x=1.2)
+			object_name='cracker',mass='heavy', width=0.2,height=0.3, oy=-1.57, urdf=False, p=p, x=1.2)
 		self.cup = Grocery_item(urdf_path='models/cup/textured.obj',
 			object_name='cup',mass='heavy', height=0.1,width=0.08, urdf=False, p=p, x=1.35)
 		self.donut = Grocery_item(urdf_path='models/donut/model.sdf',

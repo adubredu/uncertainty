@@ -151,7 +151,7 @@ class Grocery_packing:
 
 		self.arrangement_difficulty = 'easy'
 		self.space_allowed = 'high'
-		self.arrangement_num = 5
+		self.arrangement_num = 3
 
 		if self.space_allowed == 'high':
 			self.box = Box(3)
@@ -165,6 +165,7 @@ class Grocery_packing:
 		self.planning_time = 0
 		self.num_mc_samples = 100
 		self.num_pick_from_box = 0
+		self.raw_belief_space = None
 		self.domain_path='/home/alphonsus/3dmodels/uncertainty/pddl/belief_domain.pddl'
 
 
@@ -424,7 +425,7 @@ class Grocery_packing:
 					kcd = key.split('_')
 					ikcd = [float(i) for i in kcd]
 					dist = np.sqrt((ikcd[0] - mid[0])**2 + (ikcd[1]-mid[1])**2)
-					if dist < 10:
+					if dist < 5:
 						clusters[key].append(box)
 						fit = True
 						break
@@ -437,8 +438,9 @@ class Grocery_packing:
 				maxind = np.argmax(weights)
 				maxweightedbox = clusters[key][maxind]
 				scene[maxweightedbox['name']] = [(box['name'], box['confidence'], \
-								box['coordinates']) for box in clusters[key]]
+								box['coordinates'].tolist()) for box in clusters[key]]
 
+			self.raw_belief_space = scene
 			self.scene_belief = normalize_scene_weights(scene)
 			scene_data = String()
 			scene_data.data = ''
@@ -457,6 +459,10 @@ class Grocery_packing:
 			self.scene_belief_publisher.publish(scene_data)
 
 			# print(self.scene_belief)
+			# print('***'*50)
+			# print(self.raw_belief_space)
+			# print('&&&'*50)
+			# print('\n\n')
 
 			cv2.imshow('Grocery Item detection', camera_view)
 			if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -858,8 +864,13 @@ class Grocery_packing:
 	def select_perceived_objects_and_classify_weights(self):
 		confident_seen_list = []; inbox_list = []
 		lightlist = []; heavylist=[]
-		scene_belief = copy.deepcopy(self.scene_belief)
+		# scene_belief = copy.deepcopy(self.scene_belief)
+		items_seen = list(self.raw_belief_space.keys())
+		for it in items_seen:
+			if not self.items[it].inbox:
+				confident_seen_list.append(it)
 
+		'''
 		for item in scene_belief:
 			if len(scene_belief[item]) > 0 and item in self.items:
 				if scene_belief[item][0][1] >= self.confidence_threshold:
@@ -889,6 +900,8 @@ class Grocery_packing:
 						# if self.items[item].inclutter:  #BIAS TO ONLY RECOGNIZE ITEMS IN CLUTTER
 						if not self.items[item].inbox:
 							confident_seen_list.append(item)
+		'''
+
 		print('confidently scene items: '+str(confident_seen_list))
 		# for item in self.objects_list:
 		# 	if item.inbox and not item.dummy:
@@ -1117,6 +1130,9 @@ class Grocery_packing:
 					os.remove('fdplan')
 				except:
 					pass
+				if self.is_clutter_empty():
+					return
+				 
 				self.current_action = "Action: REPLANNING..."  
 				print('REPLANNING')
 				self.current_plan = 'Blah'
@@ -1125,7 +1141,7 @@ class Grocery_packing:
 				self.action_pub.publish(a)
 				print('Box num is: '+str(self.box.num_items))
 				inboxlist, topfreelist, mediumlist, heavylist = \
-					self.select_perceived_objects_and_classify_weights()
+					self.sample_belief_space()
 				new_problem_path, nalias = self.create_pddl_problem(inboxlist, topfreelist,
 												mediumlist, heavylist)
 				self.plan_and_run_belief_space_planning(self.domain_path, new_problem_path, nalias)
@@ -1893,14 +1909,24 @@ class Grocery_packing:
 
 		while not empty_clutter:
 			belief = self.get_whole_scene_belief()
+			state_space = {'holding':self.gripper.holding,
+							'items':self.items}
 			state = pomcp.State(state_space, belief)
 			root_node = pomcp.Node(state)
 			st = time.time()
 			result_root = pomcp.perform_pomcp(root_node, num_iterations=10)
+			if result_root is None:
+				print('Root is None')
+				continue
 			self.planning_time += time.time()-st
 			select_node = pomcp.select_action(result_root,infer=True)
+			if select_node is None:
+				print('No action found')
+				continue
 			action = select_node.birth_action
-			self.execute_pomcp_action(action)
+			print(action)
+			if action[1] !='':
+				self.execute_pomcp_action(action)
 
 
 			empty_clutter = self.is_clutter_empty()
@@ -1910,6 +1936,118 @@ class Grocery_packing:
 		exe = total - self.planning_time
 		print('PLANNING TIME FOR POMCP: '+str(self.planning_time))
 		print('EXECUTION TIME FOR POMCP: '+str(exe))
+		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+
+		self.save_results('pomcp',self.planning_time,exe)
+
+
+	def perform_classical_planner(self):
+		items_seen = list(self.raw_belief_space.keys())
+		mediumlist=[]; heavylist=[]
+		for item in items_seen:
+			if self.items[item].mass == 'heavy':
+				heavylist.append(item)
+			else:
+				mediumlist.append(item)
+		added_time = 0
+		problem_path, alias = self.create_pddl_problem([], items_seen, mediumlist, heavylist)
+
+		start = time.time()
+		
+		b = Bool(); b.data = True; self.should_plan.publish(b)
+		
+		time.sleep(5)
+		added_time+=5
+		plan = self.read_plan()
+		print(plan)
+		self.planning_time += time.time()-start
+		
+		for action in plan:
+			if action[1] not in alias:
+				print('wrong aliasing')
+				print(alias)
+				return
+			else:
+				if len(action) == 3:
+					if action[2] not in alias:
+						print('wrong aliasing')
+						print(alias)
+						return
+
+		for action in plan:
+
+			result = self.execute_sbp_action(action, alias)
+			if not result:
+				print('Failed to plan')
+				try:
+					os.remove('fdplan')
+				except:
+					pass
+				return
+		exe = time.time() - start 
+		exe -= self.planning_time-5
+		print('Number of packed: ', str(len(items_seen)))
+		print('Planning Time taken: ', str(self.planning_time-5))
+		print('Execution time: ', str(exe))
+				
+		return
+
+
+	def sample_belief_space(self):
+		confident_seen_list = []; inbox_list = []
+		lightlist = []; heavylist=[]
+		scene_belief = copy.deepcopy(self.raw_belief_space)
+
+		occluded_items = []
+		for item in scene_belief:
+			occluded_items.append(scene_belief[item])
+
+		confident_seen_list = self.monte_carlo_sample(occluded_items)
+		
+		print('confidently scene items: '+str(confident_seen_list))
+		
+		for key in self.box.items_added:
+			inbox_list.append(key)
+
+		for it in inbox_list:
+			try:
+				confident_seen_list.remove(it)
+			except:
+				pass
+
+		for item in inbox_list+confident_seen_list:
+			if item in self.items and not self.items[item].dummy:
+				if self.items[item].mass == 'heavy':
+					heavylist.append(item)
+				else:
+					lightlist.append(item)
+
+		return inbox_list, confident_seen_list, lightlist, heavylist
+
+
+	def perform_fdreplan(self,declutter=False):
+		empty_clutter = self.is_clutter_empty()
+		start = time.time()
+		while not empty_clutter:
+			if declutter:
+				self.declutter_surface_items()
+			inboxlist, topfreelist, lightlist, heavylist = \
+					self.sample_belief_space()
+
+			firstfree = topfreelist
+
+
+			problem_path, alias = self.create_pddl_problem(inboxlist, firstfree,
+												lightlist, heavylist)
+
+			self.plan_and_run_belief_space_planning(self.domain_path, 
+														problem_path, alias,declutter)
+			empty_clutter = self.is_clutter_empty()
+		end = time.time()
+		total = end-start
+		exe = total - self.planning_time
+		print('PLANNING TIME FOR FDREPLAN: '+str(self.planning_time))
+		print('EXECUTION TIME FOR FDREPLAN: '+str(exe))
 		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
 
 		self.save_results('pomcp',self.planning_time,exe)
@@ -1948,7 +2086,7 @@ class Grocery_packing:
 			success = self.put_in_clutter(action[1])
 
 		elif action[0] == 'put-on':
-			success = self.put_on(action[1], alias[action[2]])
+			success = self.put_on(action[1], action[2])
 
 		return success
 
@@ -2019,6 +2157,16 @@ class Grocery_packing:
 			m.data = strategy
 			self.method_pub.publish(m)
 			self.perform_pomcp()
+		elif strategy == 'classical-planner':
+			m = String()
+			m.data = strategy 
+			self.method_pub.publish(m)
+			self.perform_classical_planner()
+		elif strategy == 'fdreplan':
+			m = String()
+			m.data = strategy 
+			self.method_pub.publish(m)
+			self.perform_fdreplan()
 
 		self.alive = False
 		a = Bool()

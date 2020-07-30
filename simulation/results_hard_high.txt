@@ -28,3 +28,13 @@ planning_time: 50.63060474395752
 execution_time: 685.4271523952484
 num_pick_from_box: 7
 
+Optimistic_1
+planning_time: 75.31894183158875
+execution_time: 436.4801926612854
+num_pick_from_box: 7
+
+pomcp_1
+planning_time: 45.48783993721008
+execution_time: 476.555052280426
+num_pick_from_box: 14
+
