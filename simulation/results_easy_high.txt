@@ -73,3 +73,23 @@ planning_time: 70.25340986251831
 execution_time: 676.4578623771667
 num_pick_from_box: 3
 
+Optimistic_3
+planning_time: 30.118486404418945
+execution_time: 422.5050609111786
+num_pick_from_box: 8
+
+fdreplan_1
+planning_time: 30.127827405929565
+execution_time: 426.61212730407715
+num_pick_from_box: 9
+
+fdreplan_3
+planning_time: 30.1471848487854
+execution_time: 473.616986989975
+num_pick_from_box: 10
+
+fdreplan_5
+planning_time: 25.095181226730347
+execution_time: 426.2840304374695
+num_pick_from_box: 5
+

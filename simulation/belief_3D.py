@@ -6,6 +6,7 @@ import pybullet as p
 import time
 import pybullet_data
 import math
+import random
 import copy
 import threading
 import numpy as np
@@ -149,9 +150,9 @@ class Grocery_packing:
 		self.holding_pub = rospy.Publisher('/holding', String, queue_size=1)
 
 
-		self.arrangement_difficulty = 'easy'
+		self.arrangement_difficulty = 'hard'
 		self.space_allowed = 'high'
-		self.arrangement_num = 3
+		self.arrangement_num = 5
 
 		if self.space_allowed == 'high':
 			self.box = Box(3)
@@ -869,6 +870,8 @@ class Grocery_packing:
 		for it in items_seen:
 			if not self.items[it].inbox:
 				confident_seen_list.append(it)
+
+		random.shuffle(confident_seen_list)
 
 		'''
 		for item in scene_belief:
@@ -2003,7 +2006,7 @@ class Grocery_packing:
 			occluded_items.append(scene_belief[item])
 
 		confident_seen_list = self.monte_carlo_sample(occluded_items)
-		
+		random.shuffle(confident_seen_list)
 		print('confidently scene items: '+str(confident_seen_list))
 		
 		for key in self.box.items_added:
@@ -2050,7 +2053,7 @@ class Grocery_packing:
 		print('EXECUTION TIME FOR FDREPLAN: '+str(exe))
 		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
 
-		self.save_results('pomcp',self.planning_time,exe)
+		self.save_results('fdreplan',self.planning_time,exe)
 
 
 
