@@ -16,6 +16,7 @@ import rospy
 from std_msgs.msg import String, Bool
 from grocery_items import Shopping_List, Grocery_item
 import pomcp
+from scipy.stats import entropy as sp_entropy
 
 physicsClient = p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -150,9 +151,9 @@ class Grocery_packing:
 		self.holding_pub = rospy.Publisher('/holding', String, queue_size=1)
 
 
-		self.arrangement_difficulty = 'hard'
+		self.arrangement_difficulty = 'easy'
 		self.space_allowed = 'high'
-		self.arrangement_num = 5
+		self.arrangement_num = 2
 
 		if self.space_allowed == 'high':
 			self.box = Box(3)
@@ -205,6 +206,86 @@ class Grocery_packing:
 		b.data = a 
 		self.boxitems_pub.publish(b)
 		p.stepSimulation()
+
+
+	def compute_entropy(self,N=10):
+		'''
+		1. Draw N samples
+		2. Sum confidence of each n in N
+		3. Normalize all N confidence sums
+			making them into a probability distro.
+		4. Compute entropy of probability distro
+
+		'''
+		entropies = []
+
+		for _ in range(N):
+			scene_belief = copy.deepcopy(self.scene_belief)
+
+			beliefs = []
+			for item in scene_belief:
+				hypotheses = []; iih=[]; wih=[]
+				for hypothesis in scene_belief[item]:
+					s = (hypothesis[0], hypothesis[1])
+					hypotheses.append(s)
+					iih.append(hypothesis[0])
+					wih.append(hypothesis[1])
+				p = (1 - np.sum(wih))/(24 - len(iih))
+				for it in self.item_list:
+					if it not in iih:
+						hypotheses.append((it, p))
+				beliefs.append(hypotheses)
+
+			# print(beliefs)
+			# print('num of hypotheses is: ',len(beliefs))
+
+			total_entropy = 0
+			for bel in beliefs:
+				wt = [b[1] for b in bel]
+				wt /=np.sum(wt)
+				h = sp_entropy(wt, base=2)
+				total_entropy += h
+
+			n_left = 24-len(beliefs)
+			for i in range(n_left):
+				wt = [1./24. for _ in range(24)]
+				h = sp_entropy(wt, base=2)
+				total_entropy += h
+
+			entropies.append(total_entropy)
+		mean_entropy = np.mean(entropies)
+		print(mean_entropy)
+		return mean_entropy
+		# sample_confidences = []
+		# for i in range(N):
+		# 	s,w = self.sample_entropy(beliefs)
+		# 	print('should be twenty four: ',len(s))
+		# 	sample_confidences.append(np.sum(w))
+
+		# print(scene_belief)
+		# sample_confidences /= np.sum(sample_confidences)
+		# entropy = -np.sum([p*np.log2(p) for p in sample_confidences])
+		# print(sample_confidences)
+		# print("Entropy is : ",entropy)
+		# print("Scipy entropy is : ",sp_entropy(sample_confidences,base=2))
+
+		# return entropy
+
+
+	def sample_entropy(self,beliefs):
+		s,w = self.single_sample(beliefs)
+		u_s =[]; u_w = []
+		for item in self.item_list:
+			if item not in s:
+				u_s.append(item)
+				u_w.append(0)
+		s = s+u_s 
+		w = w+u_w
+		
+
+		return s,w
+
+
 
 
 	def generate_init_coordinates(self, space):
@@ -443,27 +524,30 @@ class Grocery_packing:
 
 			self.raw_belief_space = scene
 			self.scene_belief = normalize_scene_weights(scene)
-			scene_data = String()
-			scene_data.data = ''
-			for item in self.scene_belief:
-				for nm, cf, cd in self.scene_belief[item]:
-					if nm == item and cf >= self.confidence_threshold:
-						color = (np.random.randint(255),\
-								np.random.randint(255),\
-								np.random.randint(255))
-						camera_view = cv2.rectangle(camera_view, (cd[0],
-						 cd[1]), (cd[2], cd[3]),color , 1)
-						cv2.putText(camera_view, nm+':'+str(round(cf,2)), (cd[0],cd[1]-10),\
-							cv2.FONT_HERSHEY_SIMPLEX, 0.5, color,2)
-						scene_data.data +=nm+'-'+str(round(cf,2))+'*'
-			
-			self.scene_belief_publisher.publish(scene_data)
 
 			# print(self.scene_belief)
 			# print('***'*50)
 			# print(self.raw_belief_space)
 			# print('&&&'*50)
 			# print('\n\n')
+
+			scene_data = String()
+			scene_data.data = ''
+			for item in self.raw_belief_space:
+				for nm, cf, cd in self.raw_belief_space[item]:
+					if nm == item: # and cf >= self.confidence_threshold:
+						color = (np.random.randint(255),\
+								np.random.randint(255),\
+								np.random.randint(255))
+						camera_view = cv2.rectangle(camera_view, (int(cd[0]),
+						 int(cd[1])), (int(cd[2]), int(cd[3])),color , 1)
+						cv2.putText(camera_view, nm+':'+str(round(cf,2)), (int(cd[0]),int(cd[1])-10),\
+							cv2.FONT_HERSHEY_SIMPLEX, 0.5, color,2)
+						scene_data.data +=nm+'-'+str(round(cf,2))+'*'
+			
+			self.scene_belief_publisher.publish(scene_data)
+
+			
 
 			cv2.imshow('Grocery Item detection', camera_view)
 			if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -1541,15 +1625,19 @@ class Grocery_packing:
 
 	def single_sample(self, occluded_items):
 		sampled_items=[]
+		item_weights = []
 		for bunch in occluded_items:
 			# print(bunch)
 			items = [b[0] for b in bunch]
 			weights = [b[1] for b in bunch]
-			weights = weights/np.sum(weights)
-			sample = np.random.choice(items, size=1, p=weights)
+			# item_weights.append(weights)
+			norm_weights = weights/np.sum(weights)
+			sample = np.random.choice(items, size=1, p=norm_weights)
+			ind = items.index(sample)
+			item_weights.append(weights[ind])
 			sampled_items.append(sample[0])
 
-		return sampled_items
+		return sampled_items, item_weights
 
 
 	def monte_carlo_sample(self, occluded_items):
@@ -1558,7 +1646,7 @@ class Grocery_packing:
 		for t in items: mc_counts[t] = 0
 		mc_samples=[]
 		for i in range(self.num_mc_samples):
-			sampled_items = self.single_sample(occluded_items)
+			sampled_items,_ = self.single_sample(occluded_items)
 			joined=''
 			for it in set(sampled_items):
 				joined+= it+'*'
@@ -1575,7 +1663,7 @@ class Grocery_packing:
 		sample_scores = [0 for i in range(num_samples)]
 
 		for i in range(num_samples):
-			sample = self.single_sample(occluded_items)
+			sample,_ = self.single_sample(occluded_items)
 			divergent_samples.append(sample)
 
 		#generate mc sample
@@ -1633,13 +1721,13 @@ class Grocery_packing:
 		#the function: self.high_uncertainty_sample(name)
 		if sample_procedure == 'weighted_sample':
 			# SAMPLE WITH JUST THE ORIGINAL WEIGHTS
-			sampled_occluded_items = self.single_sample(occluded_items)
+			sampled_occluded_items,_ = self.single_sample(occluded_items)
 
 		elif sample_procedure == 'mc_sample':
 			# SAMPLE MULTIPLE TIMES FROM ORIGINAL WEIGHT AND CHOOSE ONE WITH
 			# HIGHEST FREQ
 			sampled_occluded_items = self.monte_carlo_sample(occluded_items)
-			ws = self.single_sample(occluded_items)
+			ws,_ = self.single_sample(occluded_items)
 			f=open('compare_samples.txt','a')
 			f.write('mc: '+str(sampled_occluded_items))
 			f.write('\n')
@@ -2005,7 +2093,7 @@ class Grocery_packing:
 		for item in scene_belief:
 			occluded_items.append(scene_belief[item])
 
-		confident_seen_list = self.monte_carlo_sample(occluded_items)
+		confident_seen_list,_ = self.single_sample(occluded_items)
 		random.shuffle(confident_seen_list)
 		print('confidently scene items: '+str(confident_seen_list))
 		
@@ -2125,7 +2213,7 @@ class Grocery_packing:
 			m.data = strategy
 			self.method_pub.publish(m)
 			self.perform_sbp_grocery_packing()
-		elif strategy == 'optimistic':
+		elif strategy == 'classical-replanner':
 			m = String()
 			m.data = strategy
 			self.method_pub.publish(m)
@@ -2279,6 +2367,7 @@ if __name__ == '__main__':
 		g = Grocery_packing()
 
 		time.sleep(30)
+		# g.compute_entropy()
 		g.run_strategy(strategy)
 
 	# g.perform_pick_n_roll()
