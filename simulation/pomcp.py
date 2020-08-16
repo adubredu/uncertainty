@@ -331,9 +331,10 @@ def perform_pomcp(root, num_iterations=100):
 	root_node = root
 	depth = 0
 	while iterr < num_iterations:
-		print('iteration %d. Num root children %d. Visits %d'%(iterr, len(root.children), root.visits))
+		print('iteration %d. Num root children %d. Root Visits %d'%(iterr, len(root.children), root.visits))
 		if root_node.get_num_children() == 0:
 			if root_node.visits == 0:
+				print('***simulating***')
 				value = rollout_policy(root_node)
 				backup(root_node, value)
 				# print(root_node.state.in_box)
@@ -345,10 +346,11 @@ def perform_pomcp(root, num_iterations=100):
 					child_node = root_node.children[0]
 					value = rollout_policy(child_node)
 					backup(child_node, value)
-					print('expanding')
+					print('***expanding***')
 				root_node = root
 				depth = 0
 		else:
+			print('***selecting***')
 			resultant_node = select_action(root_node)
 			if resultant_node == None:
 				return None

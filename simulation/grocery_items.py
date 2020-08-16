@@ -96,7 +96,7 @@ class Shopping_List:
 		self.donut = Grocery_item(urdf_path='models/donut/model.sdf',
 			object_name='donut',height=0.041, width=0.1,urdf=True, p=p, x=1.5)
 		self.fork = Grocery_item(urdf_path='models/fork/textured.obj',
-			object_name='fork',height=0.1, width=0.05,urdf=False, p=p, x=1.65)
+			object_name='fork',dummy=True,height=0.1, width=0.05,urdf=False, p=p, x=1.65)
 		self.gelatin = Grocery_item(urdf_path='models/gelatin/meshes/gelatin.obj',
 			object_name='gelatin', mass='heavy',width=0.08,height=0.11,z=0.005, op=1.9,orr=1.65, urdf=False, p=p, x=1.8)
 		self.meat = Grocery_item(urdf_path='models/meat/meshes/meat.obj',
@@ -113,15 +113,15 @@ class Shopping_List:
 		self.plate = Grocery_item(urdf_path='models/bowl/textured.obj',
 			object_name='plate',mass='heavy', width=0.2,height=0.05, urdf=False, p=p, x=0.2, y=-0.5)
 		self.soccer_ball = Grocery_item(urdf_path='models/soccer_ball/textured.obj',
-			object_name='soccer_ball',mass='heavy',width=0.15,height=0.15, urdf=False, p=p, x=0.35, y=-0.5)
+			object_name='soccer_ball', dummy=True,mass='heavy',width=0.15,height=0.15, urdf=False, p=p, x=0.35, y=-0.5)
 		self.soup = Grocery_item(urdf_path='models/soup/meshes/soup.obj',
 			object_name='soup',mass='heavy',height=0.14, width=0.08,oy=3.14, urdf=False, p=p, x=0.5, y=-0.5)
 		self.sponge = Grocery_item(urdf_path='models/sponge/textured.obj',
-			object_name='sponge',height=0.1, oy=1.57,width=0.08, urdf=False, p=p, x=0.75, y=-0.5)
+			object_name='sponge',dummy=True,height=0.1, oy=1.57,width=0.08, urdf=False, p=p, x=0.75, y=-0.5)
 		self.sugar =  Grocery_item(urdf_path='models/sugar/meshes/sugar.obj',
 			object_name='sugar',mass='heavy',width=0.08,height=0.2, oy=-1.57, urdf=False, p=p, x=0.9, y=-0.5)
 		self.toy = Grocery_item(urdf_path='models/toy_airplane/textured.obj',
-			object_name='toy',height=0.08,width=0.05, oy=2.2, urdf=False, p=p, x=1.05, y=-0.5)
+			object_name='toy',dummy=True,height=0.08,width=0.05, oy=2.2, urdf=False, p=p, x=1.05, y=-0.5)
 		#################################################################
 		
 
@@ -158,8 +158,22 @@ class Shopping_List:
 	def get_items_list(self):
 		self.object_list = [self.baseball, self.bottle_beer,
 		self.can_coke, self.can_pepsi, self.can_fanta,
-		self.can_sprite, self.chips_can, self.cup, self.donut,
-		self.fork,self.meat, self.mustard, self.newspaper,
+		self.can_sprite, self.chips_can,self.coffee_box,self.cracker, 
+		self.cup, self.donut,
+		self.fork,self.gelatin,self.meat, self.mustard, self.newspaper,
 		self.orange, self.pear, self.plate, self.soccer_ball,
 		self.soup, self.sponge, self.sugar, self.toy]
 		return self.object_list
+
+	def get_item_string_list(self):
+		oblist = self.get_items_list()
+		slist = [it.name for it in oblist if (not it.dummy) and \
+		(not it.name == 'lgripper') and (not it.name == 'rgripper')]
+		return slist
+
+if __name__ == '__main__':
+	import pybullet as p
+	physicsClient = p.connect(p.GUI)
+	p.setAdditionalSearchPath('models')
+	s = Shopping_List(p)
+	print(s.get_item_string_list())

@@ -1,0 +1,7 @@
+Kuffner and LaValle ICRA 2000 is the default reference for RRT (as RRT-Connect). The existing LaValle reference can remain as well.
+
+Fikes and Nilsson (1971) is the reference for A*
+
+Cormen Leisserson and Rivest can be used to cite BFS and DFS
+
+try to use adjectives that can be measured through an objective metric.

@@ -104,30 +104,31 @@ class Grocery_packing:
 		self.time_pub = rospy.Publisher('/time', String, queue_size=1)
 
 		self.gripper = Gripper()
-		self.item_list = ['baseball',
-					  'beer',
-					  'can_coke',
-					  'can_pepsi',
-					  'can_fanta',
-					  'can_sprite',
-					  'chips_can',
-					  'coffee_box',
-					  'cracker',
-					  'cup',
-					  'donut',
-					  'fork',
-					  'gelatin',
-					  'meat',
-					  'mustard',
-					  'newspaper',
-					  'orange',
-					  'pear',
-					  'plate',
-					  'soccer_ball',
-					  'soup',
-					  'sponge',
-					  'sugar',
-					  'toy']
+		# self.item_list = ['baseball',
+		# 			  'beer',
+		# 			  'can_coke',
+		# 			  'can_pepsi',
+		# 			  'can_fanta',
+		# 			  'can_sprite',
+		# 			  'chips_can',
+		# 			  'coffee_box',
+		# 			  'cracker',
+		# 			  'cup',
+		# 			  'donut',
+		# 			  'fork',
+		# 			  'gelatin',
+		# 			  'meat',
+		# 			  'mustard',
+		# 			  'newspaper',
+		# 			  'orange',
+		# 			  'pear',
+		# 			  'plate',
+		# 			  'soccer_ball',
+		# 			  'soup',
+		# 			  'sponge',
+		# 			  'sugar',
+		# 			  'toy']
+
 
 		self.clutter_ps = []
 		self.xs = [0.65,  .45,  .25, .10]
@@ -139,6 +140,7 @@ class Grocery_packing:
 		self.shopping_list = Shopping_List(p)
 		self.items = self.shopping_list.get_items_dict()
 		self.objects_list = self.shopping_list.get_items_list()
+		self.item_list = self.shopping_list.get_item_string_list()
 		self.items_in_box = []
 		self.deccount = 0
 
@@ -153,7 +155,7 @@ class Grocery_packing:
 
 		self.arrangement_difficulty = 'easy'
 		self.space_allowed = 'high'
-		self.arrangement_num = 2
+		self.arrangement_num = 4
 
 		if self.space_allowed == 'high':
 			self.box = Box(3)
@@ -168,7 +170,7 @@ class Grocery_packing:
 		self.num_mc_samples = 100
 		self.num_pick_from_box = 0
 		self.raw_belief_space = None
-		self.domain_path='/home/alphonsus/3dmodels/uncertainty/pddl/belief_domain.pddl'
+		self.domain_path='/home/bill/uncertainty/pddl/belief_domain.pddl'
 
 
 		self.lgripper = self.items['lgripper']
@@ -217,45 +219,50 @@ class Grocery_packing:
 		4. Compute entropy of probability distro
 
 		'''
-		entropies = []
+		num_objects = 20.0
 
-		for _ in range(N):
-			scene_belief = copy.deepcopy(self.scene_belief)
+		scene_belief = copy.deepcopy(self.scene_belief)
 
-			beliefs = []
-			for item in scene_belief:
-				hypotheses = []; iih=[]; wih=[]
-				for hypothesis in scene_belief[item]:
-					s = (hypothesis[0], hypothesis[1])
-					hypotheses.append(s)
-					iih.append(hypothesis[0])
-					wih.append(hypothesis[1])
-				p = (1 - np.sum(wih))/(24 - len(iih))
-				for it in self.item_list:
-					if it not in iih:
-						hypotheses.append((it, p))
-				beliefs.append(hypotheses)
+		beliefs = []
+		for item in scene_belief:
+			hypotheses = []; iih=[]; wih=[]
+			for hypothesis in scene_belief[item]:
+				s = (hypothesis[0], hypothesis[1])
+				hypotheses.append(s)
+				iih.append(hypothesis[0])
+				wih.append(hypothesis[1])
+			p = (1 - np.sum(wih))/(num_objects - len(iih))
+			for it in self.item_list:
+				if it not in iih:
+					hypotheses.append((it, p))
+			beliefs.append(hypotheses)
 
-			# print(beliefs)
-			# print('num of hypotheses is: ',len(beliefs))
+		# print(beliefs)
+		# print('num of hypotheses is: ',len(beliefs))
 
-			total_entropy = 0
-			for bel in beliefs:
-				wt = [b[1] for b in bel]
-				wt /=np.sum(wt)
-				h = sp_entropy(wt, base=2)
-				total_entropy += h
+		total_entropy = 0.0
+		for bel in beliefs:
+			wt = [b[1] for b in bel]
+			wt /=np.sum(wt)
+			h = sp_entropy(wt, base=2)
+			total_entropy += h
 
-			n_left = 24-len(beliefs)
-			for i in range(n_left):
-				wt = [1./24. for _ in range(24)]
-				h = sp_entropy(wt, base=2)
-				total_entropy += h
+		n_left = num_objects-len(beliefs)
+		for i in range(int(n_left)):
+			wt = [1./num_objects for _ in range(int(num_objects))]
+			h = sp_entropy(wt, base=2)
+			total_entropy += h
 
-			entropies.append(total_entropy)
-		mean_entropy = np.mean(entropies)
-		print(mean_entropy)
-		return mean_entropy
+		#H_max
+		H_max = 0.0
+		for i in range(int(num_objects)):
+			wt = [1./num_objects for i in range(int(num_objects))]
+			H_max += sp_entropy(wt,base=2)
+
+
+		norm_entropy = total_entropy/H_max
+		print(norm_entropy)
+		return norm_entropy
 		# sample_confidences = []
 		# for i in range(N):
 		# 	s,w = self.sample_entropy(beliefs)
@@ -291,7 +298,7 @@ class Grocery_packing:
 	def generate_init_coordinates(self, space):
 		mx = 0.4; my = 0.0; z = 0.65
 		if space == "high":
-			delta = 0.3
+			delta = 0.4
 			self.box.full_cpty = 9
 		elif space == "medium":
 			delta = 0.2
@@ -310,7 +317,7 @@ class Grocery_packing:
 					self.clutter_ps.append((x,y))
 
 		x = np.random.uniform(low=mx-delta, high=mx+delta)
-		y = np.random.uniform(low=my-delta, high=my+delta)
+		y = np.random.uniform(low=my-delta, high=my+delta-0.1)
 
 		return (x,y,z)
 
@@ -356,7 +363,7 @@ class Grocery_packing:
 			for item, z in zs:
 				generated[item][2] = z 
 
-			f = open(self.arrangement_difficulty+'_'+self.space_allowed+'.txt', 'a')
+			f = open('le_'+self.arrangement_difficulty+'_'+self.space_allowed+'.txt', 'a')
 			for item in generated:
 				x = generated[item][0]; y=generated[item][1]; z=generated[item][2];
 				f.write(item + ','+str(x) + ',' +str(y) + ','+str(z))
@@ -380,7 +387,7 @@ class Grocery_packing:
 
 
 	def read_init_positions(self, index):
-		f = open(self.arrangement_difficulty+'_'+self.space_allowed+'.txt','r')
+		f = open('le_'+self.arrangement_difficulty+'_'+self.space_allowed+'.txt','r')
 		content = f.read()
 		stages = content.split('*')
 		coords = stages[index-1].split('\n')
@@ -447,7 +454,7 @@ class Grocery_packing:
 				shadow=True,
 					renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
-			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v9_2.pth', \
+			model = core.Model.load('/home/bill/backyard/grocery_detector_v9_2.pth', \
 
 				['baseball',
 					  'beer',
@@ -1631,6 +1638,7 @@ class Grocery_packing:
 			items = [b[0] for b in bunch]
 			weights = [b[1] for b in bunch]
 			# item_weights.append(weights)
+			weights = [np.abs(w) for w in weights]
 			norm_weights = weights/np.sum(weights)
 			sample = np.random.choice(items, size=1, p=norm_weights)
 			ind = items.index(sample)
@@ -2034,6 +2042,7 @@ class Grocery_packing:
 
 	def perform_classical_planner(self):
 		items_seen = list(self.raw_belief_space.keys())
+		items_seen = [it for it in items_seen if not self.items[it].dummy]
 		mediumlist=[]; heavylist=[]
 		for item in items_seen:
 			if self.items[item].mass == 'heavy':
@@ -2087,11 +2096,29 @@ class Grocery_packing:
 	def sample_belief_space(self):
 		confident_seen_list = []; inbox_list = []
 		lightlist = []; heavylist=[]
-		scene_belief = copy.deepcopy(self.raw_belief_space)
+		# scene_belief = copy.deepcopy(self.raw_belief_space)
+
+		# occluded_items = []
+		# for item in scene_belief:
+		# 	occluded_items.append(scene_belief[item])
+
+		num_objects = 20.0
+
+		scene_belief = copy.deepcopy(self.scene_belief)
 
 		occluded_items = []
 		for item in scene_belief:
-			occluded_items.append(scene_belief[item])
+			hypotheses = []; iih=[]; wih=[]
+			for hypothesis in scene_belief[item]:
+				s = (hypothesis[0], hypothesis[1])
+				hypotheses.append(s)
+				iih.append(hypothesis[0])
+				wih.append(hypothesis[1])
+			p = (1 - np.sum(wih))/(num_objects - len(iih))
+			for it in self.item_list:
+				if it not in iih:
+					hypotheses.append((it, p))
+			occluded_items.append(hypotheses)
 
 		confident_seen_list,_ = self.single_sample(occluded_items)
 		random.shuffle(confident_seen_list)
@@ -2369,6 +2396,7 @@ if __name__ == '__main__':
 		time.sleep(30)
 		# g.compute_entropy()
 		g.run_strategy(strategy)
+		# time.sleep(60)
 
 	# g.perform_pick_n_roll()
 	# g.perform_conveyor_belt_pack()
