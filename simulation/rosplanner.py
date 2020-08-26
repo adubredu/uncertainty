@@ -19,12 +19,13 @@ class ROS_Planner:
 			f = Fast_Downward()
 			start = time.time()
 			plan = f.plan('belief_domain.pddl', 'newprob.pddl')
-			self.planning_time+= time.time() - start
+			
 			if plan is not None and len(plan)!=0:
 				p=''
 				for action in plan:
 					p+=str(action)
 					p+='\n'
+				self.planning_time+= time.time() - start
 			else:
 				p='Faill'
 			p = p[:-1]

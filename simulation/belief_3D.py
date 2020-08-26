@@ -153,9 +153,9 @@ class Grocery_packing:
 		self.holding_pub = rospy.Publisher('/holding', String, queue_size=1)
 
 
-		self.arrangement_difficulty = 'easy'
+		self.arrangement_difficulty = 'hard'
 		self.space_allowed = 'high'
-		self.arrangement_num = 4
+		self.arrangement_num = 5
 
 		if self.space_allowed == 'high':
 			self.box = Box(3)
@@ -166,7 +166,9 @@ class Grocery_packing:
 		# self.generate_clutter_coordinates(self.space_allowed)
 
 
-		self.planning_time = 0
+		self.planning_time = 0.
+		self.total_execution_time = 0.
+		self.added_time = 0.
 		self.num_mc_samples = 100
 		self.num_pick_from_box = 0
 		self.raw_belief_space = None
@@ -1179,6 +1181,7 @@ class Grocery_packing:
 
 		# plan = f.plan(domain_path, problem_path)
 		time.sleep(5)
+		self.added_time += 5.0
 		plan = self.read_plan()
 		print(plan)
 		self.planning_time += time.time()-start
@@ -1218,7 +1221,11 @@ class Grocery_packing:
 			a.data = f 
 			print(f)
 			self.action_pub.publish(a)
+			t = time.time()
 			result = self.execute_sbp_action(action, alias)
+			self.total_execution_time += time.time() - t
+			print('Total Execution Time: ', self.total_execution_time)
+			print('Num retracts: ', self.num_pick_from_box)
 			if not result:
 				try:
 					os.remove('fdplan')
@@ -1281,13 +1288,12 @@ class Grocery_packing:
 		start = time.time()
 		self.perform_optimistic_belief_grocery_packing()
 		end = time.time()
-		total = end-start
-		exe = total - self.planning_time
-		print('PLANNING TIME FOR OPTIMISTIC: '+str(self.planning_time))
-		print('EXECUTION TIME FOR OPTIMISTIC: '+str(total - self.planning_time))
-		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+		total = end-start-self.added_time
+		print('sub PLANNING TIME FOR OPTIMISTIC: ',total - self.total_execution_time)
+		print('EXECUTION TIME FOR OPTIMISTIC: ', self.total_execution_time)
+		print('NUMBER OF BOX REMOVES: ',self.num_pick_from_box)
 
-		self.save_results('Optimistic',self.planning_time,exe)
+		self.save_results('Optimistic',self.planning_time,self.total_execution_time)
 
 
 	def perform_declutter(self):
@@ -2025,22 +2031,26 @@ class Grocery_packing:
 			action = select_node.birth_action
 			print(action)
 			if action[1] !='':
+				t = time.time()
 				self.execute_pomcp_action(action)
+				self.total_execution_time += time.time() - t
+				print('Total execution time: ', self.total_execution_time)
+				print('Num retracts: ', self.num_pick_from_box)
 
 
 			empty_clutter = self.is_clutter_empty()
 
 		end = time.time()
 		total = end-start
-		exe = total - self.planning_time
-		print('PLANNING TIME FOR POMCP: '+str(self.planning_time))
-		print('EXECUTION TIME FOR POMCP: '+str(exe))
-		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+		print('PLANNING TIME FOR POMCP: ',(total-self.total_execution_time))
+		print('EXECUTION TIME FOR POMCP: ',self.total_execution_time)
+		print('NUMBER OF BOX REMOVES: ',self.num_pick_from_box)
 
 		self.save_results('pomcp',self.planning_time,exe)
 
 
 	def perform_classical_planner(self):
+		start = time.time()
 		items_seen = list(self.raw_belief_space.keys())
 		items_seen = [it for it in items_seen if not self.items[it].dummy]
 		mediumlist=[]; heavylist=[]
@@ -2052,7 +2062,7 @@ class Grocery_packing:
 		added_time = 0
 		problem_path, alias = self.create_pddl_problem([], items_seen, mediumlist, heavylist)
 
-		start = time.time()
+		
 		
 		b = Bool(); b.data = True; self.should_plan.publish(b)
 		
@@ -2075,8 +2085,11 @@ class Grocery_packing:
 						return
 
 		for action in plan:
-
+			t = time.time()
 			result = self.execute_sbp_action(action, alias)
+			self.total_execution_time += time.time() - t 
+			print('TOTAL EXECUTION TIME: ', self.total_execution_time)
+			print('Num retracts: ', self.num_pick_from_box)
 			if not result:
 				print('Failed to plan')
 				try:
@@ -2084,11 +2097,10 @@ class Grocery_packing:
 				except:
 					pass
 				return
-		exe = time.time() - start 
-		exe -= self.planning_time-5
+		total = time.time() - start - added_time
 		print('Number of packed: ', str(len(items_seen)))
-		print('Planning Time taken: ', str(self.planning_time-5))
-		print('Execution time: ', str(exe))
+		print('Total time taken: ', total)
+		print('Execution time: ', self.total_execution_time)
 				
 		return
 
@@ -2119,7 +2131,7 @@ class Grocery_packing:
 				if it not in iih:
 					hypotheses.append((it, p))
 			occluded_items.append(hypotheses)
-
+		# print(occluded_items)
 		confident_seen_list,_ = self.single_sample(occluded_items)
 		random.shuffle(confident_seen_list)
 		print('confidently scene items: '+str(confident_seen_list))
@@ -2162,13 +2174,13 @@ class Grocery_packing:
 														problem_path, alias,declutter)
 			empty_clutter = self.is_clutter_empty()
 		end = time.time()
-		total = end-start
-		exe = total - self.planning_time
-		print('PLANNING TIME FOR FDREPLAN: '+str(self.planning_time))
-		print('EXECUTION TIME FOR FDREPLAN: '+str(exe))
-		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
+		total = end-start-self.added_time
+		print('sub PLANNING TIME FOR FDREPLAN: ', total - self.total_execution_time)
+		print('EXECUTION TIME FOR FDREPLAN: ', self.total_execution_time)
+		print('TOTAL TIME FOR FDREPLAN: ', total)
+		print('NUMBER OF BOX REMOVES: ',self.num_pick_from_box)
 
-		self.save_results('fdreplan',self.planning_time,exe)
+		self.save_results('fdreplan',self.planning_time,self.total_execution_time)
 
 
 
@@ -2394,8 +2406,8 @@ if __name__ == '__main__':
 		g = Grocery_packing()
 
 		time.sleep(30)
-		# g.compute_entropy()
-		g.run_strategy(strategy)
+		g.compute_entropy()
+		# g.run_strategy(strategy)
 		# time.sleep(60)
 
 	# g.perform_pick_n_roll()

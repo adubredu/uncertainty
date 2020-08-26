@@ -153,3 +153,33 @@ planning_time: 20.060373067855835
 execution_time: 286.7767059803009
 num_pick_from_box: 3
 
+Optimistic_3
+planning_time: 25.09350275993347
+execution_time: 312.90635776519775
+num_pick_from_box: 3
+
+Optimistic_5
+planning_time: 25.06173539161682
+execution_time: 320.61750054359436
+num_pick_from_box: 4
+
+fdreplan_2
+planning_time: 35.18706750869751
+execution_time: 285.8989984989166
+num_pick_from_box: 2
+
+fdreplan_3
+planning_time: 45.2352397441864
+execution_time: 289.58348321914673
+num_pick_from_box: 3
+
+fdreplan_4
+planning_time: 15.086337327957153
+execution_time: 274.5825774669647
+num_pick_from_box: 2
+
+fdreplan_5
+planning_time: 175.80289149284363
+execution_time: 286.45223116874695
+num_pick_from_box: 3
+
