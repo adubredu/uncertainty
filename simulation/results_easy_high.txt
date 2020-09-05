@@ -183,3 +183,133 @@ planning_time: 175.80289149284363
 execution_time: 286.45223116874695
 num_pick_from_box: 3
 
+fdreplan_1
+planning_time: 155.15590620040894
+execution_time: 291.8566937446594
+num_pick_from_box: 1
+
+fdreplan_1
+planning_time: 115.81997513771057
+execution_time: 388.0093321800232
+num_pick_from_box: 10
+
+fdreplan_1
+planning_time: 654.2358763217926
+execution_time: 382.0457925796509
+num_pick_from_box: 7
+
+fdreplan_1
+planning_time: 372.1264338493347
+execution_time: 324.6742482185364
+num_pick_from_box: 4
+
+fdreplan_1
+planning_time: 30.14677381515503
+execution_time: 347.425612449646
+num_pick_from_box: 5
+
+fdreplan_2
+planning_time: 60.300018072128296
+execution_time: 330.92851662635803
+num_pick_from_box: 5
+
+fdreplan_2
+planning_time: 40.41018486022949
+execution_time: 347.2803294658661
+num_pick_from_box: 8
+
+fdreplan_2
+planning_time: 30.12607455253601
+execution_time: 364.8694953918457
+num_pick_from_box: 7
+
+fdreplan_2
+planning_time: 30.12819790840149
+execution_time: 323.10267877578735
+num_pick_from_box: 6
+
+fdreplan_2
+planning_time: 30.117831468582153
+execution_time: 291.4246368408203
+num_pick_from_box: 3
+
+fdreplan_3
+planning_time: 303.194949388504
+execution_time: 316.1632730960846
+num_pick_from_box: 4
+
+fdreplan_3
+planning_time: 654.072261095047
+execution_time: 365.2173812389374
+num_pick_from_box: 6
+
+fdreplan_3
+planning_time: 45.178362131118774
+execution_time: 339.2729699611664
+num_pick_from_box: 5
+
+fdreplan_3
+planning_time: 30.14703917503357
+execution_time: 276.56229043006897
+num_pick_from_box: 1
+
+fdreplan_3
+planning_time: 20.103455781936646
+execution_time: 372.4019374847412
+num_pick_from_box: 8
+
+fdreplan_4
+planning_time: 80.67467927932739
+execution_time: 314.8529779911041
+num_pick_from_box: 4
+
+fdreplan_4
+planning_time: 351.7581853866577
+execution_time: 322.1447093486786
+num_pick_from_box: 4
+
+fdreplan_4
+planning_time: 65.29633021354675
+execution_time: 307.9857578277588
+num_pick_from_box: 4
+
+fdreplan_4
+planning_time: 30.528035640716553
+execution_time: 309.3136177062988
+num_pick_from_box: 3
+
+fdreplan_4
+planning_time: 90.4964668750763
+execution_time: 294.276154756546
+num_pick_from_box: 3
+
+fdreplan_4
+planning_time: 30.30734896659851
+execution_time: 308.7377278804779
+num_pick_from_box: 4
+
+fdreplan_5
+planning_time: 70.33586478233337
+execution_time: 349.9001941680908
+num_pick_from_box: 7
+
+fdreplan_5
+planning_time: 983.1002862453461
+execution_time: 306.3229513168335
+num_pick_from_box: 5
+
+fdreplan_5
+planning_time: 40.155369997024536
+execution_time: 313.59730315208435
+num_pick_from_box: 4
+
+fdreplan_5
+planning_time: 85.83607506752014
+execution_time: 368.276730298996
+num_pick_from_box: 10
+
+fdreplan_5
+planning_time: 1237.1891720294952
+execution_time: 343.5525357723236
+num_pick_from_box: 6
+

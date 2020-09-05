@@ -31,7 +31,7 @@ trayId = p.loadURDF("container/container.urdf", [-.5,.0,0.65],p.getQuaternionFro
 # tid = p.loadTexture('container/boxtexture.png')
 # p.changeVisualShape(trayId, -1, textureUniqueId=tid)
 
-
+np.random.seed(0)
 
 
 
@@ -172,7 +172,7 @@ class Grocery_packing:
 		self.num_mc_samples = 100
 		self.num_pick_from_box = 0
 		self.raw_belief_space = None
-		self.domain_path='/home/bill/uncertainty/pddl/belief_domain.pddl'
+		self.domain_path='/home/alphonsus/3dmodels/uncertainty/pddl/belief_domain.pddl'
 
 
 		self.lgripper = self.items['lgripper']
@@ -436,6 +436,15 @@ class Grocery_packing:
 
 			return norm_scene
 
+		def add_gaussian_noise(image):
+			row, col, ch = image.shape 
+			mean = 0; var = 0.1; sigma = var**0.5;
+			gauss = np.random.normal(mean,sigma, (row,col,ch))
+			gauss = gauss.reshape(row,col,ch).astype('uint8')
+			noisy = cv2.add(image, gauss)
+			# nois = np.clip(noisy, 0, 255)
+			return noisy
+
 		while self.alive:
 			viewMatrix = p.computeViewMatrix(
 				cameraEyePosition=[0, -1., 2],
@@ -448,7 +457,7 @@ class Grocery_packing:
 				nearVal=0.02,
 				farVal=3.1)
 
-			width, height, rgbImg, depthImg, segImg = p.getCameraImage(
+			width, height, colorImage, depthImg, segImg = p.getCameraImage(
 				width=640, 
 				height=640,
 				viewMatrix=viewMatrix,
@@ -456,7 +465,7 @@ class Grocery_packing:
 				shadow=True,
 					renderer=p.ER_BULLET_HARDWARE_OPENGL)
 
-			model = core.Model.load('/home/bill/backyard/grocery_detector_v9_2.pth', \
+			model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v9_2.pth', \
 
 				['baseball',
 					  'beer',
@@ -483,7 +492,8 @@ class Grocery_packing:
 					  'sugar',
 					  'toy'])
 			
-			rgbImg = Image.fromarray(rgbImg).convert('RGB')
+			noisyimage = add_gaussian_noise(colorImage)
+			rgbImg = Image.fromarray(noisyimage).convert('RGB')
 			predictions = model.predict(rgbImg)
 			camera_view = cv2.cvtColor(np.array(rgbImg), cv2.COLOR_RGB2BGR)
 			labels, boxes, scores = predictions
@@ -1495,19 +1505,20 @@ class Grocery_packing:
 
 
 	def convert_to_string_and_publish(self,plan,alias):
-		concat = ''
-		for action in plan:
-			if action[0]!='Fail':
-				action = list(action)
-				action[1] = alias[action[1]]
-				if len(action) == 3:
-					action[2] = alias[action[2]]
-				concat+=str(action)
-				concat+='*'
-		p = String()
-		p.data = concat
+		pass
+		# concat = ''
+		# for action in plan:
+		# 	if action[0]!='Fail':
+		# 		action = list(action)
+		# 		action[1] = alias[action[1]]
+		# 		if len(action) == 3:
+		# 			action[2] = alias[action[2]]
+		# 		concat+=str(action)
+		# 		concat+='*'
+		# p = String()
+		# p.data = concat
 		
-		self.plan_pub.publish(p)
+		# self.plan_pub.publish(p)
 
 	def run_sbp(self, domain_path, problem_path, alias):
 		# f = Planner()#PFast_Downward()
@@ -2406,8 +2417,8 @@ if __name__ == '__main__':
 		g = Grocery_packing()
 
 		time.sleep(30)
-		g.compute_entropy()
-		# g.run_strategy(strategy)
+		# g.compute_entropy()
+		g.run_strategy(strategy)
 		# time.sleep(60)
 
 	# g.perform_pick_n_roll()
