@@ -233,3 +233,23 @@ planning_time: 35.1207594871521
 execution_time: 349.64457297325134
 num_pick_from_box: 6
 
+fdreplan_5
+planning_time: 176.7156946659088
+execution_time: 1037.2489490509033
+num_pick_from_box: 8
+
+fdreplan_5
+planning_time: 636.1220881938934
+execution_time: 437.80387687683105
+num_pick_from_box: 0
+
+Optimistic_5
+planning_time: 1154.6161615848541
+execution_time: 502.73727321624756
+num_pick_from_box: 1
+
+Optimistic_5
+planning_time: 60.4041588306427
+execution_time: 704.7909457683563
+num_pick_from_box: 0
+

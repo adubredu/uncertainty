@@ -432,19 +432,24 @@ class Grocery_packing:
 				norm_scene[item]=[]
 				for name,wt,cd in scene[item]:
 
-					if cd[0] > 300 and cd[1] > 60 and cd[1]<400:
+					if cd[0] > 250 and cd[1] > 60 and cd[1]<400:
 						names.append(name)
 						weights.append(wt)
 						coord.append([int(c) for c in cd])
 						gx = int((cd[0]+cd[2])/2); gy = int((cd[1]+cd[3])/2)
 						idd = segmented[gy-3][gx-3]
 						ids.append(idd)
+					# else:
+					# 	norm_scene.pop(item, None)
 
 
 				summ = np.sum(weights)
 				norm_wt = weights/summ
-				for name, wt, cd, idd in zip(names, norm_wt, coord, ids):
-					norm_scene[item].append((name,wt,cd, idd))
+				if len(names) > 0:
+					for name, wt, cd, idd in zip(names, norm_wt, coord, ids):
+						norm_scene[item].append((name,wt,cd, idd))
+				else:
+					norm_scene.pop(item, None)
 
 			return norm_scene
 
@@ -972,11 +977,14 @@ class Grocery_packing:
 			inbox_list.append(key)
 
 		for item in inbox_list+confident_seen_list:
-			if item in self.items and not self.items[item].dummy:
+			# if item in self.items and not self.items[item].dummy:
+			try:
 				if self.items[item].mass == 'heavy':
 					heavylist.append(item)
 				else:
 					lightlist.append(item)
+			except:
+				lightlist.append(item)
 
 		return inbox_list, confident_seen_list, lightlist, heavylist
 
@@ -1017,9 +1025,9 @@ class Grocery_packing:
 
 
 		for item in topfree:
-			if not self.items[item].dummy:
-				init += "(topfree "+alias[item]+") "
-				init += "(inclutter "+alias[item]+") "
+			# if not self.items[item].dummy:
+			init += "(topfree "+alias[item]+") "
+			init += "(inclutter "+alias[item]+") "
 
 		if self.box.num_items >= self.box.full_cpty:
 			init += "(boxfull)"
@@ -1285,14 +1293,12 @@ class Grocery_packing:
 		empty_clutter = self.is_clutter_empty()
 
 		while not empty_clutter:
-			if declutter:
-				self.declutter_surface_items()
 			inboxlist, topfreelist, lightlist, heavylist = \
 					self.select_perceived_objects_and_classify_weights()
 			problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
 												lightlist, heavylist)
 
-			self.run_classical_replanning(self.domain_path, problem_path, alias,declutter=declutter)
+			self.run_classical_replanning(self.domain_path, problem_path, alias)
 			empty_clutter = self.is_clutter_empty()
 
 		end = time.time()
@@ -1329,7 +1335,10 @@ class Grocery_packing:
 			proposed_name = alias[action[1]]
 			real_name = self.get_real_name_of_detection(proposed_name)
 			success = self.pick_up(real_name)
+			time.sleep(10)
 			success = success and self.validate(proposed_name)
+			if not success:
+				self.put_in_clutter(real_name)
 
 		elif action[0] == 'pick-from-box':
 			if not self.items[alias[action[1]]].inbox:
@@ -1367,7 +1376,7 @@ class Grocery_packing:
 			# print(bunch)
 			items = [b[0] for b in bunch]
 			weights = [b[1] for b in bunch]
-			ids = [b[1] for b in bunch]
+			ids = [b[2] for b in bunch]
 			# item_weights.append(weights)
 			weights = [np.abs(w) for w in weights]
 			norm_weights = weights/np.sum(weights)
@@ -1457,16 +1466,16 @@ class Grocery_packing:
 					x = (int(cd[0]) + int(cd[2]))/2
 					y = (int(cd[1]) + int(cd[3]))/2
 
-					if np.abs(x-218) < 100 and np.abs(y-104) < 100:
+					if np.abs(x-218) < 50 and np.abs(y-104) < 50:
 						holding = nm 
 						gx=x; gy=y;
 						break
 		if holding is not None:
 			if holding == proposed:
-				print('Validated')
+				print('Validated holding')
 				return True 
 			else:
-				print('Not valid')
+				print('Not valid. Holding ',holding)
 				return False
 		else:
 			idd = self.detection_to_real[proposed]
@@ -1476,10 +1485,13 @@ class Grocery_packing:
 					name = it 
 					break
 			if name == proposed:
-				print('Validated')
+				print('Validated id')
 				return True 
 			else:
-				print('Not valid')
+				if idd == 1:
+					print('Validated id=1')
+					return True
+				print('Not valid id',idd)
 				return False
 
 		
@@ -1624,11 +1636,13 @@ class Grocery_packing:
 				pass
 
 		for item in inbox_list+confident_seen_list:
-			if item in self.items and not self.items[item].dummy:
+			try:
 				if self.items[item].mass == 'heavy':
 					heavylist.append(item)
 				else:
 					lightlist.append(item)
+			except:
+				lightlist.append(item)
 
 		return inbox_list, confident_seen_list, lightlist, heavylist
 

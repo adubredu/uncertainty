@@ -126,7 +126,7 @@ class Shopping_List:
 		
 
 	def get_items_dict(self):
-		self.items = {'baseball':self.baseball,
+		items = {'baseball':self.baseball,
 					  'beer':self.bottle_beer,
 					  'can_coke':self.can_coke,
 					  'can_pepsi':self.can_pepsi,
@@ -152,18 +152,23 @@ class Shopping_List:
 					  'toy':self.toy,
 					  'lgripper':self.lgripper,
 					  'rgripper':self.rgripper}
+		self.items = {}
+		for it in items:
+			if not items[it].dummy:
+				self.items[it] = items[it]
+
 		return self.items
 
 
 	def get_items_list(self):
-		self.object_list = [self.baseball, self.bottle_beer,
-		self.can_coke, self.can_pepsi, self.can_fanta,
-		self.can_sprite, self.chips_can,self.coffee_box,self.cracker, 
-		self.cup, self.donut,
-		self.fork,self.gelatin,self.meat, self.mustard, self.newspaper,
-		self.orange, self.pear, self.plate, self.soccer_ball,
-		self.soup, self.sponge, self.sugar, self.toy]
-		return self.object_list
+		# self.object_list = [self.baseball, self.bottle_beer,
+		# self.can_coke, self.can_pepsi, self.can_fanta,
+		# self.can_sprite, self.chips_can,self.coffee_box,self.cracker, 
+		# self.cup, self.donut,
+		# self.fork,self.gelatin,self.meat, self.mustard, self.newspaper,
+		# self.orange, self.pear, self.plate, self.soccer_ball,
+		# self.soup, self.sponge, self.sugar, self.toy]
+		return list(self.items.values())[:-2]
 
 	def get_item_string_list(self):
 		oblist = self.get_items_list()
