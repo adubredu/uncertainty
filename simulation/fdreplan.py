@@ -186,6 +186,8 @@ class Grocery_packing:
 		self.confidence_threshold = 0.7
 		self.fps = 60
 		self.scene_belief = {}
+
+		self.detection_to_real ={}
 		
 		self.num_false = 0
 		self.alive = True
@@ -193,9 +195,9 @@ class Grocery_packing:
 		self.perception = threading.Thread(target=self.start_perception,args=(1,))
 		self.perception.start()
 
-		self.pick_up('can_coke')
-		time.sleep(30)
-		self.validate()
+		# self.pick_up('donut')
+		# time.sleep(30)
+		# self.validate('donut')
 
 
 
@@ -422,11 +424,11 @@ class Grocery_packing:
 		import numpy as np 
 		
 		from PIL import Image
-		def normalize_scene_weights(scene):
+		def normalize_scene_weights(scene, segmented):
 			norm_scene = {}
 
 			for item in scene:
-				names=[]; weights=[];coord=[]
+				names=[]; weights=[];coord=[]; ids=[]
 				norm_scene[item]=[]
 				for name,wt,cd in scene[item]:
 
@@ -434,11 +436,15 @@ class Grocery_packing:
 						names.append(name)
 						weights.append(wt)
 						coord.append([int(c) for c in cd])
+						gx = int((cd[0]+cd[2])/2); gy = int((cd[1]+cd[3])/2)
+						idd = segmented[gy-3][gx-3]
+						ids.append(idd)
+
 
 				summ = np.sum(weights)
 				norm_wt = weights/summ
-				for name, wt, cd in zip(names, norm_wt, coord):
-					norm_scene[item].append((name,wt,cd))
+				for name, wt, cd, idd in zip(names, norm_wt, coord, ids):
+					norm_scene[item].append((name,wt,cd, idd))
 
 			return norm_scene
 
@@ -449,6 +455,7 @@ class Grocery_packing:
 			gauss = gauss.reshape(row,col,ch).astype('uint8')
 			noisy = cv2.add(image, gauss)
 			return noisy
+
 
 		while self.alive:
 			viewMatrix = p.computeViewMatrix(
@@ -470,6 +477,7 @@ class Grocery_packing:
 				shadow=True,
 					renderer=p.ER_BULLET_HARDWARE_OPENGL)
 			
+			self.segmented = segImg
 			noisyimage = add_gaussian_noise(colorImage)
 			rgbImg = Image.fromarray(noisyimage).convert('RGB')
 			self.observation = copy.deepcopy(rgbImg)
@@ -521,7 +529,7 @@ class Grocery_packing:
 								box['coordinates'].tolist()) for box in clusters[key]]
 
 			self.raw_belief_space = scene
-			self.scene_belief = normalize_scene_weights(scene)
+			self.scene_belief = normalize_scene_weights(scene, self.segmented)
 
 			# print(self.scene_belief)
 			# print('***'*50)
@@ -948,49 +956,18 @@ class Grocery_packing:
 		confident_seen_list = []; inbox_list = []
 		lightlist = []; heavylist=[]
 		# scene_belief = copy.deepcopy(self.scene_belief)
-		items_seen = list(self.raw_belief_space.keys())
-		for it in items_seen:
-			if not self.items[it].inbox:
-				confident_seen_list.append(it)
+		confident_seen_list = []
+		self.detection_to_real = {}
+		for item in self.scene_belief:
+			if len(self.scene_belief[item])>0:
+				confident_seen_list.append(item)
+				idd = self.scene_belief[item][0][3]
+				self.detection_to_real[item] = idd
+
 
 		random.shuffle(confident_seen_list)
-
-		'''
-		for item in scene_belief:
-			if len(scene_belief[item]) > 0 and item in self.items:
-				if scene_belief[item][0][1] >= self.confidence_threshold:
-					if len(scene_belief[item]) == 2 and self.num_false > 2:
-						cf1 = scene_belief[item][0][1]
-						cf2 = scene_belief[item][1][1]
-						nm1 = scene_belief[item][0][0]
-						nm2 = scene_belief[item][1][0]
-						wts = [cf1, cf2]/np.sum([cf1, cf2])
-						choice = np.random.choice([nm1, nm2], size=1,p=wts)
-						if not self.items[choice[0]].inbox:
-							confident_seen_list.append(choice[0])
-						print('USED NUM FALSE')
-					elif len(scene_belief[item]) > 2 and self.num_false > 2:
-						cf1 = scene_belief[item][0][1]
-						cf2 = scene_belief[item][1][1]
-						cf3 = scene_belief[item][2][1]
-						nm1 = scene_belief[item][0][0]
-						nm2 = scene_belief[item][1][0]
-						nm3 = scene_belief[item][2][0]
-						wts = [cf1, cf2, cf3]/np.sum([cf1, cf2,cf3])
-						choice = np.random.choice([nm1, nm2,nm3], size=1,p=wts)
-						if not self.items[choice[0]].inbox:
-							confident_seen_list.append(choice[0])
-						print('USED NUM FALSE')
-					else:
-						# if self.items[item].inclutter:  #BIAS TO ONLY RECOGNIZE ITEMS IN CLUTTER
-						if not self.items[item].inbox:
-							confident_seen_list.append(item)
-		'''
-
 		print('confidently scene items: '+str(confident_seen_list))
-		# for item in self.objects_list:
-		# 	if item.inbox and not item.dummy:
-				# inbox_list.append(item.name)
+		
 		for key in self.box.items_added:
 			inbox_list.append(key)
 
@@ -1090,39 +1067,6 @@ class Grocery_packing:
 				goal +="(on "+alias[m]+" "+alias[mm]+") "
 
 		goal+=")))\n"
-		'''
-		# USES DISJUNCTIONS. SEEMS LIKE A DIFFICULT
-		#PLANNING PROBLEM FOR LARGE STATE SPACES: N>16
-		if hlen == self.box.full_cpty and mlen > hlen:
-
-			for m in mediumlist[:hlen]:
-				goal += "(or "
-				for h in hvlist_free:
-					goal += "(on "+alias[m]+" "+alias[h]+") "
-				goal+=") "
-
-			for m in mediumlist[hlen:]:
-				goal += "(or "
-				for mm in mediumlist[:hlen]:
-					goal += "(on "+alias[m]+" "+alias[mm]+") "
-				goal+=") "
-			goal +=")))"
-
-		else:
-			for m in mediumlist[:stop]:
-				goal += "(inbox "+alias[m]+") "
-			for m in mediumlist[stop:stop+self.box.full_cpty]:
-				goal+="(or "
-				for mm in hvlist_free+mediumlist[:stop]:
-					goal += "(on "+alias[m]+" "+alias[mm]+") "
-				goal+=") "
-			for m in mediumlist[stop+self.box.full_cpty:]:
-				goal += "(or "
-				for mm in mediumlist[stop:self.box.full_cpty]:
-					goal += "(on "+alias[m]+" "+alias[mm]+") "
-				goal+=") "
-			goal +=")))"
-			'''
 
 		definition = "(define (problem PACKED-GROCERY) \n(:domain GROCERY) \n (:objects "
 		for al in alias.values():
@@ -1157,18 +1101,13 @@ class Grocery_packing:
 
 
 
-		#FDREPLAN ALGO
+		#FD-REPLAN ALGO
 
-	def plan_and_run_belief_space_planning(self, domain_path, problem_path, alias, declutter=False):
+	def run_fdreplan(self, domain_path, problem_path, alias, declutter=False):
 		start = time.time()
 		
 		b = Bool(); b.data = True; self.should_plan.publish(b)
-		# rospy.Subscriber('/planned', String, self.get_plan)
-		# time.sleep(2)
-			# print('planning...')
-			# rospy.Subscriber('/planned', String, self.get_plan)
 
-		# plan = f.plan(domain_path, problem_path)
 		time.sleep(5)
 		self.added_time += 5.0
 		plan = self.read_plan()
@@ -1211,7 +1150,7 @@ class Grocery_packing:
 			print(f)
 			self.action_pub.publish(a)
 			t = time.time()
-			result = self.execute_sbp_action(action, alias)
+			result = self.execute_action(action, alias)
 			self.total_execution_time += time.time() - t
 			print('Total Execution Time: ', self.total_execution_time)
 			print('Num retracts: ', self.num_pick_from_box)
@@ -1234,7 +1173,91 @@ class Grocery_packing:
 					self.sample_belief_space()
 				new_problem_path, nalias = self.create_pddl_problem(inboxlist, topfreelist,
 												mediumlist, heavylist)
-				self.plan_and_run_belief_space_planning(self.domain_path, new_problem_path, nalias)
+				self.run_fdreplan(self.domain_path, new_problem_path, nalias)
+				break
+		try:
+			os.remove('fdplan')
+		except:
+			pass
+		a = String()
+		a.data = ''
+		
+		self.action_pub.publish(a)
+		self.plan_pub.publish(a)
+		return
+
+
+	def run_classical_replanning(self, domain_path, problem_path, alias, declutter=False):
+		start = time.time()
+		
+		b = Bool(); b.data = True; self.should_plan.publish(b)
+
+		time.sleep(5)
+		self.added_time += 5.0
+		plan = self.read_plan()
+		print(plan)
+		self.planning_time += time.time()-start
+		
+
+		if plan is None or len(plan) <= 1:
+			print('NO VALID PLAN FOUND')
+			print(self.scene_belief)
+			if declutter:
+				self.declutter_surface_items()
+			self.num_false +=1
+			if self.confidence_threshold > 0.2:
+				self.confidence_threshold -= 0.1
+				print(self.confidence_threshold)
+
+			return
+		self.convert_to_string_and_publish(plan,alias)
+		for action in plan:
+			if action[1] not in alias:
+				print('wrong aliasing')
+				print(alias)
+				return
+			else:
+				if len(action) == 3:
+					if action[2] not in alias:
+						print('wrong aliasing')
+						print(alias)
+						return
+		self.convert_to_string_and_publish(plan, alias)
+		for action in plan:
+			a = String()
+			f = list(action)
+			f[1] = alias[action[1]]
+			if len(action) == 3:
+				f[2] = alias[action[2]]
+			f = str(f)
+			a.data = f 
+			print(f)
+			self.action_pub.publish(a)
+			t = time.time()
+			result = self.execute_action(action, alias)
+			self.total_execution_time += time.time() - t
+			print('Total Execution Time: ', self.total_execution_time)
+			print('Num retracts: ', self.num_pick_from_box)
+			if not result:
+				try:
+					os.remove('fdplan')
+				except:
+					pass
+				if self.is_clutter_empty():
+					return
+				 
+				self.current_action = "Action: REPLANNING..."  
+				print('REPLANNING')
+				self.current_plan = 'Blah'
+				self.num_false+=1
+				a.data = 'REPLANNING'		
+				self.action_pub.publish(a)
+				print('Box num is: '+str(self.box.num_items))
+				inboxlist, topfreelist, mediumlist, heavylist = \
+					self.select_perceived_objects_and_classify_weights()
+				new_problem_path, nalias = self.create_pddl_problem(inboxlist, topfreelist,
+												mediumlist, heavylist)
+				self.run_classical_replanning(self.domain_path, new_problem_path, nalias)
 				break
 		try:
 			os.remove('fdplan')
@@ -1256,8 +1279,9 @@ class Grocery_packing:
 				return False
 		return True
 
-
-	def perform_optimistic_belief_grocery_packing(self,declutter=False):
+	
+	def perform_classical_replanning(self):
+		start = time.time()
 		empty_clutter = self.is_clutter_empty()
 
 		while not empty_clutter:
@@ -1268,14 +1292,9 @@ class Grocery_packing:
 			problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
 												lightlist, heavylist)
 
-			self.plan_and_run_belief_space_planning(self.domain_path, 
-														problem_path, alias,declutter=declutter)
+			self.run_classical_replanning(self.domain_path, problem_path, alias,declutter=declutter)
 			empty_clutter = self.is_clutter_empty()
 
-	
-	def perform_optimistic(self):
-		start = time.time()
-		self.perform_optimistic_belief_grocery_packing()
 		end = time.time()
 		total = end-start-self.added_time
 		print('sub PLANNING TIME FOR OPTIMISTIC: ',total - self.total_execution_time)
@@ -1285,204 +1304,7 @@ class Grocery_packing:
 		self.save_results('Optimistic',self.planning_time,self.total_execution_time)
 
 
-	def perform_declutter(self):
-		obs = []; too_close=[]
-		for item in self.item_list:
-			if self.items[item].inclutter:
-				obs.append(item)
-		for item1 in obs:
-			for item2 in obs:
-				if item1 != item2:
-					it1 = self.items[item1]
-					it2 = self.items[item2]
-					dist = np.sqrt((it1.x-it2.x)**2+(it1.y-it2.y)**2)
-					if dist < 0.05 and self.items[item2].inclutter:
-						too_close.append(item2)
-		too_close = list(set(too_close))
-		print(too_close)
-
-		for item in too_close:
-			self.pick_up(item)
-			self.put_in_clutter(item)
-		print('done decluttering')
-
-
-	def perform_declutter_belief_grocery_packing(self):
-		time.sleep(5)
-		start = time.time()
-		# self.should_declutter = True
-		# self.declutter_surface_items()
-		# self.should_declutter = False
-		self.perform_optimistic_belief_grocery_packing(declutter=True)
-		end = time.time()
-		total = end - start
-		exe = total - self.planning_time
-		print('PLANNING TIME FOR DECLUTTER: '+str(self.planning_time))
-		print('EXECUTION TIME FOR DECLUTTER: '+str(total - self.planning_time))
-		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
-		self.save_results('Declutter',self.planning_time,exe)
-
-	def create_sbp_problem(self, inbox, topfree, mediumlist, heavylist):
-		num_hypotheses = 5
-		topfree =[]
-		mediumlist =[]
-		heavylist=[]
-
-		for item in inbox:
-			if self.items[item].mass == 'heavy':
-				heavylist.append(item)
-			else:
-				mediumlist.append(item)
-
-		alias = {}
-		hc = 0
-		for item in heavylist:
-			alias[item] = 'h'+str(hc)
-			hc+=1
-
-		mc = 0
-		for item in mediumlist:
-			alias[item] = 'm'+str(mc)
-			mc+=1
-
-		if self.gripper.holding is not None:
-			name = self.gripper.holding
-			if self.items[name].mass == 'heavy':
-				alias[name] = 'h'+str(hc)
-				hc+=1
-			else:
-				alias[name] = 'm'+str(mc)
-				mc+=1
-
-
-		init = "(:init "
-		for item in inbox:
-			init += "(inbox "+alias[item]+") "
-			it = self.items[item].item_on_top
-			if it != None and it in alias:
-				init+= "(on "+alias[it]+" "+alias[item]+") "
-			else:
-				init += "(topfree "+alias[item]+") "
-
-		if self.box.num_items >= self.box.full_cpty:
-			init += "(boxfull)"
-		# for item in topfree:
-		# 	init += "(topfree "+alias[item]+") "
-		# 	init += "(inclutter "+alias[item]+") "
-
-		#generating scene hypotheses and choosing the hypothesis with
-		#highest weight
-		scene_hypotheses = []
-		for i in range(num_hypotheses):
-			subhyp=[]
-			for item in self.scene_belief:
-				if len(self.scene_belief[item]) > 0:
-					obs = [obconf[0] for obconf in self.scene_belief[item]]
-					wts = [obconf[1] for obconf in self.scene_belief[item]]
-					wts = wts/np.sum(wts)
-					choice = np.random.choice(obs, size=1, p=wts)
-					name = choice[0]
-					ind = obs.index(name)
-					subhyp.append((name, wts[ind]))
-			scene_hypotheses.append(subhyp)
-
-		#scoring hypothesis
-		scores = [0 for i in range(num_hypotheses)]
-		for i in range(num_hypotheses):
-			for obwt in scene_hypotheses[i]:
-				scores[i]+=obwt[1]
-		maxind = np.argmax(scores)
-		selected_hypothesis = scene_hypotheses[maxind]
-
-		#add them to problem. TO CHANGE IF CONDITION LATER
-		for item,_ in selected_hypothesis:
-			if not item in alias:
-				if self.items[item].mass == 'heavy':
-					heavylist.append(item)
-					alias[item] = 'h'+str(hc)
-					hc+=1
-					init += "(topfree "+alias[item]+") "
-					init += "(inclutter "+alias[item]+") "
-
-				else:
-					mediumlist.append(item)
-					alias[item] = 'm'+str(mc)
-					mc +=1
-					init += "(topfree "+alias[item]+") "
-					init += "(inclutter "+alias[item]+") "
-
-		if self.gripper.holding is not None:
-			print('IS HOLDING '+self.gripper.holding)
-			init+="(holding "+alias[self.gripper.holding]+") "
-		else:
-			init+='(handempty) '
-		init +=  ")\n"
-
-		goal = "(:goal (and "
-
-		for h in heavylist[:self.box.full_cpty]:
-			goal += "(inbox "+alias[h]+") "
-
-		hleft = heavylist[self.box.full_cpty:]
-		hin = heavylist[:self.box.full_cpty]
-		hputon = hin[:len(hleft)]
-
-		for l, i in zip(hleft, hputon):
-			goal += "(on "+alias[l]+" "+alias[i]+") "
-
-		hvlist_free = hleft + hin[len(hleft):]
-			
-		mlen=len(mediumlist)
-		hlen=len(hvlist_free)
-		stop = self.box.full_cpty - hlen
-
-		if hlen == self.box.full_cpty and mlen > hlen:
-
-			for m in mediumlist[:hlen]:
-				goal += "(or "
-				for h in hvlist_free:
-					goal += "(on "+alias[m]+" "+alias[h]+") "
-				goal+=") "
-
-			for m in mediumlist[hlen:]:
-				goal += "(or "
-				for mm in mediumlist[:hlen]:
-					goal += "(on "+alias[m]+" "+alias[mm]+") "
-				goal+=") "
-			goal +=")))"
-
-		else:
-			for m in mediumlist[:stop]:
-				goal += "(inbox "+alias[m]+") "
-			for m in mediumlist[stop:stop+self.box.full_cpty]:
-				goal+="(or "
-				for mm in hvlist_free+mediumlist[:stop]:
-					goal += "(on "+alias[m]+" "+alias[mm]+") "
-				goal+=") "
-			for m in mediumlist[stop+self.box.full_cpty:]:
-				goal += "(or "
-				for mm in mediumlist[stop:self.box.full_cpty]:
-					goal += "(on "+alias[m]+" "+alias[mm]+") "
-				goal+=") "
-			goal +=")))"
-
-		definition = "(define (problem PACKED-GROCERY) \n(:domain GROCERY) \n (:objects "
-		for al in alias.values():
-			definition += al+" "
-		definition += "- item)\n"
-
-		problem = definition + init + goal
-
-		f = open("newprob.pddl","w")
-		f.write(problem)
-		f.close()
-		dir_path = os.path.dirname(os.path.realpath(__file__))
-		prob_path = dir_path+"/"+"newprob.pddl"
-		
-		swapped_alias  = dict([(value, key) for key, value in alias.items()]) 
-		return prob_path, swapped_alias
-
-
+	
 	def convert_to_string_and_publish(self,plan,alias):
 		pass
 		# concat = ''
@@ -1499,87 +1321,19 @@ class Grocery_packing:
 		
 		# self.plan_pub.publish(p)
 
-	def run_sbp(self, domain_path, problem_path, alias):
-		# f = Planner()#PFast_Downward()
-		start = time.time()
-
-		b = Bool(); b.data = True; self.should_plan.publish(b)
-		time.sleep(5)
-		plan = self.read_plan()
-		print(plan)
-		self.planning_time += time.time()-start
-
-		if plan is None or len(plan) <= 1:
-			print('NO VALID PLAN FOUND')
-			print(self.scene_belief)
-			self.num_false +=1
-			if self.confidence_threshold > 0.2:
-				self.confidence_threshold -= 0.1
-				print(self.confidence_threshold)
-
-			return
-
-		for action in plan:
-			if action[1] not in alias:
-				print('wrong aliasing')
-				return
-			else:
-				if len(action) == 3:
-					if action[2] not in alias:
-						print('wrong aliasing')
-						return
-
-		self.convert_to_string_and_publish(plan,alias)
-		
-		for action in plan:
-			# print(action)
-			a = String()
-			f = list(action)
-			f[1] = alias[action[1]]
-			if len(action) == 3:
-				f[2] = alias[action[2]]
-			f = str(f)
-			print(f)
-			a.data = f		
-			self.action_pub.publish(a)
-			result = self.execute_sbp_action(action, alias)
-			if not result:
-				self.current_action = "Action: REPLANNING..."  
-				a.data = 'REPLANNING'		
-				self.action_pub.publish(a)
-				print('REPLANNING')
-				inboxlist, topfreelist, mediumlist, heavylist = \
-					self.select_perceived_objects_and_classify_weights()
-				new_problem_path, nalias = self.create_sbp_problem(inboxlist, topfreelist,
-												mediumlist, heavylist)
-				self.run_sbp(self.domain_path, new_problem_path, nalias)
-				break
-		a = String()
-		a.data = ''
-		try:
-			os.remove('fdplan')
-		except:
-			pass
-		
-		self.action_pub.publish(a)
-		self.plan_pub.publish(a)
-		return
-
-
-
-	def execute_sbp_action(self,action, alias):
+	
+	def execute_action(self,action, alias):
 		self.current_action = "Action: "+str(action)
 		success = True
 		if action[0] == 'pick-from-clutter':
-			if not self.items[alias[action[1]]].inclutter:
-				print('Wrong pick')
-				return False
-			success = self.pick_up(alias[action[1]])
-			self.box.remove_item(alias[action[1]])
+			proposed_name = alias[action[1]]
+			real_name = self.get_real_name_of_detection(proposed_name)
+			success = self.pick_up(real_name)
+			success = success and self.validate(proposed_name)
 
 		elif action[0] == 'pick-from-box':
 			if not self.items[alias[action[1]]].inbox:
-				print('Wrong pick')
+				print('Wrong pick from box')
 				return False
 			self.num_pick_from_box+=1
 			success = self.pick_up(alias[action[1]])
@@ -1602,44 +1356,27 @@ class Grocery_packing:
 
 		return success
 
-		
-	def perform_sbp_grocery_packing(self):
-		st = time.time()
-
-		empty_clutter = self.is_clutter_empty()
-
-		while not empty_clutter:
-			inboxlist, topfreelist, mediumlist, heavylist = \
-					self.select_perceived_objects_and_classify_weights()
-			problem_path, alias = self.create_sbp_problem(inboxlist, topfreelist,
-												mediumlist, heavylist)
-			self.run_sbp(self.domain_path, problem_path, alias)
-
-			empty_clutter = self.is_clutter_empty()
-		end = time.time()
-		total = end-st
-		exe = total-self.planning_time
-		print('PLANNING TIME FOR SBP: '+str(self.planning_time))
-		print('EXECUTION TIME FOR SBP: '+str(total-self.planning_time))
-		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
-
-		self.save_results('sbp',self.planning_time,exe)
-
+	
 
 	def single_sample(self, occluded_items):
 		sampled_items=[]
 		item_weights = []
+		ids = []
+		self.detection_to_real = {}
 		for bunch in occluded_items:
 			# print(bunch)
 			items = [b[0] for b in bunch]
 			weights = [b[1] for b in bunch]
+			ids = [b[1] for b in bunch]
 			# item_weights.append(weights)
 			weights = [np.abs(w) for w in weights]
 			norm_weights = weights/np.sum(weights)
 			sample = np.random.choice(items, size=1, p=norm_weights)
 			ind = items.index(sample)
+			idd = ids[ind]
 			item_weights.append(weights[ind])
 			sampled_items.append(sample[0])
+			self.detection_to_real[sample[0]] = idd
 
 		return sampled_items, item_weights
 
@@ -1694,10 +1431,6 @@ class Grocery_packing:
 			return min_sample
 
 
-	def divergent_set_sample_2(self, occluded_items):
-		pass
-
-
 	def get_whole_scene_belief(self):
 		belief = []
 		for item in self.scene_belief:
@@ -1706,298 +1439,18 @@ class Grocery_packing:
 		return belief
 
 
-	def estimate_clutter_content(self,surface_items,inboxlist,sample_procedure):
-		
-		# occluded are items in self.scene_belief whose confidence < threshold
-		occluded_items = []
-		for item in self.scene_belief:
-			if len(self.scene_belief[item]) > 0:
-				if self.scene_belief[item][0][1] < self.confidence_threshold:
-					occluded_items.append(self.scene_belief[item])
-
-		if len(occluded_items) == 0:
-			r = np.random.randint(2)
-			if r == 0:
-				return 1,0
-			else:
-				return 0,1
-		#one-time weighted sample. To change sampling strategy, alter 
-		#the function: self.high_uncertainty_sample(name)
-		if sample_procedure == 'weighted_sample':
-			# SAMPLE WITH JUST THE ORIGINAL WEIGHTS
-			sampled_occluded_items,_ = self.single_sample(occluded_items)
-
-		elif sample_procedure == 'mc_sample':
-			# SAMPLE MULTIPLE TIMES FROM ORIGINAL WEIGHT AND CHOOSE ONE WITH
-			# HIGHEST FREQ
-			sampled_occluded_items = self.monte_carlo_sample(occluded_items)
-			ws,_ = self.single_sample(occluded_items)
-			f=open('compare_samples.txt','a')
-			f.write('mc: '+str(sampled_occluded_items))
-			f.write('\n')
-			f.write('wd: '+str(ws))
-			f.write('\n')
-			f.write('gt: '+str(occluded_items))
-			f.write('************************************\n')
-			f.write('\n')
-			f.close()
-
-		elif sample_procedure == 'divergent_set_1':
-			# 1. DRAW MULTIPLE SAMPLES, SCORE THEM BY SIMILARITY TO MC SAMPLE
-			# CHOOSE FROM THE BEST AND WORST
-			sampled_occluded_items = self.divergent_set_sample_1(occluded_items)
-
-		elif sample_procedure == 'divergent_set_2':
-			# 2. DRAW MULTIPLE SAMPLES, COMPUTE PLANS FOR EACH, FIND THE
-			# TWO WITH THE HIGHEST DIFF AND CHOOSE ONE WITH PROBABILITY 0.5
-			sampled_occluded_items = self.divergent_set_sample_2(occluded_items)
-		
-		num_heavy = 0; num_light = 0;
-		for it in sampled_occluded_items:
-			if self.items[it].mass == 'heavy':
-				num_heavy +=1
-			else:
-				num_light += 1
-		#finding percentage of heavy and light
-		# print("NUM HEAVY: "+str(num_heavy)+" over "+str(N_o_s))
-		oh = (float(num_heavy)/float(len(sampled_occluded_items)))
-
-		suh = 0
-		print('surface items:')
-		print(surface_items)
-		for it in surface_items:
-			if self.items[it].mass == 'heavy':
-				suh +=1
-
-		print("sNUM HEAVY: "+str(suh)+" over "+str(len(surface_items)))
-		if len(surface_items) == 0:
-			sh = 1
-		else:
-			sh = float(suh)/float(len(surface_items))
-		return oh, sh
+	def get_real_name_of_detection(self, maybefalse):
+		idd =  self.detection_to_real[maybefalse]
+		name = maybefalse
+		for it in self.items:
+			if self.items[it].id == idd:
+				name = it 
+		return name
 
 
-	def declutter_surface_items(self):
-		a = String()
-		a.data = "Decluttering..."
-		self.action_pub.publish(a)
-		self.perform_declutter()
-		'''
-		occluded_items = []
-		num = int(len(self.item_list)/4)
-
-		for item in self.item_list:
-			if self.items[item].inclutter:
-				occluded_items.append(item)
-		# print(self.scene_belief)
-		# for item in self.scene_belief:
-		# 	if not self.items[item].dummy:
-		# 		if len(self.scene_belief[item]) > 0:
-		# 			if self.scene_belief[item][0][1] < self.confidence_threshold+0.3:
-		# 				occluded_items.append(self.scene_belief[item][0][0])
-		for item in occluded_items[:num]:
-			self.pick_up(item)
-			self.put_in_clutter(item)
-		'''
-	
-	def perform_random_dynamic_grocery_packing(self):
-		st = time.time()
-		empty_clutter = self.is_clutter_empty()
-
-		while not empty_clutter:
-			inboxlist, topfreelist, mediumlist, heavylist = \
-					self.select_perceived_objects_and_classify_weights()
-			problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
-												mediumlist, heavylist)
-			
-			r = np.random.randint(2)
-
-			if r == 1:
-				print('\nPERFORMING OPT\n')
-				self.plan_and_run_belief_space_planning(self.domain_path, \
-										problem_path, alias)
-				
-			else:
-				print(('\nPERFORMING DECLUTTER\n'))
-				self.deccount+=1
-				self.declutter_surface_items()
-			
-			empty_clutter = self.is_clutter_empty()
-		end = time.time()
-		total = end-st
-		exe = total-self.planning_time
-		print('PLANNING TIME FOR DYNAMIC: '+str(self.planning_time))
-		print('EXECUTION TIME FOR DYNAMIC: '+str(total-self.planning_time))
-		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
-
-		self.save_results('Dynamic_random',self.planning_time,exe)
-
-
-	def perform_dynamic_grocery_packing(self,sample_procedure):
-		st = time.time()
-		empty_clutter = self.is_clutter_empty()
-
-		while not empty_clutter:
-			inboxlist, topfreelist, mediumlist, heavylist = \
-					self.select_perceived_objects_and_classify_weights()
-			problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
-												mediumlist, heavylist)
-			
-			unoccluded_items = topfreelist
-			oh, sh = self.estimate_clutter_content(unoccluded_items,inboxlist,sample_procedure)
-			print("probs are "+str(oh)+" "+str(sh))
-			if self.deccount >=5:
-				sh = 1; oh = 0;
-				self.deccount = 0
-				print('do opt now')
-
-			if sh >= oh:
-				print('\nPERFORMING OPT\n')
-				self.plan_and_run_belief_space_planning(self.domain_path, \
-										problem_path, alias)
-				
-			else:
-				print(('\nPERFORMING DECLUTTER\n'))
-				self.deccount+=1
-				self.declutter_surface_items()
-			
-			empty_clutter = self.is_clutter_empty()
-		end = time.time()
-		total = end-st
-		exe = total-self.planning_time
-		print('PLANNING TIME FOR DYNAMIC: '+str(self.planning_time))
-		print('EXECUTION TIME FOR DYNAMIC: '+str(total-self.planning_time))
-		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
-
-		self.save_results('Dynamic_'+sample_procedure,self.planning_time,exe)
-
-
-	def get_objects_in_order(self):
-		obs=[]
-		for item in self.objects_list:
-			if not item.dummy:
-				obs.append(item.name)
-		return obs
-
-	def perform_conveyor_belt_pack(self):
-		# items_in_order = self.get_objects_in_order()
-		start = time.time()
-		empty_clutter = self.is_clutter_empty()
-
-		while not empty_clutter:
-			print('Beginning while')
-			_,items_in_order,_,_ = self.select_perceived_objects_and_classify_weights()
-			print('ITEMS IN ORDER: '+str(len(items_in_order)))
-			for item in items_in_order:
-				inboxlist, topfreelist, mediumlist, heavylist = \
-						self.select_perceived_objects_and_classify_weights()
-				for t in topfreelist:
-					if t != item:
-						try:
-							mediumlist.remove(t)
-						except:
-							pass
-				for t in topfreelist:
-					if t != item:
-						try:
-							heavylist.remove(t)
-						except:
-							pass
-				topfreelist = [item]
-
-				if self.items[item].mass == 'heavy':
-					if item not in heavylist:
-						heavylist.append(item)
-				else:
-					if item not in mediumlist:
-						mediumlist.append(item)
-
-				print('creating prob')
-				problem_path, alias = self.create_pddl_problem(inboxlist, topfreelist,
-													mediumlist, heavylist)
-				print('planning and running')
-				self.plan_and_run_belief_space_planning(self.domain_path, 
-														problem_path, alias)
-			print('RUN IS OVER')
-			empty_clutter = self.is_clutter_empty()
-
-		end = time.time()
-		total = end-start
-		exe = total - self.planning_time
-		print('PLANNING TIME FOR CONVEYORBELT: '+str(self.planning_time))
-		print('EXECUTION TIME FOR CONVEYORBELT: '+str(total - self.planning_time))
-		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
-
-		self.save_results('Conveyor_Belt',self.planning_time,exe)
-
-
-	def perform_pick_n_roll(self):
-		st = time.time()
-		items_in_order = self.get_objects_in_order()
-		light = []
-		box = Box(3,vast=True)
-		box.cascade = True 
-
-		for item in items_in_order:
-			if self.items[item].mass == 'heavy':
-				x,y,z= box.add_item(item)
-				self.pick_up(item)
-				self.put_in_box(item,x,y,z)
-
-			else:
-				light.append(item)
-				self.pick_up(item)
-				self.put_in_clutter(item)
-
-		for item in light:
-			x,y,z = box.add_item(item)
-			self.pick_up(item)
-			self.put_in_box(item,x,y,z)
-
-		duration = time.time() - st
-		print("PLANNING TIME FOR PICKNROLL: 0")
-		print("EXECUTION TIME FOR PICKNROLL: "+str(duration))
-		self.save_results('Pick_n_roll',0,duration)
-
-
-
-	def perform_bag_sort(self):
-		st = time.time()
-		items_in_order = self.get_objects_in_order()
-		light = []; heavy=[]
-		box = Box(3,vast=True)
-		box.cascade = True 
-
-		for item in items_in_order:
-			if self.items[item].mass == 'heavy':
-				heavy.append(item)
-				self.pick_up(item)
-				self.put_in_clutter(item)				
-			else:
-				light.append(item)
-				self.pick_up(item)
-				self.put_in_clutter(item)
-
-		for item in heavy:
-			x,y,z= box.add_item(item)
-			self.pick_up(item)
-			self.put_in_box(item,x,y,z)
-
-		for item in light:
-			x,y,z = box.add_item(item)
-			self.pick_up(item)
-			self.put_in_box(item,x,y,z)
-
-		duration = time.time() - st
-		print("PLANNING TIME FOR BAGSORT: 0")
-		print("EXECUTION TIME FOR BAGSORT: "+str(duration))
-		print('NUMBER OF BOX REMOVES: '+str(self.num_pick_from_box))
-
-		self.save_results('Bag_sort',0,duration)
-
-
-	def validate(self, proposed='pear'):
+	def validate(self, proposed):
 		holding = None
+		gx=0; gy=0
 		for item in self.raw_belief_space:
 			for nm, cf, cd in self.raw_belief_space[item]:
 				if nm == item:
@@ -2006,11 +1459,29 @@ class Grocery_packing:
 
 					if np.abs(x-218) < 100 and np.abs(y-104) < 100:
 						holding = nm 
+						gx=x; gy=y;
 						break
 		if holding is not None:
-			print('holding ',holding)
+			if holding == proposed:
+				print('Validated')
+				return True 
+			else:
+				print('Not valid')
+				return False
 		else:
-			print("can't see holding")
+			idd = self.detection_to_real[proposed]
+			name = None
+			for it in self.items:
+				if self.items[it].id == idd:
+					name = it 
+					break
+			if name == proposed:
+				print('Validated')
+				return True 
+			else:
+				print('Not valid')
+				return False
+
 		
 
 	def perform_pomcp(self):
@@ -2093,7 +1564,7 @@ class Grocery_packing:
 
 		for action in plan:
 			t = time.time()
-			result = self.execute_sbp_action(action, alias)
+			result = self.execute_action(action, alias)
 			self.total_execution_time += time.time() - t 
 			print('TOTAL EXECUTION TIME: ', self.total_execution_time)
 			print('Num retracts: ', self.num_pick_from_box)
@@ -2129,14 +1600,14 @@ class Grocery_packing:
 		for item in scene_belief:
 			hypotheses = []; iih=[]; wih=[]
 			for hypothesis in scene_belief[item]:
-				s = (hypothesis[0], hypothesis[1])
+				s = (hypothesis[0], hypothesis[1], hypothesis[3])
 				hypotheses.append(s)
 				iih.append(hypothesis[0])
 				wih.append(hypothesis[1])
 			p = (1 - np.sum(wih))/(num_objects - len(iih))
 			for it in self.item_list:
 				if it not in iih:
-					hypotheses.append((it, p))
+					hypotheses.append((it, p,1))
 			occluded_items.append(hypotheses)
 		# print(occluded_items)
 		confident_seen_list,_ = self.single_sample(occluded_items)
@@ -2177,8 +1648,7 @@ class Grocery_packing:
 			problem_path, alias = self.create_pddl_problem(inboxlist, firstfree,
 												lightlist, heavylist)
 
-			self.plan_and_run_belief_space_planning(self.domain_path, 
-														problem_path, alias,declutter)
+			self.run_fdreplan(self.domain_path, problem_path, alias,declutter)
 			empty_clutter = self.is_clutter_empty()
 		end = time.time()
 		total = end-start-self.added_time
@@ -2239,56 +1709,13 @@ class Grocery_packing:
 		f.close()
 
 	def run_strategy(self, strategy):
-		if strategy == 'conveyor-belt':
+		
+		if strategy == 'classical-replanner':
 			m = String()
 			m.data = strategy
 			self.method_pub.publish(m)
-			self.perform_conveyor_belt_pack()
-		elif strategy == 'pick-n-roll':
-			m = String()
-			m.data = strategy
-			self.method_pub.publish(m)
-			self.perform_pick_n_roll()
-		elif strategy == 'bag-sort':
-			m = String()
-			m.data = strategy
-			self.method_pub.publish(m)
-			self.perform_bag_sort()
-		elif strategy == 'sbp':
-			m = String()
-			m.data = strategy
-			self.method_pub.publish(m)
-			self.perform_sbp_grocery_packing()
-		elif strategy == 'classical-replanner':
-			m = String()
-			m.data = strategy
-			self.method_pub.publish(m)
-			self.perform_optimistic()
-		elif strategy == 'declutter':
-			m = String()
-			m.data = strategy
-			self.method_pub.publish(m)
-			self.perform_declutter_belief_grocery_packing()
-		elif strategy == 'mc-dynamic':
-			m = String()
-			m.data = strategy
-			self.method_pub.publish(m)
-			self.perform_dynamic_grocery_packing('mc_sample')
-		elif strategy == 'weighted-dynamic':
-			m = String()
-			m.data = strategy
-			self.method_pub.publish(m)
-			self.perform_dynamic_grocery_packing('weighted_sample')
-		elif strategy == 'divergent-dynamic':
-			m = String()
-			m.data = strategy
-			self.method_pub.publish(m)
-			self.perform_dynamic_grocery_packing('divergent_set_1')
-		elif strategy == 'random-dynamic':
-			m = String()
-			m.data = strategy
-			self.method_pub.publish(m)
-			self.perform_random_dynamic_grocery_packing()
+			self.perform_classical_replanning()
+		
 		elif strategy == 'pomcp':
 			m = String()
 			m.data = strategy
@@ -2311,95 +1738,6 @@ class Grocery_packing:
 
 
 
-def test_pick_place():
-	g = Grocery_packing()
-	box = Box(3)
-	time.sleep(10)
-
-	# g.pick_up('lysol')
-	# g.put_on('lysol', 'cereal')
-	# g.pick_up('lysol')
-	# g.put_in_clutter('lysol')
-	g.pick_up('beer')
-	i,j,k = box.add_item('beer')
-	g.put_in_box('beer',i,j,k)
-	print(g.scene_belief)
-	print("\n**********************************\n")
-
-	g.pick_up('mustard')
-	g.put_on('mustard','beer')
-
-	g.pick_up('can_coke')
-	g.put_on('can_coke', 'mustard')
-
-	g.pick_up('soccer_ball')
-	g.put_on('soccer_ball','can_coke')
-
-	g.pick_up('can_sprite')
-	g.put_on('can_sprite','soccer_ball')
-
-	g.pick_up('gelatin')
-	g.put_on('gelatin','can_sprite')
-
-	g.pick_up('soup')
-	g.put_on('soup','gelatin')
-
-	g.pick_up('cracker')
-	g.put_on('cracker','soup')
-
-	g.pick_up('cup')
-	g.put_on('cup','cracker')
-
-	g.pick_up('sugar')
-	g.put_on('sugar','cup')
-
-	g.pick_up('plate')
-	g.put_on('plate','sugar')
-	time.sleep(30)
-
-	# g.pick_up('mustard')
-	# i,j,k = box.add_item('mustard')
-	# g.put_in_box('mustard',i,j,k)
-	# print(g.scene_belief)
-	# print("\n**********************************\n")
-
-
-	# g.pick_up('can_coke')
-	# i,j,k = box.add_item('can_coke')
-	# g.put_in_box('can_coke',i,j,k)
-	# print(g.scene_belief)
-	# print("\n**********************************\n")
-
-
-	# g.pick_up('soccer_ball')
-	# i,j,k = box.add_item('soccer_ball')
-	# g.put_in_box('soccer_ball',i,j,k)
-	# print(g.scene_belief)
-	# print("\n**********************************\n")
-
-	# g.pick_up('can_sprite')
-	# i,j,k = box.add_item('can_sprite')
-	# g.put_in_box('can_sprite',i,j,k)
-	# print(g.scene_belief)
-	# print("\n**********************************\n")
-
-	# g.pick_up('gelatin')
-	# i,j,k = box.add_item('gelatin')
-	# g.put_in_box('gelatin',i,j,k)
-	# print(g.scene_belief)
-	# print("\n**********************************\n")
-
-	# g.pick_up('soup')
-	# i,j,k = box.add_item('soup')
-	# g.put_in_box('soup',i,j,k)
-	# print(g.scene_belief)
-	# print("\n**********************************\n")
-
-	# g.pick_up('cracker')
-	# i,j,k = box.add_item('cracker')
-	# g.put_in_box('cracker',i,j,k)	
-	# print(g.scene_belief)
-
 
 if __name__ == '__main__':
 	args = sys.argv
@@ -2412,30 +1750,12 @@ if __name__ == '__main__':
 		# order = int(args[2])
 		g = Grocery_packing()
 
-		time.sleep(3000)
+		time.sleep(30)
 		# g.compute_entropy()
-		# g.run_strategy(strategy)
+		g.run_strategy(strategy)
 		# time.sleep(60)
 
-	# g.perform_pick_n_roll()
-	# g.perform_conveyor_belt_pack()
-	# g.perform_dynamic_grocery_packing('divergent_set_1')
-	# g.perform_sbp_grocery_packing()
-	# g.perform_declutter_belief_grocery_packing()
-	# g.perform_optimistic()
-
-# for i in range(1):
-# 	# p.stepSimulation()
-# 	time.sleep(1./420)
-# 	test_pick_place()
-# 	time.sleep(60)
-
-	# p.resetBasePositionAndOrientation(boxId, [h,0,1], cubeStartOrientation)
-	# h+=.01
-
-# (x,y,z), cubeOrn = p.getBasePositionAndOrientation(boxId)
-# print((x,y,z))
-# p.disconnect()
+	
 
 
 
