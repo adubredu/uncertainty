@@ -976,6 +976,10 @@ class Grocery_packing:
 		for key in self.box.items_added:
 			inbox_list.append(key)
 
+		for it in confident_seen_list:
+			if it in inbox_list:
+				inbox_list.remove(it)
+
 		for item in inbox_list+confident_seen_list:
 			# if item in self.items and not self.items[item].dummy:
 			try:
@@ -1134,7 +1138,7 @@ class Grocery_packing:
 				print(self.confidence_threshold)
 
 			return
-		self.convert_to_string_and_publish(plan,alias)
+		# self.convert_to_string_and_publish(plan,alias)
 		for action in plan:
 			if action[1] not in alias:
 				print('wrong aliasing')
@@ -1218,7 +1222,7 @@ class Grocery_packing:
 				print(self.confidence_threshold)
 
 			return
-		self.convert_to_string_and_publish(plan,alias)
+		# self.convert_to_string_and_publish(plan,alias)
 		for action in plan:
 			if action[1] not in alias:
 				print('wrong aliasing')
@@ -1312,20 +1316,20 @@ class Grocery_packing:
 
 	
 	def convert_to_string_and_publish(self,plan,alias):
-		pass
-		# concat = ''
-		# for action in plan:
-		# 	if action[0]!='Fail':
-		# 		action = list(action)
-		# 		action[1] = alias[action[1]]
-		# 		if len(action) == 3:
-		# 			action[2] = alias[action[2]]
-		# 		concat+=str(action)
-		# 		concat+='*'
-		# p = String()
-		# p.data = concat
+		# pass
+		concat = ''
+		for action in plan:
+			if action[0]!='Fail':
+				action = list(action)
+				action[1] = alias[action[1]]
+				if len(action) == 3:
+					action[2] = alias[action[2]]
+				concat+=str(action)
+				concat+='*'
+		p = String()
+		p.data = concat
 		
-		# self.plan_pub.publish(p)
+		self.plan_pub.publish(p)
 
 	
 	def execute_action(self,action, alias):
@@ -1335,7 +1339,7 @@ class Grocery_packing:
 			proposed_name = alias[action[1]]
 			real_name = self.get_real_name_of_detection(proposed_name)
 			success = self.pick_up(real_name)
-			time.sleep(10)
+			time.sleep(8)
 			success = success and self.validate(proposed_name)
 			if not success:
 				self.put_in_clutter(real_name)
@@ -1458,6 +1462,9 @@ class Grocery_packing:
 
 
 	def validate(self, proposed):
+		m = String()
+		m.data = "Validating..."
+		self.action_pub.publish(m)
 		holding = None
 		gx=0; gy=0
 		for item in self.raw_belief_space:
@@ -1473,8 +1480,12 @@ class Grocery_packing:
 		if holding is not None:
 			if holding == proposed:
 				print('Validated holding')
+				m.data = "Validation returned True"
+				self.action_pub.publish(m)
 				return True 
 			else:
+				m.data = "Validation returned False"
+				self.action_pub.publish(m)
 				print('Not valid. Holding ',holding)
 				return False
 		else:
@@ -1485,13 +1496,19 @@ class Grocery_packing:
 					name = it 
 					break
 			if name == proposed:
+				m.data = "Validation returned True"
+				self.action_pub.publish(m)
 				print('Validated id')
 				return True 
 			else:
 				if idd == 1:
 					print('Validated id=1')
+					m.data = "Validation returned True"
+					self.action_pub.publish(m)
 					return True
 				print('Not valid id',idd)
+				m.data = "Validation returned False"
+				self.action_pub.publish(m)
 				return False
 
 		
