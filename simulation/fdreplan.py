@@ -154,7 +154,7 @@ class Grocery_packing:
 			self.box.full_cpty = 4
 		self.init_clutter(self.arrangement_num)
 		# self.generate_clutter_coordinates(self.space_allowed)
-
+		# '''
 		self.observation = None
 		self.planning_time = 0.
 		self.total_execution_time = 0.
@@ -208,6 +208,7 @@ class Grocery_packing:
 
 		self.perception = threading.Thread(target=self.start_perception,args=(1,))
 		self.perception.start()
+		# '''
 
 		# self.pick_up('donut')
 		# time.sleep(30)
@@ -332,7 +333,7 @@ class Grocery_packing:
 	def generate_init_coordinates(self, space):
 		mx = 0.4; my = 0.0; z = 0.65
 		if space == "high":
-			delta = 0.4
+			delta = 0.2
 			self.box.full_cpty = 9
 		elif space == "medium":
 			delta = 0.2
@@ -350,8 +351,8 @@ class Grocery_packing:
 				for y in self.ys[:-2]:
 					self.clutter_ps.append((x,y))
 
-		x = np.random.uniform(low=mx-delta, high=mx+delta)
-		y = np.random.uniform(low=my-delta, high=my+delta-0.1)
+		x = np.random.uniform(low=mx-(delta+0.3), high=mx+delta)
+		y = np.random.uniform(low=my-(delta+0.2), high=my+delta)
 
 		return (x,y,z)
 
@@ -1883,10 +1884,10 @@ if __name__ == '__main__':
 		time.sleep(30)
 		signal.signal(signal.SIGTERM, end_the_prog)
 		signal.alarm(1800)
-		# g.compute_entropy()
-		g.run_strategy(strategy)
+		g.compute_entropy()
+		# g.run_strategy(strategy)
 
-		# time.sleep(60)
+		time.sleep(60)
 
 	
 
