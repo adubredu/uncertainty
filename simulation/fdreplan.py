@@ -1884,10 +1884,10 @@ if __name__ == '__main__':
 		time.sleep(30)
 		signal.signal(signal.SIGTERM, end_the_prog)
 		signal.alarm(1800)
-		g.compute_entropy()
-		# g.run_strategy(strategy)
+		# g.compute_entropy()
+		g.run_strategy(strategy)
 
-		time.sleep(60)
+		# time.sleep(60)
 
 	
 
