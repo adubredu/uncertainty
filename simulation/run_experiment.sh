@@ -1,30 +1,48 @@
 #! /bin/bash
 
-# for i in {1..5}
-# do 
-# 	python3 belief_3D.py conveyor-belt
-# 	sleep 15
-# done
-python belief_3D.py pick-n-roll 1
-sleep 30
-python belief_3D.py bag-sort 1
-sleep 30
-python belief_3D.py pick-n-roll 2
-sleep 30
-python belief_3D.py bag-sort 2
-sleep 30
-python belief_3D.py pick-n-roll 3
-sleep 30
-python belief_3D.py bag-sort 3
-sleep 30
-python belief_3D.py pick-n-roll 4
-sleep 30
-python belief_3D.py bag-sort 4
-sleep 30
-python belief_3D.py pick-n-roll 5
-sleep 30
-python belief_3D.py bag-sort 5
-sleep 30
+#python3 fdreplan.py algo difficulty arrangement_number run_number
+for ((j=1; j<=5; j++))
+do
+	for ((i=1; i<=5; i++))
+	do 
+		python3 fdreplan.py fdreplan sas $j $i
+		sleep 15
+	done
+done
+
+sleep 60
+
+for ((j=1; j<=5; j++))
+do
+	for ((i=1; i<=5; i++))
+	do 
+		python3 fdreplan.py classical-replanner sas $j $i
+		sleep 15
+	done
+done
+
+sleep 60
+
+for ((j=1; j<=5; j++))
+do
+	for ((i=1; i<=5; i++))
+	do 
+		python3 fdreplan.py fdreplan las $j $i
+		sleep 15
+	done
+done
+
+sleep 60
+
+for ((j=1; j<=5; j++))
+do
+	for ((i=1; i<=5; i++))
+	do 
+		python3 fdreplan.py classical-replanner las $j $i
+		sleep 15
+	done
+done
+
 # for i in {1..5}
 # do 
 # 	python3 belief_3D.py pick-n-roll

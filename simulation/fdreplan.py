@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pybullet as p
 import time
+import signal
 import pybullet_data
 import math
 import random
@@ -34,7 +35,6 @@ trayId = p.loadURDF("container/container.urdf", [-.5,.0,0.65],p.getQuaternionFro
 # tid = p.loadTexture('container/boxtexture.png')
 # p.changeVisualShape(trayId, -1, textureUniqueId=tid)
 
-np.random.seed(0)
 
 
 
@@ -102,16 +102,17 @@ class Box:
 
 
 class Grocery_packing:
-	def __init__(self):
+	def __init__(self, diff, arr, run_num, strat):
 		self.start_time = time.time()
 		self.time_pub = rospy.Publisher('/time', String, queue_size=1)
 
 		self.gripper = Gripper()
 
+		np.random.seed(int(arr))
 
 		self.clutter_ps = []
-		self.xs = [0.65,  .45,  .25, .10]
-		self.ys = [-.3, -.2, .3, .2]
+		self.xs = [0.4,  .35,  .25, .15, .1]
+		self.ys = [-.3, -.2, -.1, 0, .1, .25, .2]
 		for x in self.xs:
 			for y in self.ys:
 				self.clutter_ps.append((x,y))
@@ -122,6 +123,10 @@ class Grocery_packing:
 		self.item_list = self.shopping_list.get_item_string_list()
 		self.items_in_box = []
 		self.deccount = 0
+		self.num_actions = 0
+
+
+		self.credentials = [str(diff), str(arr), str(run_num), str(strat)]
 
 		self.plan_pub = rospy.Publisher('/plan', String, queue_size=1)
 		self.boxitems_pub = rospy.Publisher('/box_items', String, queue_size=1)
@@ -130,10 +135,17 @@ class Grocery_packing:
 		self.method_pub = rospy.Publisher('/method', String, queue_size=1)
 		self.should_plan = rospy.Publisher('/should_plan', Bool, queue_size=1)
 		self.holding_pub = rospy.Publisher('/holding', String, queue_size=1)
-
-		self.arrangement_difficulty = 'hard'
+		self.startpub = rospy.Publisher('/starting', Bool, queue_size=1)
+		
+		self.pl_time = 0
+		rospy.Subscriber('/planning_time', String, self.planning_time_callback)
+		
+		if diff == 'las':
+			self.arrangement_difficulty = 'hard'
+		else: 
+			self.arrangement_difficulty = 'easy'
 		self.space_allowed = 'high'
-		self.arrangement_num = 5
+		self.arrangement_num = int(arr)
 
 		if self.space_allowed == 'high':
 			self.box = Box(3)
@@ -150,12 +162,12 @@ class Grocery_packing:
 		self.num_mc_samples = 100
 		self.num_pick_from_box = 0
 		self.raw_belief_space = None
-		self.domain_path='/home/alphonsus/3dmodels/uncertainty/pddl/belief_domain.pddl'
+		self.domain_path='/home/bill/uncertainty/pddl/belief_domain.pddl'
 
 		self.lgripper = self.items['lgripper']
 		self.rgripper = self.items['rgripper']
 
-		self.model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v9_2.pth', \
+		self.model = core.Model.load('/home/bill/backyard/grocery_detector_v9_2.pth', \
 
 				['baseball',
 					  'beer',
@@ -192,12 +204,23 @@ class Grocery_packing:
 		self.num_false = 0
 		self.alive = True
 		
+		 
+
 		self.perception = threading.Thread(target=self.start_perception,args=(1,))
 		self.perception.start()
 
 		# self.pick_up('donut')
 		# time.sleep(30)
 		# self.validate('donut')
+
+	def planning_time_callback(self, data):
+		self.pl_time = data.data
+		# fname = 'exp_data/'+self.credentials[3]+'/'+self.credentials[0]+'_'+ \
+		# 		self.credentials[1]+'_'+self.credentials[2]+'_ptime.txt'
+		# f  = open(fname, 'w')
+		# f.write(self.pl_time)
+		# f.close()
+
 
 
 
@@ -913,6 +936,8 @@ class Grocery_packing:
 			else:
 				self.lgripper.z-=self.delta
 				item.z-=self.delta
+				if item.z < 0.7:
+					item.z = 0.7
 			self.rgripper.z = self.lgripper.z
 			time.sleep(1./self.fps)
 			self.refresh_world()
@@ -1166,6 +1191,15 @@ class Grocery_packing:
 			self.total_execution_time += time.time() - t
 			print('Total Execution Time: ', self.total_execution_time)
 			print('Num retracts: ', self.num_pick_from_box)
+			fname = 'exp_data/'+self.credentials[3]+'/'+self.credentials[0]+'_'+ \
+				self.credentials[1]+'_'+self.credentials[2]+'_etime.txt'
+			f  = open(fname, 'w')
+			f.write('exe: '+str(self.total_execution_time)+'\n')
+			f.write('plan: '+str(self.pl_time)+'\n')
+			f.write('num pick: '+str(self.num_pick_from_box)+'\n')
+			f.write('num act: '+str(self.num_actions)+'\n')
+			f.write('num packed items: '+str(len(self.items_in_box))+'\n')
+			f.close()
 			if not result:
 				try:
 					os.remove('fdplan')
@@ -1250,6 +1284,15 @@ class Grocery_packing:
 			self.total_execution_time += time.time() - t
 			print('Total Execution Time: ', self.total_execution_time)
 			print('Num retracts: ', self.num_pick_from_box)
+			fname = 'exp_data/'+self.credentials[3]+'/'+self.credentials[0]+'_'+ \
+				self.credentials[1]+'_'+self.credentials[2]+'_etime.txt'
+			f  = open(fname, 'w')
+			f.write('exe: '+str(self.total_execution_time)+'\n')
+			f.write('plan: '+str(self.pl_time)+'\n')
+			f.write('num pick: '+str(self.num_pick_from_box)+'\n')
+			f.write('num act: '+str(self.num_actions)+'\n')
+			f.write('num packed items: '+str(len(self.items_in_box))+'\n')
+			f.close()
 			if not result:
 				try:
 					os.remove('fdplan')
@@ -1310,6 +1353,11 @@ class Grocery_packing:
 		print('sub PLANNING TIME FOR OPTIMISTIC: ',total - self.total_execution_time)
 		print('EXECUTION TIME FOR OPTIMISTIC: ', self.total_execution_time)
 		print('NUMBER OF BOX REMOVES: ',self.num_pick_from_box)
+		fname = 'exp_data/'+self.credentials[3]+'/'+self.credentials[0]+'_'+ \
+				self.credentials[1]+'_'+self.credentials[2]+'_STATUS.txt'
+		f  = open(fname, 'w')
+		f.write('SUCCESS')
+		f.close()
 
 		self.save_results('Optimistic',self.planning_time,self.total_execution_time)
 
@@ -1339,10 +1387,12 @@ class Grocery_packing:
 			proposed_name = alias[action[1]]
 			real_name = self.get_real_name_of_detection(proposed_name)
 			success = self.pick_up(real_name)
-			time.sleep(8)
+			self.num_actions+=1
+			time.sleep(.5)
 			success = success and self.validate(proposed_name)
 			if not success:
 				self.put_in_clutter(real_name)
+				self.num_actions+=1
 
 		elif action[0] == 'pick-from-box':
 			if not self.items[alias[action[1]]].inbox:
@@ -1350,22 +1400,27 @@ class Grocery_packing:
 				return False
 			self.num_pick_from_box+=1
 			success = self.pick_up(alias[action[1]])
+			self.num_actions+=1
 			self.box.remove_item(alias[action[1]])
 
 		elif action[0] == 'pick-from':
 			self.num_pick_from_box+=1
 			success = self.pick_up(alias[action[1]])
+			self.num_actions+=1
 			self.box.remove_item(alias[action[1]])
 
 		elif action[0] == 'put-in-box':
 			x,y,z = self.box.add_item(alias[action[1]])
 			success = self.put_in_box(alias[action[1]],x,y,z)
+			self.num_actions+=1
 
 		elif action[0] == 'put-in-clutter':
 			success = self.put_in_clutter(alias[action[1]])
+			self.num_actions+=1
 
 		elif action[0] == 'put-on':
 			success = self.put_on(alias[action[1]], alias[action[2]])
+			self.num_actions+=1
 
 		return success
 
@@ -1477,17 +1532,49 @@ class Grocery_packing:
 						holding = nm 
 						gx=x; gy=y;
 						break
-		if holding is not None:
-			if holding == proposed:
-				print('Validated holding')
-				m.data = "Validation returned True"
-				self.action_pub.publish(m)
-				return True 
+
+		rand = np.random.randint(2)
+		if rand == 1:
+			idd = self.detection_to_real[proposed]
+			name = None
+			for it in self.items:
+				if self.items[it].id == idd:
+					name = it 
+					break
+
+			if holding is not None and name is not None:
+				if holding == proposed and name == proposed:
+					print('Validated holding')
+					m.data = "Validation returned True"
+					self.action_pub.publish(m)
+					return True 
+				else:
+					m.data = "Validation returned False"
+					self.action_pub.publish(m)
+					print('Not valid. Holding ',holding)
+					return False
 			else:
-				m.data = "Validation returned False"
-				self.action_pub.publish(m)
-				print('Not valid. Holding ',holding)
-				return False
+				idd = self.detection_to_real[proposed]
+				name = None
+				for it in self.items:
+					if self.items[it].id == idd:
+						name = it 
+						break
+				if name == proposed:
+					m.data = "Validation returned True"
+					self.action_pub.publish(m)
+					print('Validated id')
+					return True 
+				else:
+					if idd == 1:
+						print('Validated id=1')
+						m.data = "Validation returned True"
+						self.action_pub.publish(m)
+						return True
+					print('Not valid id',idd)
+					m.data = "Validation returned False"
+					self.action_pub.publish(m)
+					return False
 		else:
 			idd = self.detection_to_real[proposed]
 			name = None
@@ -1510,6 +1597,7 @@ class Grocery_packing:
 				m.data = "Validation returned False"
 				self.action_pub.publish(m)
 				return False
+
 
 		
 
@@ -1646,11 +1734,9 @@ class Grocery_packing:
 		for key in self.box.items_added:
 			inbox_list.append(key)
 
-		for it in inbox_list:
-			try:
-				confident_seen_list.remove(it)
-			except:
-				pass
+		for it in confident_seen_list:
+			if it in inbox_list:
+				inbox_list.remove(it)
 
 		for item in inbox_list+confident_seen_list:
 			try:
@@ -1687,6 +1773,11 @@ class Grocery_packing:
 		print('EXECUTION TIME FOR FDREPLAN: ', self.total_execution_time)
 		print('TOTAL TIME FOR FDREPLAN: ', total)
 		print('NUMBER OF BOX REMOVES: ',self.num_pick_from_box)
+		fname = 'exp_data/'+self.credentials[3]+'/'+self.credentials[0]+'_'+ \
+				self.credentials[1]+'_'+self.credentials[2]+'_STATUS.txt'
+		f  = open(fname, 'w')
+		f.write('SUCCESS')
+		f.close()
 
 		self.save_results('fdreplan',self.planning_time,self.total_execution_time)
 
@@ -1740,6 +1831,9 @@ class Grocery_packing:
 		f.close()
 
 	def run_strategy(self, strategy):
+		b = Bool()
+		b.data = True
+		self.startpub.publish(b)
 		
 		if strategy == 'classical-replanner':
 			m = String()
@@ -1768,22 +1862,30 @@ class Grocery_packing:
 		a.data = False
 
 
-
+def end_the_prog(signum, frame):
+	sys.exit()
 
 if __name__ == '__main__':
 	args = sys.argv
-	if len(args) != 2:
+	if len(args) != 5:
 		print("Arguments should be strategy and order")
 	else:        
 		rospy.init_node('grocery_packing')
 		strategy = args[1]
+		difficulty = args[2]
+		arrangement_num = args[3]
+		run_number = args[4]
 		# test_pick_place()
 		# order = int(args[2])
-		g = Grocery_packing()
+		g = Grocery_packing(diff=difficulty, arr=arrangement_num,\
+						 run_num=run_number, strat=strategy)
 
 		time.sleep(30)
+		signal.signal(signal.SIGTERM, end_the_prog)
+		signal.alarm(1800)
 		# g.compute_entropy()
 		g.run_strategy(strategy)
+
 		# time.sleep(60)
 
 	

@@ -131,18 +131,18 @@ class Grocery_packing:
 		self.should_plan = rospy.Publisher('/should_plan', Bool, queue_size=1)
 		self.holding_pub = rospy.Publisher('/holding', String, queue_size=1)
 
-		self.arrangement_difficulty = 'hard'
+		self.arrangement_difficulty = 'easy'
 		self.space_allowed = 'high'
-		self.arrangement_num = 5
+		self.arrangement_num = 1
 
 		if self.space_allowed == 'high':
 			self.box = Box(3)
 		else:
 			self.box = Box(2) 
 			self.box.full_cpty = 4
-		self.init_clutter(self.arrangement_num)
-		# self.generate_clutter_coordinates(self.space_allowed)
-
+		# self.init_clutter(self.arrangement_num)
+		self.generate_clutter_coordinates(self.space_allowed)
+		# '''
 		self.observation = None
 		self.planning_time = 0.
 		self.total_execution_time = 0.
@@ -150,12 +150,12 @@ class Grocery_packing:
 		self.num_mc_samples = 100
 		self.num_pick_from_box = 0
 		self.raw_belief_space = None
-		self.domain_path='/home/alphonsus/3dmodels/uncertainty/pddl/belief_domain.pddl'
+		self.domain_path='/home/bill/uncertainty/pddl/belief_domain.pddl'
 
 		self.lgripper = self.items['lgripper']
 		self.rgripper = self.items['rgripper']
 
-		self.model = core.Model.load('/home/alphonsus/3dmodels/grocery_detector_v9_2.pth', \
+		self.model = core.Model.load('/home/bill/backyard/grocery_detector_v9_2.pth', \
 
 				['baseball',
 					  'beer',
@@ -196,6 +196,7 @@ class Grocery_packing:
 		self.pick_up('can_coke')
 		time.sleep(30)
 		self.validate()
+		# '''
 
 
 
@@ -307,7 +308,7 @@ class Grocery_packing:
 	def generate_init_coordinates(self, space):
 		mx = 0.4; my = 0.0; z = 0.65
 		if space == "high":
-			delta = 0.4
+			delta = 0.3
 			self.box.full_cpty = 9
 		elif space == "medium":
 			delta = 0.2

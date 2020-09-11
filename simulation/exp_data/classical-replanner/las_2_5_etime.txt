@@ -1,0 +1,5 @@
+exe: 682.3828120231628
+plan: 60.0486536026001
+num pick: 5
+num act: 83
+num packed items: 20
