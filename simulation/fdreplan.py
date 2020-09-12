@@ -456,7 +456,7 @@ class Grocery_packing:
 				norm_scene[item]=[]
 				for name,wt,cd in scene[item]:
 
-					if cd[0] > 250 and cd[1] > 60 and cd[1]<400:
+					if cd[0] > 250 and cd[1] > 20 and cd[1]<400:
 						names.append(name)
 						weights.append(wt)
 						coord.append([int(c) for c in cd])

@@ -44,17 +44,17 @@
 # done
 
 #replacements
-for ((i=1; i<=5; i++))
-do 
-	python3 fdreplan.py fdreplan sas 2 $i
-	sleep 15
-done
+# for ((i=1; i<=5; i++))
+# do 
+# 	python3 fdreplan.py fdreplan sas 2 $i
+# 	sleep 15
+# done
 
-for ((i=1; i<=5; i++))
-do 
-	python3 fdreplan.py classical-replanner sas 2 $i
-	sleep 15
-done
+# for ((i=1; i<=5; i++))
+# do 
+# 	python3 fdreplan.py classical-replanner sas 2 $i
+# 	sleep 15
+# done
 
 for ((i=1; i<=5; i++))
 do 

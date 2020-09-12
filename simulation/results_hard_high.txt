@@ -438,3 +438,73 @@ planning_time: 45.44523000717163
 execution_time: 450.18004536628723
 num_pick_from_box: 1
 
+fdreplan_3
+planning_time: 85.53349757194519
+execution_time: 489.56854271888733
+num_pick_from_box: 1
+
+fdreplan_3
+planning_time: 75.45305562019348
+execution_time: 502.05351662635803
+num_pick_from_box: 3
+
+fdreplan_3
+planning_time: 85.5245316028595
+execution_time: 539.2271864414215
+num_pick_from_box: 4
+
+Optimistic_3
+planning_time: 80.45859289169312
+execution_time: 572.034640789032
+num_pick_from_box: 2
+
+Optimistic_3
+planning_time: 85.61590719223022
+execution_time: 605.9393355846405
+num_pick_from_box: 3
+
+fdreplan_3
+planning_time: 90.68283772468567
+execution_time: 565.631326675415
+num_pick_from_box: 4
+
+fdreplan_3
+planning_time: 85.61525678634644
+execution_time: 515.3068165779114
+num_pick_from_box: 1
+
+fdreplan_3
+planning_time: 131.03811836242676
+execution_time: 729.4208948612213
+num_pick_from_box: 3
+
+fdreplan_3
+planning_time: 105.5890998840332
+execution_time: 631.6484496593475
+num_pick_from_box: 4
+
+fdreplan_3
+planning_time: 95.55589365959167
+execution_time: 633.8150205612183
+num_pick_from_box: 3
+
+Optimistic_3
+planning_time: 80.43590831756592
+execution_time: 654.3163809776306
+num_pick_from_box: 3
+
+Optimistic_3
+planning_time: 95.72154402732849
+execution_time: 620.8281898498535
+num_pick_from_box: 3
+
+Optimistic_3
+planning_time: 115.77230787277222
+execution_time: 758.576667547226
+num_pick_from_box: 2
+
+Optimistic_3
+planning_time: 75.38400602340698
+execution_time: 557.4039947986603
+num_pick_from_box: 1
+
