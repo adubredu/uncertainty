@@ -124,6 +124,7 @@ class Grocery_packing:
 		self.items_in_box = []
 		self.deccount = 0
 		self.num_actions = 0
+		self.num_mistakes = 0
 
 
 		self.credentials = [str(diff), str(arr), str(run_num), str(strat)]
@@ -485,6 +486,18 @@ class Grocery_packing:
 			noisy = cv2.add(image, gauss)
 			return noisy
 
+		def add_some_entropy(labels):
+			r = np.random.randint(2)
+			if r==1 and len(labels)>1:
+				print(' labels 0: '+labels[0]+' to '+labels[1])
+				tmp = labels[0]
+				labels[0] = labels[1]
+				labels[1] = tmp
+				return labels
+			else:
+				return labels
+
+
 
 		while self.alive:
 			viewMatrix = p.computeViewMatrix(
@@ -513,6 +526,8 @@ class Grocery_packing:
 			predictions = self.model.predict(rgbImg)
 			camera_view = cv2.cvtColor(np.array(rgbImg), cv2.COLOR_RGB2BGR)
 			labels, boxes, scores = predictions
+			# print(labels, scores)
+			# labels = add_some_entropy(labels)
 			boxes = boxes.numpy()
 			scores = scores.numpy()
 			num_observed = len(labels)
@@ -552,13 +567,35 @@ class Grocery_packing:
 			scene = {}
 			for key in clusters:
 				weights = [box['confidence'] for box in clusters[key]]
-				maxind = np.argmax(weights)
-				maxweightedbox = clusters[key][maxind]
-				scene[maxweightedbox['name']] = [(box['name'], box['confidence'], \
-								box['coordinates'].tolist()) for box in clusters[key]]
+				r = np.random.randint(2)
+				if r == 1 and len(weights)>1:
+					secmaxind = weights.index(np.partition(weights,-2)[-2])
+					maxweightedbox = clusters[key][secmaxind]
+					scene[maxweightedbox['name']] = [[box['name'], box['confidence'], \
+								box['coordinates'].tolist()] for box in clusters[key]]
+					tmp = scene[maxweightedbox['name']][0][0]
+					scene[maxweightedbox['name']][0][0] = scene[maxweightedbox['name']][1][0]
+					scene[maxweightedbox['name']][1][0] = tmp
+					# print('sorry ',tmp, len(weights))
+
+				else:
+					maxind = np.argmax(weights)
+					maxweightedbox = clusters[key][maxind]
+					r = np.random.randint(2)
+					if r == 1:
+						its = self.shopping_list.get_item_string_list()
+						name = np.random.choice(its)
+						scene[name] = [[box['name'], box['confidence'], \
+									box['coordinates'].tolist()] for box in clusters[key]]
+						# scene[name][0][0] = name
+						# print(name, 'for', maxweightedbox['name'])
+					else:
+						scene[maxweightedbox['name']] = [(box['name'], box['confidence'], \
+									box['coordinates'].tolist()) for box in clusters[key]]
 
 			self.raw_belief_space = scene
 			self.scene_belief = normalize_scene_weights(scene, self.segmented)
+
 
 			# print(self.scene_belief)
 			# print('***'*50)
@@ -592,7 +629,10 @@ class Grocery_packing:
 
 
 	def pick_up(self,targetID):
-		item = self.items[targetID]
+		try:
+			item = self.items[targetID]
+		except:
+			return False
 		if item.dummy:
 			return False
 		for it in self.objects_list:
@@ -997,7 +1037,7 @@ class Grocery_packing:
 
 
 		random.shuffle(confident_seen_list)
-		print('confidently scene items: '+str(confident_seen_list))
+		print('confidently seen items: '+str(confident_seen_list))
 		
 		for key in self.box.items_added:
 			inbox_list.append(key)
@@ -1198,8 +1238,9 @@ class Grocery_packing:
 			f.write('exe: '+str(self.total_execution_time)+'\n')
 			f.write('plan: '+str(self.pl_time)+'\n')
 			f.write('num pick: '+str(self.num_pick_from_box)+'\n')
-			f.write('num act: '+str(self.num_actions)+'\n')
+			f.write('num actions: '+str(self.num_actions)+'\n')
 			f.write('num packed items: '+str(len(self.items_in_box))+'\n')
+			f.write('num mistakes: '+str(self.num_mistakes)+'\n')
 			f.close()
 			if not result:
 				try:
@@ -1208,7 +1249,8 @@ class Grocery_packing:
 					pass
 				if self.is_clutter_empty():
 					return
-				 
+				
+				self.num_mistakes+=1
 				self.current_action = "Action: REPLANNING..."  
 				print('REPLANNING')
 				self.current_plan = 'Blah'
@@ -1291,8 +1333,9 @@ class Grocery_packing:
 			f.write('exe: '+str(self.total_execution_time)+'\n')
 			f.write('plan: '+str(self.pl_time)+'\n')
 			f.write('num pick: '+str(self.num_pick_from_box)+'\n')
-			f.write('num act: '+str(self.num_actions)+'\n')
+			f.write('num actions: '+str(self.num_actions)+'\n')
 			f.write('num packed items: '+str(len(self.items_in_box))+'\n')
+			f.write('num mistakes: '+str(self.num_mistakes)+'\n')
 			f.close()
 			if not result:
 				try:
@@ -1301,7 +1344,8 @@ class Grocery_packing:
 					pass
 				if self.is_clutter_empty():
 					return
-				 
+				
+				self.num_mistakes +=1 
 				self.current_action = "Action: REPLANNING..."  
 				print('REPLANNING')
 				self.current_plan = 'Blah'
@@ -1394,6 +1438,7 @@ class Grocery_packing:
 			if not success:
 				self.put_in_clutter(real_name)
 				self.num_actions+=1
+				self.num_mistakes+=1
 
 		elif action[0] == 'pick-from-box':
 			if not self.items[alias[action[1]]].inbox:
@@ -1441,7 +1486,7 @@ class Grocery_packing:
 			weights = [np.abs(w) for w in weights]
 			norm_weights = weights/np.sum(weights)
 			sample = np.random.choice(items, size=1, p=norm_weights)
-			ind = items.index(sample)
+			ind = items.index(sample[0])
 			idd = ids[ind]
 			item_weights.append(weights[ind])
 			sampled_items.append(sample[0])
@@ -1509,12 +1554,16 @@ class Grocery_packing:
 
 
 	def get_real_name_of_detection(self, maybefalse):
-		idd =  self.detection_to_real[maybefalse]
-		name = maybefalse
-		for it in self.items:
-			if self.items[it].id == idd:
-				name = it 
-		return name
+		try:
+			idd =  self.detection_to_real[maybefalse]
+			name = maybefalse
+			for it in self.items:
+				if self.items[it].id == idd:
+					name = it 
+			return name
+		except:
+			print("Couldn't save its ID")
+			return maybefalse
 
 
 	def validate(self, proposed):
@@ -1716,21 +1765,22 @@ class Grocery_packing:
 
 		occluded_items = []
 		for item in scene_belief:
-			hypotheses = []; iih=[]; wih=[]
+			hypotheses = []; iih=[]; wih=[]; ids = 1
 			for hypothesis in scene_belief[item]:
 				s = (hypothesis[0], hypothesis[1], hypothesis[3])
 				hypotheses.append(s)
 				iih.append(hypothesis[0])
 				wih.append(hypothesis[1])
+				ids = hypothesis[3]
 			p = (1 - np.sum(wih))/(num_objects - len(iih))
 			for it in self.item_list:
 				if it not in iih:
-					hypotheses.append((it, p,1))
+					hypotheses.append((it, p,ids))
 			occluded_items.append(hypotheses)
 		# print(occluded_items)
 		confident_seen_list,_ = self.single_sample(occluded_items)
 		random.shuffle(confident_seen_list)
-		print('confidently scene items: '+str(confident_seen_list))
+		print('confident sampled scene items: '+str(confident_seen_list))
 		
 		for key in self.box.items_added:
 			inbox_list.append(key)
@@ -1885,7 +1935,7 @@ if __name__ == '__main__':
 		signal.signal(signal.SIGTERM, end_the_prog)
 		signal.alarm(1800)
 		# g.compute_entropy()
-		g.run_strategy(strategy)
+		# g.run_strategy(strategy)
 
 		# time.sleep(60)
 

@@ -19,8 +19,8 @@ class  visualizer:
 		self.stay_alive = True
 		self.clock = pygame.time.Clock()
 
-		self.window_width = 800
-		self.window_height = 700
+		self.window_width = 400
+		self.window_height = 900
 		self.duration = ''
 
 		self.fps = 60
@@ -86,8 +86,27 @@ class  visualizer:
 		text = font.render(textcontent, True, color)
 		self.win.blit(text, (x,y))
 
-
 	def refresh_window(self):
+		self.win.fill((255,255,255))
+		self.display_text('Current Action: ', 20, 30, (0,0,255),17)
+		self.display_text(self.current_action, 20, 60, (0,0,0), 15)
+		self.display_text('Current Plan: ', 20, 120, (0,0,255),17)
+		y = 150
+		plan = self.plan.split('*')[:-1]
+		for p in plan:
+			if p == self.current_action:
+				self.display_text(p, 20, y, (255,0,0), 15)
+			else:
+				self.display_text(p, 20, y, (0,0,0), 15)
+			y+=20
+
+		objects = self.scene_belief.split('*')[:-1]
+		bobjects = self.box_items.split('*')
+		pygame.display.update()
+		self.clock.tick(self.fps)
+
+
+	def old_refresh_window(self):
 		# objects = ['pepsi-0.8', 'nutella-0.8_coke-0.8_lipton-0.8',
 		# 			'bleach-0.8', 'ambrosia-0.8', 'banana-0.8', 'cereal-0.8', 
 		# 			'lysol-0.8_milk-0.8', 'oreo-0.8', 'tangerine-0.8']

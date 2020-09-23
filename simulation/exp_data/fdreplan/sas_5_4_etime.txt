@@ -1,5 +1,6 @@
-exe: 906.417843580246
-plan: 104.19197750091553
-num pick: 3
-num act: 108
-num packed items: 20
+exe: 756.3435163497925
+plan: 79.34374976158142
+num pick: 4
+num actions: 90
+num packed items: 19
+num mistakes: 40
