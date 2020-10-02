@@ -1,0 +1,4 @@
+('pick-from-clutter', 'm0')
+('put-in-box', 'm0')
+('pick-from-clutter', 'm1')
+('put-on', 'm1', 'h0')

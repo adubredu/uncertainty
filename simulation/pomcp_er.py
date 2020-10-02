@@ -1,3 +1,4 @@
+#pomcp with episodic rewards
 import numpy as np 
 import copy
 
@@ -12,6 +13,7 @@ class State:
 		self.on = []
 		self.handempty = True
 		self.total_num_items=10
+		self.box_delta = 0
 		self.heaviness = {}
 		self.state_space = state_space
 		self.num_mc_samples = 100
@@ -151,6 +153,7 @@ def get_next_state_node(node, action):
 		next_state.holding = None
 		next_state.topfree.append(action[1])
 		next_state.handempty = True 
+		next_state.box_delta +=1
 
 	elif action[0] == 'put-in-clutter':
 		next_state.in_clutter.append(action[1])
@@ -280,7 +283,7 @@ def successful_packing(node):
 
 
 
-def rollout_policy(node, depth=100):
+def rollout_policy(node, depth=10):
 	global success
 	iteration = 0
 	next_node = node
@@ -297,6 +300,11 @@ def rollout_policy(node, depth=100):
 				return 100
 			else:
 				return -10
+		elif next_node.state.box_delta > 0:
+			next_node.state.box_delta = 0
+			print('Packed an object. Reward += 10')
+			return 10
+
 		actions = get_valid_actions(next_node)
 		if len(actions) > 0:
 			index = np.random.randint(len(actions))

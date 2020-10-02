@@ -16,7 +16,7 @@ from planner import Planner
 import rospy
 from std_msgs.msg import String, Bool
 from grocery_items import Shopping_List, Grocery_item
-import pomcp
+import pomcp, pomcp_er
 from scipy.stats import entropy as sp_entropy
 sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
@@ -137,8 +137,9 @@ class Grocery_packing:
 		self.should_plan = rospy.Publisher('/should_plan', Bool, queue_size=1)
 		self.holding_pub = rospy.Publisher('/holding', String, queue_size=1)
 		self.startpub = rospy.Publisher('/starting', Bool, queue_size=1)
-		
+		print(self.items.keys())
 		self.pl_time = 0
+		self.loaded=[]
 		rospy.Subscriber('/planning_time', String, self.planning_time_callback)
 		
 		if diff == 'las':
@@ -149,7 +150,8 @@ class Grocery_packing:
 		self.arrangement_num = int(arr)
 
 		if self.space_allowed == 'high':
-			self.box = Box(3)
+			self.box = Box(2)
+			self.box.full_cpty = 4
 		else:
 			self.box = Box(2) 
 			self.box.full_cpty = 4
@@ -157,6 +159,7 @@ class Grocery_packing:
 		# self.generate_clutter_coordinates(self.space_allowed)
 		# '''
 		self.observation = None
+
 		self.planning_time = 0.
 		self.total_execution_time = 0.
 		self.added_time = 0.
@@ -412,10 +415,12 @@ class Grocery_packing:
 
 	def init_clutter(self, index):
 		init_positions = self.read_init_positions(index)
+		
 		for name, x, y, z in init_positions:
 			self.items[name].x = float(x)
 			self.items[name].y = float(y)
 			self.items[name].z = float(z)
+			self.loaded.append(name)
 
 		# self.generate_clutter_coordinates(self.space_allowed)
 		# self.objects_list = self.shopping_list.get_items_list()
@@ -607,7 +612,7 @@ class Grocery_packing:
 			scene_data.data = ''
 			for item in self.raw_belief_space:
 				for nm, cf, cd in self.raw_belief_space[item]:
-					if nm == item: # and cf >= self.confidence_threshold:
+					if nm == item and cd[0] > 250 and cd[1] > 20 and cd[1]<400: # and cf >= self.confidence_threshold:
 						color = (np.random.randint(255),\
 								np.random.randint(255),\
 								np.random.randint(255))
@@ -632,9 +637,12 @@ class Grocery_packing:
 		try:
 			item = self.items[targetID]
 		except:
+			print('dummied: ',targetID)
 			return False
 		if item.dummy:
 			return False
+		# if item not in self.loaded:
+		# 	return False
 		for it in self.objects_list:
 			if it.item_on_top == targetID:
 				it.item_on_top = None
@@ -648,8 +656,8 @@ class Grocery_packing:
 		item.inclutter = False 
 		self.gripper.holding = targetID
 
-		(olx,oly,olz) = (-0.13,-.5,1.5)
-		(orx,ory,orz) = (-0.1, -.5, 1.5)
+		(olx,oly,olz) = (-0.13,-.5,1.0)
+		(orx,ory,orz) = (-0.1, -.5, 1.0)
 
 		width = self.items[targetID].width
 
@@ -928,9 +936,11 @@ class Grocery_packing:
 
 
 	def put_in_clutter(self, itemname):
-		item = self.items[itemname]
-		if item.dummy:
+		try:
+			item = self.items[itemname]
+		except:
 			return False
+
 		r = np.random.randint(len(self.clutter_ps))
 		bx,by = self.clutter_ps[r]
 		bz = 0.7
@@ -1228,7 +1238,11 @@ class Grocery_packing:
 			print(f)
 			self.action_pub.publish(a)
 			t = time.time()
-			result = self.execute_action(action, alias)
+			if alias[action[1]] not in self.item_list:
+				print('not in item list', alias[action[1]])
+				result = False 
+			else:
+				result = self.execute_action(action, alias)
 			self.total_execution_time += time.time() - t
 			print('Total Execution Time: ', self.total_execution_time)
 			print('Num retracts: ', self.num_pick_from_box)
@@ -1323,7 +1337,11 @@ class Grocery_packing:
 			print(f)
 			self.action_pub.publish(a)
 			t = time.time()
-			result = self.execute_action(action, alias)
+			if alias[action[1]] not in self.item_list:
+				print('not in item list', alias[action[1]])
+				result = False 
+			else:
+				result = self.execute_action(action, alias)
 			self.total_execution_time += time.time() - t
 			print('Total Execution Time: ', self.total_execution_time)
 			print('Num retracts: ', self.num_pick_from_box)
@@ -1431,6 +1449,8 @@ class Grocery_packing:
 		if action[0] == 'pick-from-clutter':
 			proposed_name = alias[action[1]]
 			real_name = self.get_real_name_of_detection(proposed_name)
+			if real_name not in list(self.items.keys()):
+				return False
 			success = self.pick_up(real_name)
 			self.num_actions+=1
 			time.sleep(.5)
@@ -1585,7 +1605,10 @@ class Grocery_packing:
 
 		rand = np.random.randint(2)
 		if rand == 1:
-			idd = self.detection_to_real[proposed]
+			try: 
+				idd = self.detection_to_real[proposed]
+			except:
+				return False
 			name = None
 			for it in self.items:
 				if self.items[it].id == idd:
@@ -1604,7 +1627,10 @@ class Grocery_packing:
 					print('Not valid. Holding ',holding)
 					return False
 			else:
-				idd = self.detection_to_real[proposed]
+				try:
+					idd = self.detection_to_real[proposed]
+				except:
+					return False
 				name = None
 				for it in self.items:
 					if self.items[it].id == idd:
@@ -1626,7 +1652,10 @@ class Grocery_packing:
 					self.action_pub.publish(m)
 					return False
 		else:
-			idd = self.detection_to_real[proposed]
+			try:
+				idd = self.detection_to_real[proposed]
+			except:
+				return False
 			name = None
 			for it in self.items:
 				if self.items[it].id == idd:
@@ -1648,7 +1677,63 @@ class Grocery_packing:
 				self.action_pub.publish(m)
 				return False
 
+	def perform_pomcp_er(self):
+		start = time.time()
+		empty_clutter = self.is_clutter_empty()
+		state_space = {'holding':self.gripper.holding,
+		'items':self.items}
 
+		while not empty_clutter:
+			belief = self.get_whole_scene_belief()
+			state_space = {'holding':self.gripper.holding,
+							'items':self.items}
+			state = pomcp_er.State(state_space, belief)
+			root_node = pomcp_er.Node(state)
+			st = time.time()
+			result_root = pomcp_er.perform_pomcp(root_node, num_iterations=10)
+			if result_root is None:
+				print('Root is None')
+				continue
+			self.planning_time += time.time()-st
+			select_node = pomcp_er.select_action(result_root,infer=True)
+			if select_node is None:
+				print('No action found')
+				continue
+			action = select_node.birth_action
+			print(action)
+			if action[1] !='':
+				t = time.time()
+				self.detection_to_real = state.detection_to_real
+				if action[1] not in self.item_list:
+					print('not in item list', action[1])
+					result = False 
+				else:
+					success = self.execute_pomcp_action(action)
+				self.total_execution_time += time.time() - t
+				self.num_actions+=1
+				print('Total execution time: ', self.total_execution_time)
+				print('Num retracts: ', self.num_pick_from_box)
+				fname = 'exp_data/'+self.credentials[3]+'/'+self.credentials[0]+'_'+ \
+					self.credentials[1]+'_'+self.credentials[2]+'_etime.txt'
+				f  = open(fname, 'w')
+				f.write('exe: '+str(self.total_execution_time)+'\n')
+				f.write('plan: '+str(self.planning_time)+'\n')
+				f.write('num pick: '+str(self.num_pick_from_box)+'\n')
+				f.write('num actions: '+str(self.num_actions)+'\n')
+				f.write('num packed items: '+str(len(self.items_in_box))+'\n')
+				f.write('num mistakes: '+str(self.num_mistakes)+'\n')
+				f.close()
+
+
+			empty_clutter = self.is_clutter_empty()
+
+		end = time.time()
+		total = end-start
+		print('PLANNING TIME FOR POMCP: ',(total-self.total_execution_time))
+		print('EXECUTION TIME FOR POMCP: ',self.total_execution_time)
+		print('NUMBER OF BOX REMOVES: ',self.num_pick_from_box)
+
+		self.save_results('pomcp_er',self.planning_time,exe)
 		
 
 	def perform_pomcp(self):
@@ -1676,11 +1761,23 @@ class Grocery_packing:
 			action = select_node.birth_action
 			print(action)
 			if action[1] !='':
+				self.detection_to_real = state.detection_to_real
 				t = time.time()
-				self.execute_pomcp_action(action)
+				success = self.execute_pomcp_action(action)
 				self.total_execution_time += time.time() - t
+				self.num_actions+=1
 				print('Total execution time: ', self.total_execution_time)
 				print('Num retracts: ', self.num_pick_from_box)
+				fname = 'exp_data/'+self.credentials[3]+'/'+self.credentials[0]+'_'+ \
+					self.credentials[1]+'_'+self.credentials[2]+'_etime.txt'
+				f  = open(fname, 'w')
+				f.write('exe: '+str(self.total_execution_time)+'\n')
+				f.write('plan: '+str(self.planning_time)+'\n')
+				f.write('num pick: '+str(self.num_pick_from_box)+'\n')
+				f.write('num actions: '+str(self.num_actions)+'\n')
+				f.write('num packed items: '+str(len(self.items_in_box))+'\n')
+				f.write('num mistakes: '+str(self.num_mistakes)+'\n')
+				f.close()
 
 
 			empty_clutter = self.is_clutter_empty()
@@ -1784,7 +1881,13 @@ class Grocery_packing:
 		
 		for key in self.box.items_added:
 			inbox_list.append(key)
-
+######################################################
+		for item in self.items:
+			if item in inbox_list:
+				it = self.items[item].item_on_top
+				if it != None:
+					inbox_list.append(it)
+#####################################################
 		for it in confident_seen_list:
 			if it in inbox_list:
 				inbox_list.remove(it)
@@ -1839,11 +1942,18 @@ class Grocery_packing:
 		self.current_action = "Action: "+str(action)
 		success = True
 		if action[0] == 'pick-from-clutter':
-			if not self.items[action[1]].inclutter:
-				print('Wrong pick')
-				return False
-			success = self.pick_up(action[1])
-			self.box.remove_item(action[1])
+			# if not self.items[action[1]].inclutter:
+			# 	print('Wrong pick')
+			# 	return False
+			proposed_name = action[1]
+			real_name = self.get_real_name_of_detection(proposed_name)
+			success = self.pick_up(real_name)
+			time.sleep(.5)
+			success = success and self.validate(proposed_name)
+			if not success:
+				self.put_in_clutter(real_name)
+				self.num_actions+=1
+				self.num_mistakes+=1
 
 		elif action[0] == 'pick-from-box':
 			if not self.items[action[1]].inbox:
@@ -1861,6 +1971,10 @@ class Grocery_packing:
 		elif action[0] == 'put-in-box':
 			x,y,z = self.box.add_item(action[1])
 			success = self.put_in_box(action[1],x,y,z)
+			if not success:
+				self.put_in_clutter(action[1])
+				self.num_actions+=1
+				self.num_mistakes+=1
 
 		elif action[0] == 'put-in-clutter':
 			success = self.put_in_clutter(action[1])
@@ -1897,6 +2011,11 @@ class Grocery_packing:
 			m.data = strategy
 			self.method_pub.publish(m)
 			self.perform_pomcp()
+		elif strategy == 'pomcp_er':
+			m = String()
+			m.data = strategy
+			self.method_pub.publish(m)
+			self.perform_pomcp_er()
 		elif strategy == 'classical-planner':
 			m = String()
 			m.data = strategy 
@@ -1935,7 +2054,7 @@ if __name__ == '__main__':
 		signal.signal(signal.SIGTERM, end_the_prog)
 		signal.alarm(1800)
 		# g.compute_entropy()
-		# g.run_strategy(strategy)
+		g.run_strategy(strategy)
 
 		# time.sleep(60)
 
